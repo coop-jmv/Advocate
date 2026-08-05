@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Brain, Loader2, Upload } from "lucide-react";
 import { Tag } from "@/components/app/primitives";
-import { analyzeDocument, listDocumentAnalyses } from "@/lib/ai.functions";
+import { listDocumentAnalyses } from "@/lib/ai.functions";
+import { analyzeDocument } from "@/lib/edge-functions";
 import { matters } from "@/lib/mock-data";
 
 type Analysis = {
@@ -34,7 +35,6 @@ function asKeyDates(value: unknown): { date?: string; what?: string }[] {
 }
 
 export function DocumentIntelligence() {
-  const analyze = useServerFn(analyzeDocument);
   const load = useServerFn(listDocumentAnalyses);
 
   const [items, setItems] = useState<Analysis[]>([]);
@@ -63,8 +63,10 @@ export function DocumentIntelligence() {
     setBusy(true);
     setError(null);
     try {
-      const result = (await analyze({
-        data: { name: name || "Untitled document", matterRef: matterRef || undefined, text },
+      const result = (await analyzeDocument({
+        name: name || "Untitled document",
+        matterRef: matterRef || undefined,
+        text,
       })) as Analysis;
       setItems((prev) => [result, ...prev]);
       setText("");

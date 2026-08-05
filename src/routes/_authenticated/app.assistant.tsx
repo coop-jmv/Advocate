@@ -3,12 +3,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
 import { Bot, Loader2, Plus, Send, Trash2, User } from "lucide-react";
 import { AppShell } from "@/components/app/AppShell";
-import {
-  askAssistant,
-  deleteConversation,
-  listConversations,
-  listMessages,
-} from "@/lib/ai.functions";
+import { deleteConversation, listConversations, listMessages } from "@/lib/ai.functions";
+import { askAssistant } from "@/lib/edge-functions";
 import { matters } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 
@@ -45,7 +41,6 @@ const SUGGESTIONS = [
 ];
 
 function Assistant() {
-  const ask = useServerFn(askAssistant);
   const loadThreads = useServerFn(listConversations);
   const loadMessages = useServerFn(listMessages);
   const removeThread = useServerFn(deleteConversation);
@@ -89,12 +84,10 @@ function Assistant() {
       { id: `local-${Date.now()}`, role: "user", content: question },
     ]);
     try {
-      const result = await ask({
-        data: {
-          conversationId: activeId,
-          question,
-          matterRef: matterRef || undefined,
-        },
+      const result = await askAssistant({
+        conversationId: activeId,
+        question,
+        matterRef: matterRef || undefined,
       });
       setActiveId(result.conversationId);
       setMessages((prev) => [

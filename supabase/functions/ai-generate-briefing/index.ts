@@ -1,0 +1,36 @@
+import { handleOptions, jsonResponse, errorResponse } from "../_shared/cors.ts";
+import { authedClient, requireUserId } from "../_shared/auth.ts";
+import { chatComplete, LEGAL_SYSTEM_PROMPT } from "../_shared/ai.ts";
+
+Deno.serve(async (req) => {
+  const preflight = handleOptions(req);
+  if (preflight) return preflight;
+
+  const auth = authedClient(req);
+  if (!auth) return errorResponse("Unauthorized", 401);
+  const userId = await requireUserId(auth.supabase);
+  if (!userId) return errorResponse("Unauthorized", 401);
+
+  let body: { context: string };
+  try {
+    body = await req.json();
+  } catch {
+    return errorResponse("Invalid JSON body");
+  }
+  if (!body.context || body.context.length < 10) {
+    return errorResponse("context (min 10 chars) is required");
+  }
+
+  try {
+    const briefing = await chatComplete([
+      { role: "system", content: LEGAL_SYSTEM_PROMPT },
+      {
+        role: "user",
+        content: `Prepare a chamber briefing for the advocate from the workload below. Use these markdown sections:\n\n## Hearing readiness\n## Limitation & deadline risk\n## Conflict and workload watch\n## Priority actions today\n\nBe specific, reference the matter codes given, and never invent matters or dates that are not listed.\n\n${body.context}`,
+      },
+    ]);
+    return jsonResponse({ briefing });
+  } catch (cause) {
+    return errorResponse(cause instanceof Error ? cause.message : "AI request failed.", 502);
+  }
+});

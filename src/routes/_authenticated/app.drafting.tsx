@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { FileText, Loader2, Printer, Save, Sparkles } from "lucide-react";
 import { AppShell } from "@/components/app/AppShell";
 import { Tag } from "@/components/app/primitives";
-import { generateDraft, listDrafts, saveDraft } from "@/lib/ai.functions";
+import { listDrafts, saveDraft } from "@/lib/ai.functions";
+import { generateDraft } from "@/lib/edge-functions";
 import { matters } from "@/lib/mock-data";
 
 export const Route = createFileRoute("/_authenticated/app/drafting")({
@@ -50,7 +51,6 @@ const DOC_TYPES = [
 ] as const;
 
 function Drafting() {
-  const create = useServerFn(generateDraft);
   const load = useServerFn(listDrafts);
   const persist = useServerFn(saveDraft);
 
@@ -74,8 +74,10 @@ function Drafting() {
     setBusy(true);
     setError(null);
     try {
-      const draft = (await create({
-        data: { docType, matterRef: matterRef || undefined, instructions },
+      const draft = (await generateDraft({
+        docType,
+        matterRef: matterRef || undefined,
+        instructions,
       })) as Draft;
       setActive(draft);
       setDrafts((prev) => [draft, ...prev]);

@@ -1,5 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
 import {
   Mic,
@@ -13,7 +12,7 @@ import {
 } from "lucide-react";
 import { AppShell } from "@/components/app/AppShell";
 import { Tag } from "@/components/app/primitives";
-import { formatDictation, transcribeDictation } from "@/lib/dictation.functions";
+import { formatDictation, transcribeDictation } from "@/lib/edge-functions";
 import { blobToBase64, startRecording, type Recorder } from "@/lib/wav-recorder";
 import { cn } from "@/lib/utils";
 
@@ -66,9 +65,6 @@ const LANGUAGES = [
 type StepKey = (typeof STEPS)[number]["key"];
 
 function Dictation() {
-  const transcribe = useServerFn(transcribeDictation);
-  const format = useServerFn(formatDictation);
-
   const [step, setStep] = useState<StepKey>("record");
   const [recording, setRecording] = useState(false);
   const [seconds, setSeconds] = useState(0);
@@ -114,7 +110,7 @@ function Dictation() {
     try {
       const blob = await recorder.stop();
       const audioBase64 = await blobToBase64(blob);
-      const result = await transcribe({ data: { audioBase64, language } });
+      const result = await transcribeDictation({ audioBase64, language });
       if (!result.text) {
         setError("Nothing was recognised in that recording. Please dictate again.");
         setStep("record");
@@ -135,8 +131,10 @@ function Dictation() {
     setBusy("format");
     setError(null);
     try {
-      const result = await format({
-        data: { transcript, style: docType, matter: matter || undefined },
+      const result = await formatDictation({
+        transcript,
+        style: docType,
+        matter: matter || undefined,
       });
       setDraft(result.text);
       setStep("print");

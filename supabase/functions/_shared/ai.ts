@@ -1,20 +1,16 @@
-/** Server-only AI gateway helpers. Points at any OpenAI-compatible chat completions API. */
-
-const GATEWAY = process.env["AI_GATEWAY_URL"] || "https://api.openai.com/v1";
-const MODEL = process.env["AI_GATEWAY_MODEL"] || "gpt-4o-mini";
+const GATEWAY = Deno.env.get("AI_GATEWAY_URL") || "https://api.openai.com/v1";
+const MODEL = Deno.env.get("AI_GATEWAY_MODEL") || "gpt-4o-mini";
+const TRANSCRIBE_MODEL = Deno.env.get("AI_GATEWAY_TRANSCRIBE_MODEL") || "gpt-4o-mini-transcribe";
 
 export type ChatMessage = { role: "system" | "user" | "assistant"; content: string };
 
 export async function chatComplete(messages: ChatMessage[]): Promise<string> {
-  const apiKey = process.env["AI_GATEWAY_API_KEY"];
+  const apiKey = Deno.env.get("AI_GATEWAY_API_KEY");
   if (!apiKey) throw new Error("AI is not configured for this workspace.");
 
   const response = await fetch(`${GATEWAY}/chat/completions`, {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
+    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({ model: MODEL, messages }),
   });
 
@@ -28,6 +24,30 @@ export async function chatComplete(messages: ChatMessage[]): Promise<string> {
 
   const result = (await response.json()) as { choices?: { message?: { content?: string } }[] };
   return (result.choices?.[0]?.message?.content ?? "").trim();
+}
+
+export async function transcribeAudio(
+  bytes: Uint8Array,
+  language?: string,
+): Promise<{ text: string }> {
+  const apiKey = Deno.env.get("AI_GATEWAY_API_KEY");
+  if (!apiKey) throw new Error("Transcription is not configured.");
+
+  const form = new FormData();
+  form.append("model", TRANSCRIBE_MODEL);
+  form.append("file", new Blob([bytes], { type: "audio/wav" }), "dictation.wav");
+  if (language && language !== "auto") form.append("language", language);
+
+  const response = await fetch(`${GATEWAY}/audio/transcriptions`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${apiKey}` },
+    body: form,
+  });
+  if (!response.ok) {
+    throw new Error(`Transcription failed [${response.status}]: ${await response.text()}`);
+  }
+  const result = (await response.json()) as { text?: string };
+  return { text: (result.text ?? "").trim() };
 }
 
 export function extractJson(text: string): unknown {

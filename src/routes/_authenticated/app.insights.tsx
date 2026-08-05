@@ -1,10 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { Loader2, RefreshCw, ShieldAlert, Sparkles } from "lucide-react";
 import { AppShell } from "@/components/app/AppShell";
 import { Tag } from "@/components/app/primitives";
-import { generateBriefing } from "@/lib/ai.functions";
+import { generateBriefing } from "@/lib/edge-functions";
 import { limitationAlerts, matters, todaysDiary, weeklyLoad } from "@/lib/mock-data";
 
 export const Route = createFileRoute("/_authenticated/app/insights")({
@@ -51,7 +50,6 @@ function buildContext() {
 }
 
 function Insights() {
-  const run = useServerFn(generateBriefing);
   const [briefing, setBriefing] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -60,7 +58,7 @@ function Insights() {
     setBusy(true);
     setError(null);
     try {
-      const result = await run({ data: { context: buildContext() } });
+      const result = await generateBriefing({ context: buildContext() });
       setBriefing(result.briefing);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "The briefing could not be generated.");
@@ -71,7 +69,6 @@ function Insights() {
 
   useEffect(() => {
     void refresh();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
