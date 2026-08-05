@@ -216,7 +216,9 @@ function Dictation() {
                 "flex size-16 items-center justify-center rounded-full text-primary-foreground transition-transform disabled:opacity-60",
                 recording ? "bg-destructive" : "bg-primary hover:bg-ink",
               )}
-              style={recording ? { transform: `scale(${1 + Math.min(level, 1) * 0.18})` } : undefined}
+              style={
+                recording ? { transform: `scale(${1 + Math.min(level, 1) * 0.18})` } : undefined
+              }
               aria-label={recording ? "Stop dictation" : "Start dictation"}
             >
               {recording ? <Square className="size-5" /> : <Mic className="size-6" />}
@@ -323,7 +325,10 @@ function Dictation() {
             </div>
 
             {draft.trim() ? (
-              <article id="dictation-print" className="mt-4 rounded border border-border bg-card p-6">
+              <article
+                id="dictation-print"
+                className="mt-4 rounded border border-border bg-card p-6"
+              >
                 <textarea
                   value={draft}
                   onChange={(event) => setDraft(event.target.value)}

@@ -62,16 +62,14 @@ function Cases() {
         )}
       </div>
 
-      <DataTable
-        headers={["Matter", "CNR", "Court", "Practice area", "Stage", "Next hearing"]}
-      >
+      <DataTable headers={["Matter", "CNR", "Court", "Practice area", "Stage", "Next hearing"]}>
         {matters.map((matter) => (
           <tr key={matter.id} className="hover:bg-secondary/40">
             <td className="px-4 py-3">
               <p className="font-medium">{matter.title}</p>
               <p className="mt-0.5 text-xs text-muted-foreground">
-                <span className="font-mono">{matter.id}</span> · Client {matter.client} ·
-                Opposite {matter.opposing}
+                <span className="font-mono">{matter.id}</span> · Client {matter.client} · Opposite{" "}
+                {matter.opposing}
               </p>
             </td>
             <td className="px-4 py-3 font-mono text-xs whitespace-nowrap">{matter.cnr}</td>

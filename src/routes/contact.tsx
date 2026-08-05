@@ -35,9 +35,8 @@ function Contact() {
             <p className="text-eyebrow text-accent">Onboarding</p>
             <h1 className="mt-4 text-3xl font-bold">Request access</h1>
             <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-              We onboard chambers court by court so cause-list coverage is verified
-              before you rely on it. Tell us where you practise and we will confirm
-              coverage for your bench.
+              We onboard chambers court by court so cause-list coverage is verified before you rely
+              on it. Tell us where you practise and we will confirm coverage for your bench.
             </p>
             <dl className="mt-9 space-y-4 text-sm">
               <div>

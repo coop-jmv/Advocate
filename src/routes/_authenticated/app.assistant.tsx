@@ -24,7 +24,8 @@ export const Route = createFileRoute("/_authenticated/app/assistant")({
       { property: "og:title", content: "AI case assistant — Advocate Companion" },
       {
         property: "og:description",
-        content: "An AI associate for Indian advocates: matter questions, procedure and next steps.",
+        content:
+          "An AI associate for Indian advocates: matter questions, procedure and next steps.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -59,7 +60,9 @@ function Assistant() {
   const endRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    void loadThreads().then(setThreads).catch(() => setThreads([]));
+    void loadThreads()
+      .then(setThreads)
+      .catch(() => setThreads([]));
   }, [loadThreads]);
 
   useEffect(() => {

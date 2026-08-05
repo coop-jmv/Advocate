@@ -29,13 +29,7 @@ export function Tag({
   );
 }
 
-export function DataTable({
-  headers,
-  children,
-}: {
-  headers: string[];
-  children: React.ReactNode;
-}) {
+export function DataTable({ headers, children }: { headers: string[]; children: React.ReactNode }) {
   return (
     <div className="surface-panel overflow-x-auto rounded">
       <table className="w-full text-sm">
@@ -57,15 +51,7 @@ export function DataTable({
   );
 }
 
-export function StatCard({
-  label,
-  value,
-  note,
-}: {
-  label: string;
-  value: string;
-  note?: string;
-}) {
+export function StatCard({ label, value, note }: { label: string; value: string; note?: string }) {
   return (
     <div className="surface-panel rounded p-5">
       <p className="text-eyebrow text-muted-foreground">{label}</p>

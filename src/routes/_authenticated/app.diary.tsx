@@ -32,7 +32,11 @@ type DiaryItem = { time: string; matter: string; court: string; clash?: boolean 
 type DiaryDay = { day: string; date: string; today?: boolean; items: DiaryItem[] };
 
 const week: DiaryDay[] = [
-  { day: "Mon", date: "3 Aug", items: [{ time: "11:00", matter: "Yadav v. Gram Panchayat", court: "District Court, Lucknow" }] },
+  {
+    day: "Mon",
+    date: "3 Aug",
+    items: [{ time: "11:00", matter: "Yadav v. Gram Panchayat", court: "District Court, Lucknow" }],
+  },
   {
     day: "Tue",
     date: "4 Aug",
@@ -43,7 +47,11 @@ const week: DiaryDay[] = [
       { time: "14:15", matter: "State v. Imran Sheikh", court: "Sessions Court, Pune" },
     ],
   },
-  { day: "Wed", date: "5 Aug", items: [{ time: "10:00", matter: "Nandini Enterprises v. CGST", court: "Karnataka HC" }] },
+  {
+    day: "Wed",
+    date: "5 Aug",
+    items: [{ time: "10:00", matter: "Nandini Enterprises v. CGST", court: "Karnataka HC" }],
+  },
   {
     day: "Thu",
     date: "6 Aug",
@@ -52,7 +60,13 @@ const week: DiaryDay[] = [
       { time: "10:30", matter: "Kapoor v. Kapoor", court: "Family Court, Saket", clash: true },
     ],
   },
-  { day: "Fri", date: "7 Aug", items: [{ time: "11:30", matter: "Iyer v. Coastal Insurance", court: "Consumer Forum, Chennai" }] },
+  {
+    day: "Fri",
+    date: "7 Aug",
+    items: [
+      { time: "11:30", matter: "Iyer v. Coastal Insurance", court: "Consumer Forum, Chennai" },
+    ],
+  },
   { day: "Sat", date: "8 Aug", items: [] },
 ];
 
@@ -95,9 +109,7 @@ function Diary() {
                     >
                       <p className="text-xs font-semibold">{item.time}</p>
                       <p className="mt-0.5 text-xs">{item.matter}</p>
-                      <p className="mt-0.5 text-[11px] text-muted-foreground">
-                        {item.court}
-                      </p>
+                      <p className="mt-0.5 text-[11px] text-muted-foreground">{item.court}</p>
                     </li>
                   ))
                 )}
@@ -111,7 +123,10 @@ function Diary() {
             <h2 className="font-display text-lg font-bold">Today's appearances</h2>
             <ul className="mt-4 space-y-4">
               {todaysDiary.map((hearing) => (
-                <li key={hearing.id} className="border-b border-border pb-4 last:border-0 last:pb-0">
+                <li
+                  key={hearing.id}
+                  className="border-b border-border pb-4 last:border-0 last:pb-0"
+                >
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="text-sm font-medium">{hearing.matter}</p>
@@ -141,8 +156,8 @@ function Diary() {
           <section className="rounded border-l-2 border-destructive bg-destructive/5 p-5">
             <h2 className="font-display text-base font-bold">Conflict on 6 August</h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              Two matters are listed at 10:30 — Delhi High Court Court 12 and Family
-              Court, Saket. Brief a junior or move for a pass-over.
+              Two matters are listed at 10:30 — Delhi High Court Court 12 and Family Court, Saket.
+              Brief a junior or move for a pass-over.
             </p>
           </section>
         </div>

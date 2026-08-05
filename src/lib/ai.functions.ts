@@ -146,13 +146,16 @@ export const analyzeDocument = createServerFn({ method: "POST" })
       parties: Array.isArray(parsed?.["parties"]) ? parsed["parties"] : [],
       key_dates: Array.isArray(parsed?.["key_dates"]) ? parsed["key_dates"] : [],
       tags: Array.isArray(parsed?.["tags"]) ? parsed["tags"] : [],
-      risk_notes: typeof parsed?.["risk_notes"] === "string" ? (parsed["risk_notes"] as string) : null,
+      risk_notes:
+        typeof parsed?.["risk_notes"] === "string" ? (parsed["risk_notes"] as string) : null,
     };
 
     const { data: saved, error } = await context.supabase
       .from("ai_documents")
       .insert(record)
-      .select("id, name, matter_ref, doc_kind, summary, parties, key_dates, tags, risk_notes, created_at")
+      .select(
+        "id, name, matter_ref, doc_kind, summary, parties, key_dates, tags, risk_notes, created_at",
+      )
       .single();
     if (error) throw new Error(error.message);
     return saved;
@@ -163,7 +166,9 @@ export const listDocumentAnalyses = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("ai_documents")
-      .select("id, name, matter_ref, doc_kind, summary, parties, key_dates, tags, risk_notes, created_at")
+      .select(
+        "id, name, matter_ref, doc_kind, summary, parties, key_dates, tags, risk_notes, created_at",
+      )
       .order("created_at", { ascending: false })
       .limit(20);
     if (error) throw new Error(error.message);

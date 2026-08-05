@@ -40,8 +40,7 @@ const plans = [
     name: "Chamber",
     price: "₹899",
     cadence: "per user / month",
-    summary:
-      "For a chamber with juniors and a clerk — the full matter file, OCR and billing.",
+    summary: "For a chamber with juniors and a clerk — the full matter file, OCR and billing.",
     features: [
       "Unlimited matters and clients",
       "Indic OCR and in-document search",
@@ -56,8 +55,7 @@ const plans = [
     name: "Firm",
     price: "₹1,699",
     cadence: "per user / month",
-    summary:
-      "For small-to-medium firms that need the client portal and audit controls.",
+    summary: "For small-to-medium firms that need the client portal and audit controls.",
     features: [
       "Everything in Chamber",
       "Client portal and secure messaging",
@@ -77,8 +75,8 @@ function Pricing() {
         <p className="text-eyebrow text-accent">Subscriptions</p>
         <h1 className="mt-4 text-4xl font-bold">Priced per seat, billed in rupees</h1>
         <p className="mt-4 max-w-2xl text-muted-foreground">
-          Every plan includes GST-compliant invoicing, Indian data residency and
-          daily backups. Annual billing carries two months free.
+          Every plan includes GST-compliant invoicing, Indian data residency and daily backups.
+          Annual billing carries two months free.
         </p>
 
         <div className="mt-14 grid gap-6 lg:grid-cols-3">
@@ -96,9 +94,7 @@ function Pricing() {
                 <span className="font-display text-3xl font-bold">{plan.price}</span>
                 <span className="text-xs text-muted-foreground">{plan.cadence}</span>
               </p>
-              <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-                {plan.summary}
-              </p>
+              <p className="mt-4 text-sm leading-relaxed text-muted-foreground">{plan.summary}</p>
               <ul className="mt-7 space-y-3">
                 {plan.features.map((feature) => (
                   <li key={feature} className="flex gap-2.5 text-sm">
@@ -122,8 +118,8 @@ function Pricing() {
         </div>
 
         <p className="mt-10 text-sm text-muted-foreground">
-          Client portal users are never charged a seat. Storage beyond the plan
-          limit is billed at ₹40 per 10 GB per month.
+          Client portal users are never charged a seat. Storage beyond the plan limit is billed at
+          ₹40 per 10 GB per month.
         </p>
       </main>
       <SiteFooter />

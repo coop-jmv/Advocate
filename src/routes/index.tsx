@@ -82,16 +82,14 @@ function Landing() {
         <section className="border-b border-border bg-brief text-primary-foreground">
           <div className="mx-auto grid max-w-6xl gap-12 px-5 py-20 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:py-28">
             <div>
-              <p className="text-eyebrow text-primary-foreground/70">
-                Practice management · India
-              </p>
+              <p className="text-eyebrow text-primary-foreground/70">Practice management · India</p>
               <h1 className="mt-5 text-4xl leading-[1.1] font-bold sm:text-5xl">
                 Your entire practice, ready before your item is called.
               </h1>
               <p className="mt-6 max-w-xl text-base leading-relaxed text-primary-foreground/80">
-                Advocate Companion keeps matters, cause lists, documents, clients
-                and billing in one workspace built for how litigation actually runs
-                in Indian courts — on the phone in your pocket.
+                Advocate Companion keeps matters, cause lists, documents, clients and billing in one
+                workspace built for how litigation actually runs in Indian courts — on the phone in
+                your pocket.
               </p>
               <div className="mt-9">
                 <Link
@@ -128,12 +126,10 @@ function Landing() {
         <section className="mx-auto max-w-6xl px-5 py-20">
           <div className="max-w-2xl">
             <p className="text-eyebrow text-accent">What it covers</p>
-            <h2 className="mt-4 text-3xl font-bold">
-              Every part of a matter, in one file
-            </h2>
+            <h2 className="mt-4 text-3xl font-bold">Every part of a matter, in one file</h2>
             <p className="mt-4 text-muted-foreground">
-              Six modules that map to the working day of a solo advocate or a small
-              firm — not a generic CRM with a court field bolted on.
+              Six modules that map to the working day of a solo advocate or a small firm — not a
+              generic CRM with a court field bolted on.
             </p>
           </div>
 
@@ -142,9 +138,7 @@ function Landing() {
               <article key={item.title} className="bg-card p-7">
                 <item.icon className="size-5 text-accent" />
                 <h3 className="mt-5 font-display text-lg font-bold">{item.title}</h3>
-                <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-                  {item.body}
-                </p>
+                <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{item.body}</p>
               </article>
             ))}
           </div>
@@ -155,9 +149,7 @@ function Landing() {
             <div className="grid gap-12 lg:grid-cols-[0.9fr_1.1fr]">
               <div>
                 <p className="text-eyebrow text-accent">Compliance by design</p>
-                <h2 className="mt-4 text-3xl font-bold">
-                  Privileged data, treated as privileged
-                </h2>
+                <h2 className="mt-4 text-3xl font-bold">Privileged data, treated as privileged</h2>
               </div>
               <ul className="space-y-6">
                 {[
@@ -195,8 +187,8 @@ function Landing() {
             <div>
               <h2 className="text-2xl font-bold">See the workspace with sample matters</h2>
               <p className="mt-2 text-sm text-muted-foreground">
-                A working prototype of the dashboard, diary, case file, documents and
-                billing screens.
+                A working prototype of the dashboard, diary, case file, documents and billing
+                screens.
               </p>
             </div>
             <Link

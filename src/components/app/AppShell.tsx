@@ -43,10 +43,7 @@ export function AppShell({
   return (
     <div className="min-h-screen bg-background lg:flex">
       <aside className="bg-sidebar text-sidebar-foreground lg:flex lg:w-60 lg:shrink-0 lg:flex-col">
-        <Link
-          to="/"
-          className="flex h-16 items-center gap-2.5 border-b border-sidebar-border px-5"
-        >
+        <Link to="/" className="flex h-16 items-center gap-2.5 border-b border-sidebar-border px-5">
           <span className="flex size-8 items-center justify-center rounded bg-sidebar-primary text-sidebar-primary-foreground">
             <Scale className="size-4" />
           </span>
@@ -82,9 +79,7 @@ export function AppShell({
               PN
             </span>
             <div className="text-xs">
-              <p className="font-semibold text-sidebar-accent-foreground">
-                Adv. Priya Nair
-              </p>
+              <p className="font-semibold text-sidebar-accent-foreground">Adv. Priya Nair</p>
               <p className="text-sidebar-foreground/65">Nair &amp; Associates</p>
             </div>
           </div>

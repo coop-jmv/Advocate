@@ -1,9 +1,4 @@
-export type CaseStage =
-  | "Pending"
-  | "Hearing"
-  | "Reserved"
-  | "Disposed"
-  | "Appeal";
+export type CaseStage = "Pending" | "Hearing" | "Reserved" | "Disposed" | "Appeal";
 
 export type Matter = {
   id: string;
@@ -201,11 +196,51 @@ export type Client = {
 };
 
 export const clients: Client[] = [
-  { id: "C-311", name: "Rakesh Malhotra", city: "New Delhi", matters: 2, outstanding: "₹84,000", portal: "Active", conflict: "Clear" },
-  { id: "C-308", name: "Nandini Enterprises", city: "Bengaluru", matters: 3, outstanding: "₹2,15,500", portal: "Active", conflict: "Review" },
-  { id: "C-297", name: "Imran Sheikh", city: "Pune", matters: 1, outstanding: "₹12,000", portal: "Invited", conflict: "Clear" },
-  { id: "C-284", name: "Lakshmi Iyer", city: "Chennai", matters: 1, outstanding: "₹0", portal: "Active", conflict: "Clear" },
-  { id: "C-266", name: "Rameshwar Yadav", city: "Lucknow", matters: 2, outstanding: "₹38,400", portal: "Not invited", conflict: "Clear" },
+  {
+    id: "C-311",
+    name: "Rakesh Malhotra",
+    city: "New Delhi",
+    matters: 2,
+    outstanding: "₹84,000",
+    portal: "Active",
+    conflict: "Clear",
+  },
+  {
+    id: "C-308",
+    name: "Nandini Enterprises",
+    city: "Bengaluru",
+    matters: 3,
+    outstanding: "₹2,15,500",
+    portal: "Active",
+    conflict: "Review",
+  },
+  {
+    id: "C-297",
+    name: "Imran Sheikh",
+    city: "Pune",
+    matters: 1,
+    outstanding: "₹12,000",
+    portal: "Invited",
+    conflict: "Clear",
+  },
+  {
+    id: "C-284",
+    name: "Lakshmi Iyer",
+    city: "Chennai",
+    matters: 1,
+    outstanding: "₹0",
+    portal: "Active",
+    conflict: "Clear",
+  },
+  {
+    id: "C-266",
+    name: "Rameshwar Yadav",
+    city: "Lucknow",
+    matters: 2,
+    outstanding: "₹38,400",
+    portal: "Not invited",
+    conflict: "Clear",
+  },
 ];
 
 export type Invoice = {
@@ -219,17 +254,81 @@ export type Invoice = {
 };
 
 export const invoices: Invoice[] = [
-  { id: "INV-2026-118", client: "Nandini Enterprises", matter: "AC-1031", amount: "₹1,80,000", gst: "18% IGST", status: "Sent", due: "18 Aug 2026" },
-  { id: "INV-2026-117", client: "Rakesh Malhotra", matter: "AC-1042", amount: "₹71,200", gst: "18% CGST+SGST", status: "Overdue", due: "27 Jul 2026" },
-  { id: "INV-2026-115", client: "Lakshmi Iyer", matter: "AC-1024", amount: "₹45,000", gst: "18% CGST+SGST", status: "Paid", due: "10 Jul 2026" },
-  { id: "INV-2026-114", client: "Rameshwar Yadav", matter: "AC-1017", amount: "₹32,500", gst: "Exempt", status: "Draft", due: "—" },
+  {
+    id: "INV-2026-118",
+    client: "Nandini Enterprises",
+    matter: "AC-1031",
+    amount: "₹1,80,000",
+    gst: "18% IGST",
+    status: "Sent",
+    due: "18 Aug 2026",
+  },
+  {
+    id: "INV-2026-117",
+    client: "Rakesh Malhotra",
+    matter: "AC-1042",
+    amount: "₹71,200",
+    gst: "18% CGST+SGST",
+    status: "Overdue",
+    due: "27 Jul 2026",
+  },
+  {
+    id: "INV-2026-115",
+    client: "Lakshmi Iyer",
+    matter: "AC-1024",
+    amount: "₹45,000",
+    gst: "18% CGST+SGST",
+    status: "Paid",
+    due: "10 Jul 2026",
+  },
+  {
+    id: "INV-2026-114",
+    client: "Rameshwar Yadav",
+    matter: "AC-1017",
+    amount: "₹32,500",
+    gst: "Exempt",
+    status: "Draft",
+    due: "—",
+  },
 ];
 
 export const timeEntries = [
-  { id: "T-4412", matter: "AC-1042", task: "Drafting rejoinder", hours: "2.5", rate: "₹6,000", value: "₹15,000", date: "04 Aug" },
-  { id: "T-4409", matter: "AC-1031", task: "Conference with client", hours: "1.0", rate: "₹6,000", value: "₹6,000", date: "03 Aug" },
-  { id: "T-4405", matter: "AC-1039", task: "Court appearance — bail", hours: "3.0", rate: "₹5,000", value: "₹15,000", date: "02 Aug" },
-  { id: "T-4401", matter: "AC-1024", task: "Reviewing policy documents", hours: "1.5", rate: "₹4,500", value: "₹6,750", date: "01 Aug" },
+  {
+    id: "T-4412",
+    matter: "AC-1042",
+    task: "Drafting rejoinder",
+    hours: "2.5",
+    rate: "₹6,000",
+    value: "₹15,000",
+    date: "04 Aug",
+  },
+  {
+    id: "T-4409",
+    matter: "AC-1031",
+    task: "Conference with client",
+    hours: "1.0",
+    rate: "₹6,000",
+    value: "₹6,000",
+    date: "03 Aug",
+  },
+  {
+    id: "T-4405",
+    matter: "AC-1039",
+    task: "Court appearance — bail",
+    hours: "3.0",
+    rate: "₹5,000",
+    value: "₹15,000",
+    date: "02 Aug",
+  },
+  {
+    id: "T-4401",
+    matter: "AC-1024",
+    task: "Reviewing policy documents",
+    hours: "1.5",
+    rate: "₹4,500",
+    value: "₹6,750",
+    date: "01 Aug",
+  },
 ];
 
 export const weeklyLoad = [

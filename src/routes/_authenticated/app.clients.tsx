@@ -45,14 +45,12 @@ function Clients() {
       <div className="mb-6 rounded border-l-2 border-warning bg-warning/10 p-5">
         <h2 className="font-display text-base font-bold">Conflict check pending</h2>
         <p className="mt-1.5 text-sm text-muted-foreground">
-          Nandini Enterprises shares a director with an opposing party in AC-1031.
-          Review before filing further pleadings.
+          Nandini Enterprises shares a director with an opposing party in AC-1031. Review before
+          filing further pleadings.
         </p>
       </div>
 
-      <DataTable
-        headers={["Client", "City", "Matters", "Outstanding", "Portal", "Conflict"]}
-      >
+      <DataTable headers={["Client", "City", "Matters", "Outstanding", "Portal", "Conflict"]}>
         {clients.map((client) => (
           <tr key={client.id} className="hover:bg-secondary/40">
             <td className="px-4 py-3">
@@ -66,9 +64,7 @@ function Clients() {
               <Tag tone={portalTone[client.portal]}>{client.portal}</Tag>
             </td>
             <td className="px-4 py-3">
-              <Tag tone={client.conflict === "Clear" ? "success" : "danger"}>
-                {client.conflict}
-              </Tag>
+              <Tag tone={client.conflict === "Clear" ? "success" : "danger"}>{client.conflict}</Tag>
             </td>
           </tr>
         ))}

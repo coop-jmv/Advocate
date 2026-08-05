@@ -96,9 +96,7 @@ function Dashboard() {
                 <li key={alert.matter} className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-sm">{alert.note}</p>
-                    <p className="mt-0.5 font-mono text-xs text-muted-foreground">
-                      {alert.matter}
-                    </p>
+                    <p className="mt-0.5 font-mono text-xs text-muted-foreground">{alert.matter}</p>
                   </div>
                   <Tag tone={severityTone[alert.severity]}>{alert.severity}</Tag>
                 </li>
@@ -108,9 +106,7 @@ function Dashboard() {
 
           <section className="surface-panel rounded p-5">
             <h2 className="font-display text-lg font-bold">This week</h2>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Billable hours recorded per day
-            </p>
+            <p className="mt-1 text-xs text-muted-foreground">Billable hours recorded per day</p>
             <ul className="mt-5 space-y-3">
               {weeklyLoad.map((day) => (
                 <li key={day.day} className="flex items-center gap-3 text-sm">

@@ -19,12 +19,17 @@ type Analysis = {
 };
 
 function asStrings(value: unknown): string[] {
-  return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === "string")
+    : [];
 }
 
 function asKeyDates(value: unknown): { date?: string; what?: string }[] {
   return Array.isArray(value)
-    ? (value.filter((item) => item && typeof item === "object") as { date?: string; what?: string }[])
+    ? (value.filter((item) => item && typeof item === "object") as {
+        date?: string;
+        what?: string;
+      }[])
     : [];
 }
 
@@ -160,9 +165,7 @@ export function DocumentIntelligence() {
                   </span>
                 ) : null}
               </div>
-              {item.summary ? (
-                <p className="mt-2 text-sm leading-relaxed">{item.summary}</p>
-              ) : null}
+              {item.summary ? <p className="mt-2 text-sm leading-relaxed">{item.summary}</p> : null}
 
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 {asStrings(item.parties).length > 0 ? (

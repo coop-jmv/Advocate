@@ -112,9 +112,9 @@ function Features() {
         <p className="text-eyebrow text-accent">Functional scope</p>
         <h1 className="mt-4 text-4xl font-bold">What Advocate Companion does</h1>
         <p className="mt-4 max-w-2xl text-muted-foreground">
-          The modules below follow the requirement set for the first two release
-          phases. Full e-filing submission, large-firm litigation analytics and
-          full accounting sit outside this scope.
+          The modules below follow the requirement set for the first two release phases. Full
+          e-filing submission, large-firm litigation analytics and full accounting sit outside this
+          scope.
         </p>
 
         <div className="mt-14 space-y-px overflow-hidden rounded border border-border bg-border">

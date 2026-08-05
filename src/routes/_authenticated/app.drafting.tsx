@@ -19,7 +19,8 @@ export const Route = createFileRoute("/_authenticated/app/drafting")({
       { property: "og:title", content: "AI drafting studio — Advocate Companion" },
       {
         property: "og:description",
-        content: "AI-generated Indian legal drafts with numbered paragraphs, prayer and verification.",
+        content:
+          "AI-generated Indian legal drafts with numbered paragraphs, prayer and verification.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -133,7 +134,10 @@ function Drafting() {
               >
                 <option value="">Not linked</option>
                 {matters.map((matter) => (
-                  <option key={matter.id} value={`${matter.id} — ${matter.title} (${matter.court})`}>
+                  <option
+                    key={matter.id}
+                    value={`${matter.id} — ${matter.title} (${matter.court})`}
+                  >
                     {matter.id} — {matter.client}
                   </option>
                 ))}
