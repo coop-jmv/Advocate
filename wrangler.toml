@@ -1,0 +1,18 @@
+name = "advocate"
+main = "dist/server/server.js"
+compatibility_date = "2025-06-01"
+compatibility_flags = ["nodejs_compat"]
+
+[assets]
+directory = "dist/client"
+binding = "ASSETS"
+
+# Non-secret runtime values the app reads via process.env (nodejs_compat
+# shims process.env from these). The two SUPABASE_* names are read
+# server-side (auth-middleware.ts, client.server.ts); the app's client
+# bundle gets its own copy of the VITE_-prefixed pair baked in at build
+# time from whatever .env / --var overrides are present when `bun run
+# build` runs, so those aren't set here.
+[vars]
+SUPABASE_URL = "https://cjcjfdwdlsdgyvshuncn.supabase.co"
+SUPABASE_PUBLISHABLE_KEY = "sb_publishable_DnB_8STNU8FST_sCkRAM4w_K9c8A4Ft"
