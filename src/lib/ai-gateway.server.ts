@@ -1,12 +1,12 @@
-/** Server-only Lovable AI Gateway helpers. */
+/** Server-only AI gateway helpers. Points at any OpenAI-compatible chat completions API. */
 
-const GATEWAY = "https://ai.gateway.lovable.dev/v1";
-const MODEL = "google/gemini-3.6-flash";
+const GATEWAY = process.env["AI_GATEWAY_URL"] || "https://api.openai.com/v1";
+const MODEL = process.env["AI_GATEWAY_MODEL"] || "gpt-4o-mini";
 
 export type ChatMessage = { role: "system" | "user" | "assistant"; content: string };
 
 export async function chatComplete(messages: ChatMessage[]): Promise<string> {
-  const apiKey = process.env["LOVABLE_API_KEY"];
+  const apiKey = process.env["AI_GATEWAY_API_KEY"];
   if (!apiKey) throw new Error("AI is not configured for this workspace.");
 
   const response = await fetch(`${GATEWAY}/chat/completions`, {

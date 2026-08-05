@@ -1,7 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
-const GATEWAY = "https://ai.gateway.lovable.dev/v1";
+const GATEWAY = process.env["AI_GATEWAY_URL"] || "https://api.openai.com/v1";
+const MODEL = process.env["AI_GATEWAY_MODEL"] || "gpt-4o-mini";
 
 const transcribeInput = z.object({
   audioBase64: z.string(),
@@ -25,7 +26,7 @@ function decodeBase64(base64: string): Uint8Array<ArrayBuffer> {
 export const transcribeDictation = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => transcribeInput.parse(data))
   .handler(async ({ data }) => {
-    const apiKey = process.env["LOVABLE_API_KEY"];
+    const apiKey = process.env["AI_GATEWAY_API_KEY"];
     if (!apiKey) throw new Error("Transcription is not configured.");
 
     const bytes = decodeBase64(data.audioBase64);
@@ -34,7 +35,7 @@ export const transcribeDictation = createServerFn({ method: "POST" })
     }
 
     const form = new FormData();
-    form.append("model", "openai/gpt-4o-mini-transcribe");
+    form.append("model", process.env["AI_GATEWAY_TRANSCRIBE_MODEL"] || "gpt-4o-mini-transcribe");
     form.append("file", new Blob([bytes], { type: "audio/wav" }), "dictation.wav");
     if (data.language && data.language !== "auto") form.append("language", data.language);
 
@@ -53,7 +54,7 @@ export const transcribeDictation = createServerFn({ method: "POST" })
 export const formatDictation = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => formatInput.parse(data))
   .handler(async ({ data }) => {
-    const apiKey = process.env["LOVABLE_API_KEY"];
+    const apiKey = process.env["AI_GATEWAY_API_KEY"];
     if (!apiKey) throw new Error("Formatting is not configured.");
 
     const response = await fetch(`${GATEWAY}/chat/completions`, {
@@ -63,7 +64,7 @@ export const formatDictation = createServerFn({ method: "POST" })
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3.6-flash",
+        model: MODEL,
         messages: [
           {
             role: "system",
