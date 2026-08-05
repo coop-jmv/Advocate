@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Loader2, RefreshCw, ShieldAlert, Sparkles } from "lucide-react";
 import { AppShell } from "@/components/app/AppShell";
+import { Markdown } from "@/components/app/Markdown";
 import { Tag } from "@/components/app/primitives";
 import { generateBriefing } from "@/lib/edge-functions";
 import { limitationAlerts, matters, todaysDiary, weeklyLoad } from "@/lib/mock-data";
@@ -106,7 +107,7 @@ function Insights() {
               Reviewing your diary, matters and deadlines…
             </p>
           ) : (
-            <div className="mt-4 text-sm leading-relaxed whitespace-pre-wrap">{briefing}</div>
+            <Markdown content={briefing} className="mt-4" />
           )}
         </section>
 

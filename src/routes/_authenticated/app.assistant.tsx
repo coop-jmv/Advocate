@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
 import { Bot, Loader2, Plus, Send, Trash2, User } from "lucide-react";
 import { AppShell } from "@/components/app/AppShell";
+import { Markdown } from "@/components/app/Markdown";
 import { deleteConversation, listConversations, listMessages } from "@/lib/ai.functions";
 import { askAssistant } from "@/lib/edge-functions";
 import { matters } from "@/lib/mock-data";
@@ -214,8 +215,14 @@ function Assistant() {
                       <User className="size-4" />
                     )}
                   </span>
-                  <div className="min-w-0 flex-1 text-sm leading-relaxed whitespace-pre-wrap">
-                    {message.content}
+                  <div className="min-w-0 flex-1">
+                    {message.role === "assistant" ? (
+                      <Markdown content={message.content} />
+                    ) : (
+                      <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                        {message.content}
+                      </p>
+                    )}
                   </div>
                 </article>
               ))
