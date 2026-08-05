@@ -1,1 +1,10 @@
 project_id = "uwsouirbmhdoldicfxze"
+
+# Logflare analytics needs the Docker daemon exposed over TCP on Windows, which
+# Docker Desktop does not do by default. Not needed for local development.
+[analytics]
+enabled = false
+
+[auth.email]
+# Skip the Mailpit confirmation round-trip when signing up locally.
+enable_confirmations = false
