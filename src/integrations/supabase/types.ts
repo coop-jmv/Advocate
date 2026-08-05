@@ -155,6 +155,8 @@ export type Database = {
           firm_name: string | null;
           full_name: string | null;
           id: string;
+          tenant_id: string | null;
+          tenant_role: string;
           updated_at: string;
         };
         Insert: {
@@ -163,6 +165,8 @@ export type Database = {
           firm_name?: string | null;
           full_name?: string | null;
           id: string;
+          tenant_id?: string | null;
+          tenant_role?: string;
           updated_at?: string;
         };
         Update: {
@@ -171,7 +175,100 @@ export type Database = {
           firm_name?: string | null;
           full_name?: string | null;
           id?: string;
+          tenant_id?: string | null;
+          tenant_role?: string;
           updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "profiles_tenant_id_fkey";
+            columns: ["tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "tenants";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      tenants: {
+        Row: {
+          created_at: string;
+          id: string;
+          name: string;
+          slug: string;
+          status: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          name: string;
+          slug: string;
+          status?: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          name?: string;
+          slug?: string;
+          status?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      licenses: {
+        Row: {
+          created_at: string;
+          current_period_end: string | null;
+          id: string;
+          plan: string;
+          seats: number;
+          status: string;
+          tenant_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          current_period_end?: string | null;
+          id?: string;
+          plan?: string;
+          seats?: number;
+          status?: string;
+          tenant_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          current_period_end?: string | null;
+          id?: string;
+          plan?: string;
+          seats?: number;
+          status?: string;
+          tenant_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "licenses_tenant_id_fkey";
+            columns: ["tenant_id"];
+            isOneToOne: true;
+            referencedRelation: "tenants";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      platform_admins: {
+        Row: {
+          created_at: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          user_id?: string;
         };
         Relationships: [];
       };
@@ -180,7 +277,10 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
-      [_ in never]: never;
+      is_platform_admin: {
+        Args: { uid: string };
+        Returns: boolean;
+      };
     };
     Enums: {
       [_ in never]: never;
