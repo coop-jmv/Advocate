@@ -42,7 +42,7 @@ function Dashboard() {
       title="Tuesday, 4 August 2026"
       subtitle="3 hearings listed · 2 matters need attention before tomorrow"
     >
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Active matters" value="38" note="5 opened this month" />
         <StatCard label="Hearings this week" value="21" note="Across 6 court complexes" />
         <StatCard label="Unbilled hours" value="42.5" note="≈ ₹2,41,000 in WIP" />

@@ -43,7 +43,7 @@ function Billing() {
         </button>
       }
     >
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Billed this month" value="₹3,28,700" note="Across 9 matters" />
         <StatCard label="Work in progress" value="₹2,41,000" note="42.5 unbilled hours" />
         <StatCard label="Collected" value="₹1,45,000" note="UPI and Razorpay" />
