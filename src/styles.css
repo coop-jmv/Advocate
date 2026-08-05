@@ -1,0 +1,225 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Advocate Companion design system — "Navy Trust"
+ * Deep navy authority, crisp paper surfaces, restrained gold-free accents.
+ * All colors are oklch semantic tokens. Never hardcode colors in components.
+ */
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+
+  --font-display: "Libre Baskerville", Georgia, serif;
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-ink: var(--ink);
+  --color-ink-foreground: var(--ink-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-ring-offset-background: var(--background);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --shadow-panel: 0 1px 2px oklch(0.18 0.06 262 / 0.06), 0 8px 24px -12px oklch(0.18 0.06 262 / 0.18);
+  --shadow-lift: 0 18px 48px -20px oklch(0.18 0.06 262 / 0.35);
+}
+
+:root {
+  --radius: 0.375rem;
+
+  --background: oklch(0.985 0.004 250);
+  --foreground: oklch(0.21 0.055 262);
+
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.21 0.055 262);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.21 0.055 262);
+
+  /* deep navy #0f1b3d */
+  --primary: oklch(0.245 0.072 265);
+  --primary-foreground: oklch(0.975 0.008 250);
+
+  /* mid navy #1e3a5f */
+  --ink: oklch(0.355 0.062 258);
+  --ink-foreground: oklch(0.975 0.008 250);
+
+  --secondary: oklch(0.945 0.012 250);
+  --secondary-foreground: oklch(0.28 0.06 262);
+
+  --muted: oklch(0.955 0.008 250);
+  --muted-foreground: oklch(0.52 0.03 258);
+
+  /* steel blue #3b6fa0 */
+  --accent: oklch(0.555 0.088 250);
+  --accent-foreground: oklch(0.985 0.004 250);
+
+  --destructive: oklch(0.545 0.19 27);
+  --destructive-foreground: oklch(0.985 0.004 250);
+  --success: oklch(0.55 0.115 155);
+  --success-foreground: oklch(0.985 0.004 250);
+  --warning: oklch(0.72 0.15 72);
+  --warning-foreground: oklch(0.24 0.05 60);
+
+  --border: oklch(0.9 0.012 250);
+  --input: oklch(0.9 0.012 250);
+  --ring: oklch(0.555 0.088 250);
+
+  --chart-1: oklch(0.245 0.072 265);
+  --chart-2: oklch(0.555 0.088 250);
+  --chart-3: oklch(0.7 0.075 245);
+  --chart-4: oklch(0.55 0.115 155);
+  --chart-5: oklch(0.72 0.15 72);
+
+  --sidebar: oklch(0.245 0.072 265);
+  --sidebar-foreground: oklch(0.88 0.018 250);
+  --sidebar-primary: oklch(0.555 0.088 250);
+  --sidebar-primary-foreground: oklch(0.985 0.004 250);
+  --sidebar-accent: oklch(0.3 0.062 263);
+  --sidebar-accent-foreground: oklch(0.985 0.004 250);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.555 0.088 250);
+}
+
+.dark {
+  --background: oklch(0.19 0.05 264);
+  --foreground: oklch(0.96 0.008 250);
+  --card: oklch(0.235 0.055 264);
+  --card-foreground: oklch(0.96 0.008 250);
+  --popover: oklch(0.235 0.055 264);
+  --popover-foreground: oklch(0.96 0.008 250);
+  --primary: oklch(0.93 0.014 250);
+  --primary-foreground: oklch(0.22 0.06 264);
+  --ink: oklch(0.86 0.02 250);
+  --ink-foreground: oklch(0.22 0.06 264);
+  --secondary: oklch(0.29 0.05 262);
+  --secondary-foreground: oklch(0.96 0.008 250);
+  --muted: oklch(0.29 0.05 262);
+  --muted-foreground: oklch(0.72 0.025 254);
+  --accent: oklch(0.6 0.09 250);
+  --accent-foreground: oklch(0.985 0.004 250);
+  --border: oklch(1 0 0 / 12%);
+  --input: oklch(1 0 0 / 16%);
+  --ring: oklch(0.6 0.09 250);
+  --sidebar: oklch(0.215 0.055 264);
+  --sidebar-foreground: oklch(0.9 0.015 250);
+  --sidebar-accent: oklch(0.29 0.05 262);
+  --sidebar-border: oklch(1 0 0 / 10%);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  .font-display {
+    font-family: var(--font-display);
+    letter-spacing: -0.015em;
+  }
+}
+
+@utility text-eyebrow {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+@utility surface-panel {
+  background-color: var(--color-card);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-panel);
+}
+
+@utility bg-brief {
+  background-image: linear-gradient(
+    180deg,
+    var(--color-primary) 0%,
+    oklch(0.3 0.07 262) 100%
+  );
+}
+
+@utility rule-line {
+  background-image: linear-gradient(
+    90deg,
+    var(--color-accent) 0%,
+    transparent 100%
+  );
+  height: 2px;
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  #dictation-print,
+  #dictation-print * {
+    visibility: visible;
+  }
+
+  #dictation-print {
+    position: absolute;
+    inset: 0;
+    border: none;
+    padding: 0;
+  }
+
+  #dictation-print textarea {
+    height: auto;
+    min-height: 100vh;
+    resize: none;
+    border: none;
+  }
+}
