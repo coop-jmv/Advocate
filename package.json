@@ -11,9 +11,15 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "deploy": "bun run build && wrangler deploy",
-    "deploy:dry-run": "bun run build && wrangler deploy --dry-run"
+    "deploy:dry-run": "bun run build && wrangler deploy --dry-run",
+    "cap:sync": "bun run build && cap sync",
+    "cap:android": "bun run cap:sync && cap open android",
+    "cap:ios": "bun run cap:sync && cap open ios"
   },
   "dependencies": {
+    "@capacitor/android": "^8.5.0",
+    "@capacitor/core": "^8.5.0",
+    "@capacitor/ios": "^8.5.0",
     "@hookform/resolvers": "^5.2.2",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-alert-dialog": "^1.1.15",
@@ -71,6 +77,7 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.5.0",
     "@eslint/js": "^9.32.0",
     "@types/node": "^22.16.5",
     "@types/react": "^19.2.0",
