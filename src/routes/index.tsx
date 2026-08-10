@@ -14,20 +14,20 @@ import heroImage from "@/assets/hero-advocate.jpg";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Advocate Companion — Court Diary, Cases & Billing for Advocates" },
+      { title: "Advocate Companion — Practice Management for Indian Advocates" },
       {
         name: "description",
         content:
-          "A mobile-first practice management workspace for Indian advocates: CNR-linked cases, cause-list diary, OCR document vault, client portal and GST invoicing.",
+          "The practice management platform built for Indian advocates. CNR-linked case tracking, an automated cause-list diary, an Indic OCR document vault, a client portal and GST-compliant billing — in one secure workspace.",
       },
       {
         property: "og:title",
-        content: "Advocate Companion — Court Diary, Cases & Billing for Advocates",
+        content: "Advocate Companion — Practice Management for Indian Advocates",
       },
       {
         property: "og:description",
         content:
-          "CNR-linked cases, cause-list diary, OCR document vault, client portal and GST invoicing — built for Indian legal practice.",
+          "Case tracking, cause-list diary, document vault, client portal and GST billing — the complete practice management platform for Indian legal professionals.",
       },
     ],
   }),
@@ -70,7 +70,7 @@ const capabilities = [
 const stats = [
   { value: "3,700+", label: "District & subordinate court complexes" },
   { value: "25", label: "High Courts and benches covered" },
-  { value: "9", label: "Interface languages on the roadmap" },
+  { value: "6", label: "Core modules covering the full matter lifecycle" },
 ];
 
 function Landing() {
@@ -84,20 +84,26 @@ function Landing() {
             <div>
               <p className="text-eyebrow text-primary-foreground/70">Practice management · India</p>
               <h1 className="mt-5 text-4xl leading-[1.1] font-bold sm:text-5xl">
-                Your entire practice, ready before your item is called.
+                A disciplined practice, run from a single workspace.
               </h1>
               <p className="mt-6 max-w-xl text-base leading-relaxed text-primary-foreground/80">
-                Advocate Companion keeps matters, cause lists, documents, clients and billing in one
-                workspace built for how litigation actually runs in Indian courts — on the phone in
-                your pocket.
+                Advocate Companion brings matters, cause lists, documents, clients and billing
+                together in one platform, purpose-built for how litigation is practised in Indian
+                courts — accessible from your phone, wherever the day takes you.
               </p>
-              <div className="mt-9">
+              <div className="mt-9 flex flex-wrap gap-4">
                 <Link
                   to="/app"
                   className="inline-flex items-center gap-2 rounded border border-primary-foreground/25 bg-background px-5 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
                 >
                   Explore the workspace
                   <ArrowRight className="size-4" />
+                </Link>
+                <Link
+                  to="/features"
+                  className="inline-flex items-center gap-2 rounded border border-primary-foreground/25 px-5 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-foreground/10"
+                >
+                  See all features
                 </Link>
               </div>
 
@@ -128,8 +134,8 @@ function Landing() {
             <p className="text-eyebrow text-accent">What it covers</p>
             <h2 className="mt-4 text-3xl font-bold">Every part of a matter, in one file</h2>
             <p className="mt-4 text-muted-foreground">
-              Six modules that map to the working day of a solo advocate or a small firm — not a
-              generic CRM with a court field bolted on.
+              Six modules designed around the working day of a solo advocate or a small firm —
+              not a generic CRM adapted for legal use.
             </p>
           </div>
 
@@ -187,8 +193,8 @@ function Landing() {
             <div>
               <h2 className="text-2xl font-bold">See the workspace with sample matters</h2>
               <p className="mt-2 text-sm text-muted-foreground">
-                A working prototype of the dashboard, diary, case file, documents and billing
-                screens.
+                Explore the dashboard, diary, case file, documents and billing screens with
+                sample data — no setup required.
               </p>
             </div>
             <Link
