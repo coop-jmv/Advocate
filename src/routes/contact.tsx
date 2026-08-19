@@ -8,17 +8,17 @@ import { Textarea } from "@/components/ui/textarea";
 export const Route = createFileRoute("/contact")({
   head: () => ({
     meta: [
-      { title: "Request access — Advocate Companion" },
+      { title: "Request access — Wakilio" },
       {
         name: "description",
         content:
-          "Tell us about your practice — court, bench and team size — and we will arrange onboarding for Advocate Companion.",
+          "Tell us about your practice — court, bench and team size — and we will arrange onboarding for Wakilio.",
       },
-      { property: "og:title", content: "Request access — Advocate Companion" },
+      { property: "og:title", content: "Request access — Wakilio" },
       {
         property: "og:description",
         content:
-          "Tell us about your practice and we will arrange onboarding for Advocate Companion.",
+          "Tell us about your practice and we will arrange onboarding for Wakilio.",
       },
     ],
   }),
@@ -41,7 +41,7 @@ function Contact() {
             <dl className="mt-9 space-y-4 text-sm">
               <div>
                 <dt className="font-semibold">Email</dt>
-                <dd className="text-muted-foreground">chambers@advocatecompanion.in</dd>
+                <dd className="text-muted-foreground">chambers@wakilio.in</dd>
               </div>
               <div>
                 <dt className="font-semibold">Support hours</dt>

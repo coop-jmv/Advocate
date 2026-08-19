@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import {
   Mic,
   Square,
@@ -9,23 +10,49 @@ import {
   Sparkles,
   RotateCcw,
   Check,
+  Save,
 } from "lucide-react";
 import { AppShell } from "@/components/app/AppShell";
-import { Tag } from "@/components/app/primitives";
+import { Tag, type Tone } from "@/components/app/primitives";
+import { listDrafts, saveDictatedDraft } from "@/lib/ai.functions";
 import { formatDictation, transcribeDictation } from "@/lib/edge-functions";
+import { listMatters } from "@/lib/matters.functions";
 import { blobToBase64, startRecording, type Recorder } from "@/lib/wav-recorder";
 import { cn } from "@/lib/utils";
+
+type DictatedDraft = {
+  id: string;
+  doc_type: string;
+  matter_ref: string | null;
+  instructions: string;
+  content: string;
+  status: string;
+  created_at: string;
+};
+
+type MatterOption = { id: string; title: string };
+
+const reviewLabel: Record<string, string> = {
+  pending_review: "Pending review",
+  approved: "Approved",
+  rejected: "Rejected",
+};
+const reviewTone: Record<string, Tone> = {
+  pending_review: "warning",
+  approved: "success",
+  rejected: "danger",
+};
 
 export const Route = createFileRoute("/_authenticated/app/dictation")({
   head: () => ({
     meta: [
-      { title: "Voice dictation — Advocate Companion" },
+      { title: "Voice dictation — Wakilio" },
       {
         name: "description",
         content:
           "Dictate notes, drafts and case briefs by voice, convert speech to text, review the formatted draft and print it from your chamber workspace.",
       },
-      { property: "og:title", content: "Voice dictation — Advocate Companion" },
+      { property: "og:title", content: "Voice dictation — Wakilio" },
       {
         property: "og:description",
         content:
@@ -65,19 +92,44 @@ const LANGUAGES = [
 type StepKey = (typeof STEPS)[number]["key"];
 
 function Dictation() {
+  const loadMatters = useServerFn(listMatters);
+  const loadDrafts = useServerFn(listDrafts);
+  const persistDictation = useServerFn(saveDictatedDraft);
+
   const [step, setStep] = useState<StepKey>("record");
   const [recording, setRecording] = useState(false);
   const [seconds, setSeconds] = useState(0);
   const [level, setLevel] = useState(0);
   const [busy, setBusy] = useState<"transcribe" | "format" | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [transcript, setTranscript] = useState("");
   const [draft, setDraft] = useState("");
   const [docType, setDocType] = useState<string>(DOC_TYPES[0]);
   const [language, setLanguage] = useState<string>("auto");
   const [matter, setMatter] = useState("");
+  const [matters, setMatters] = useState<MatterOption[]>([]);
+  const [recentDictations, setRecentDictations] = useState<DictatedDraft[]>([]);
 
   const recorderRef = useRef<Recorder | null>(null);
+
+  useEffect(() => {
+    void loadMatters()
+      .then((rows) => setMatters((rows as { id: string; title: string }[]).map((m) => ({ id: m.id, title: m.title }))))
+      .catch(() => setMatters([]));
+    void refreshRecentDictations();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function refreshRecentDictations() {
+    try {
+      const rows = (await loadDrafts()) as DictatedDraft[];
+      setRecentDictations(rows.filter((row) => row.instructions === "(Dictated)"));
+    } catch {
+      setRecentDictations([]);
+    }
+  }
 
   useEffect(() => {
     if (!recording) return;
@@ -130,6 +182,7 @@ function Dictation() {
     if (!transcript.trim()) return;
     setBusy("format");
     setError(null);
+    setSaved(false);
     try {
       const result = await formatDictation({
         transcript,
@@ -145,12 +198,38 @@ function Dictation() {
     }
   }
 
+  async function handleSaveDictation() {
+    if (!draft.trim()) return;
+    setSaving(true);
+    setError(null);
+    try {
+      await persistDictation({
+        data: { docType, matterRef: matter || undefined, content: draft },
+      });
+      setSaved(true);
+      await refreshRecentDictations();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not save the dictation.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   function handleReset() {
     setTranscript("");
     setDraft("");
     setSeconds(0);
     setError(null);
+    setSaved(false);
     setStep("record");
+  }
+
+  function loadRecentDictation(item: DictatedDraft) {
+    setDraft(item.content);
+    setDocType(item.doc_type);
+    setMatter(item.matter_ref ?? "");
+    setStep("print");
+    setSaved(true);
   }
 
   const activeIndex = STEPS.findIndex((s) => s.key === step);
@@ -261,13 +340,45 @@ function Dictation() {
             </label>
             <label className="block text-sm">
               <span className="text-eyebrow">Link to matter (optional)</span>
-              <input
+              <select
                 value={matter}
                 onChange={(event) => setMatter(event.target.value)}
-                placeholder="e.g. OS/214/2024 — Mehta v. Rathi"
                 className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
-              />
+              >
+                <option value="">Not linked</option>
+                {matters.map((m) => (
+                  <option key={m.id} value={m.title}>
+                    {m.title}
+                  </option>
+                ))}
+              </select>
             </label>
+          </div>
+
+          <div className="mt-6 border-t border-border pt-4">
+            <p className="text-eyebrow">Recent dictations</p>
+            <div className="mt-3 space-y-1">
+              {recentDictations.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No saved dictations yet.</p>
+              ) : (
+                recentDictations.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => loadRecentDictation(item)}
+                    className="flex w-full items-center gap-2 truncate rounded px-2.5 py-2 text-left text-sm transition-colors hover:bg-secondary"
+                  >
+                    <span className="truncate">
+                      {item.doc_type}
+                      {item.matter_ref ? ` · ${item.matter_ref}` : ""}
+                    </span>
+                    <Tag tone={reviewTone[item.status] ?? "neutral"}>
+                      {reviewLabel[item.status] ?? item.status}
+                    </Tag>
+                  </button>
+                ))
+              )}
+            </div>
           </div>
         </section>
 
@@ -311,15 +422,26 @@ function Dictation() {
                   Formatted as a {docType.toLowerCase()} — edit freely, then print.
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={() => window.print()}
-                disabled={!draft.trim()}
-                className="flex items-center gap-2 rounded border border-input px-4 py-2 text-sm font-semibold transition-colors hover:bg-secondary disabled:opacity-50"
-              >
-                <Printer className="size-4" />
-                Print
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleSaveDictation}
+                  disabled={!draft.trim() || saving}
+                  className="flex items-center gap-2 rounded border border-input px-4 py-2 text-sm font-semibold transition-colors hover:bg-secondary disabled:opacity-50"
+                >
+                  {saving ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
+                  {saved ? "Saved" : "Save"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  disabled={!draft.trim()}
+                  className="flex items-center gap-2 rounded border border-input px-4 py-2 text-sm font-semibold transition-colors hover:bg-secondary disabled:opacity-50"
+                >
+                  <Printer className="size-4" />
+                  Print
+                </button>
+              </div>
             </div>
 
             {draft.trim() ? (

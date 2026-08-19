@@ -16,7 +16,7 @@ export function SiteHeader() {
             <Scale className="size-4" />
           </span>
           <span className="font-display text-base font-bold tracking-tight">
-            Advocate Companion
+            Wakilio
           </span>
         </Link>
 
@@ -48,7 +48,7 @@ export function SiteFooter() {
   return (
     <footer className="border-t border-border bg-secondary/60">
       <div className="mx-auto flex max-w-6xl flex-col gap-3 px-5 py-8 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-        <p>Advocate Companion — practice management for Indian advocates.</p>
+        <p>Wakilio — practice management for Indian advocates.</p>
         <p>Data hosted in Indian cloud regions · DPDP Act, 2023 aligned</p>
       </div>
     </footer>

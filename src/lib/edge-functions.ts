@@ -29,6 +29,7 @@ export function analyzeDocument(input: {
     key_dates: unknown;
     tags: unknown;
     risk_notes: string | null;
+    status: string;
     created_at: string;
   }>("ai-analyze-document", input);
 }
@@ -44,6 +45,7 @@ export function generateDraft(input: {
     matter_ref: string | null;
     instructions: string;
     content: string;
+    status: string;
     created_at: string;
   }>("ai-generate-draft", input);
 }
@@ -62,4 +64,18 @@ export function formatDictation(input: {
   matter?: string | undefined;
 }) {
   return invoke<{ text: string }>("dictation-format", input);
+}
+
+export function ocrExtract(input: { imageBase64: string; mimeType?: string | undefined }) {
+  return invoke<{ text: string }>("ocr-extract", input);
+}
+
+export function logAuthEvent(input: {
+  event: "login_success" | "login_failed" | "logout" | "signup";
+  email?: string | undefined;
+  userId?: string | undefined;
+}) {
+  // Best-effort — a failure to log an audit event should never block the
+  // actual sign-in/out/signup flow the user is doing.
+  return invoke<{ ok: true }>("audit-log-auth", input).catch(() => undefined);
 }

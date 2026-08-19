@@ -1,10 +1,19 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Brain, Loader2, Upload } from "lucide-react";
-import { Tag } from "@/components/app/primitives";
-import { listDocumentAnalyses } from "@/lib/ai.functions";
-import { analyzeDocument } from "@/lib/edge-functions";
-import { matters } from "@/lib/mock-data";
+import { Brain, Camera, Check, Loader2, Upload, X } from "lucide-react";
+import { Tag, type Tone } from "@/components/app/primitives";
+import { listDocumentAnalyses, updateDocumentAnalysisStatus } from "@/lib/ai.functions";
+import { analyzeDocument, ocrExtract } from "@/lib/edge-functions";
+import { listMatters } from "@/lib/matters.functions";
+
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve((reader.result as string).split(",")[1] ?? "");
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
 
 type Analysis = {
   id: string;
@@ -16,7 +25,21 @@ type Analysis = {
   key_dates: unknown;
   tags: unknown;
   risk_notes: string | null;
+  status: string;
   created_at: string;
+};
+
+type MatterOption = { id: string; title: string };
+
+const reviewLabel: Record<string, string> = {
+  pending_review: "Pending review",
+  approved: "Approved",
+  rejected: "Rejected",
+};
+const reviewTone: Record<string, Tone> = {
+  pending_review: "warning",
+  approved: "success",
+  rejected: "danger",
 };
 
 function asStrings(value: unknown): string[] {
@@ -36,23 +59,61 @@ function asKeyDates(value: unknown): { date?: string; what?: string }[] {
 
 export function DocumentIntelligence() {
   const load = useServerFn(listDocumentAnalyses);
+  const loadMatters = useServerFn(listMatters);
+  const setReviewStatus = useServerFn(updateDocumentAnalysisStatus);
 
   const [items, setItems] = useState<Analysis[]>([]);
+  const [matters, setMatters] = useState<MatterOption[]>([]);
   const [name, setName] = useState("");
   const [matterRef, setMatterRef] = useState("");
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
+  const [scanning, setScanning] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     void load()
       .then((rows) => setItems(rows as Analysis[]))
       .catch(() => setItems([]));
-  }, [load]);
+    void loadMatters()
+      .then((rows) => setMatters((rows as { id: string; title: string }[]).map((m) => ({ id: m.id, title: m.title }))))
+      .catch(() => setMatters([]));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function reviewItem(id: string, status: "approved" | "rejected") {
+    setItems((prev) => prev.map((item) => (item.id === id ? { ...item, status } : item)));
+    try {
+      await setReviewStatus({ data: { id, status } });
+    } catch {
+      void load()
+        .then((rows) => setItems(rows as Analysis[]))
+        .catch(() => undefined);
+    }
+  }
 
   async function handleFile(file: File) {
     setName(file.name);
     setText(await file.text());
+  }
+
+  async function handleScan(file: File) {
+    setScanning(true);
+    setError(null);
+    try {
+      const imageBase64 = await fileToBase64(file);
+      const { text: scanned } = await ocrExtract({ imageBase64, mimeType: file.type || "image/jpeg" });
+      if (!scanned) {
+        setError("No legible text found in that photo — try again with better lighting or framing.");
+        return;
+      }
+      setText((prev) => (prev ? `${prev}\n\n${scanned}` : scanned));
+      if (!name) setName(file.name.replace(/\.[^.]+$/, "") || "Scanned document");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "The scan could not be processed.");
+    } finally {
+      setScanning(false);
+    }
   }
 
   async function handleAnalyze() {
@@ -85,8 +146,9 @@ export function DocumentIntelligence() {
         <h2 className="font-display text-base font-bold">Document intelligence</h2>
       </div>
       <p className="mt-1.5 text-sm text-muted-foreground">
-        Upload a text/OCR extract or paste document text — AI returns a summary, parties, key dates,
-        tags and drafting risks, saved to your account.
+        Scan a document with your camera (English &amp; Hindi), upload a text extract, or paste
+        document text — AI returns a summary, parties, key dates, tags and drafting risks, saved to
+        your account.
       </p>
 
       <div className="mt-4 grid gap-4 lg:grid-cols-[280px_1fr]">
@@ -109,8 +171,8 @@ export function DocumentIntelligence() {
             >
               <option value="">Not linked</option>
               {matters.map((matter) => (
-                <option key={matter.id} value={`${matter.id} — ${matter.title}`}>
-                  {matter.id} — {matter.client}
+                <option key={matter.id} value={matter.title}>
+                  {matter.title}
                 </option>
               ))}
             </select>
@@ -125,6 +187,22 @@ export function DocumentIntelligence() {
               onChange={(event) => {
                 const file = event.target.files?.[0];
                 if (file) void handleFile(file);
+              }}
+            />
+          </label>
+          <label className="flex cursor-pointer items-center gap-2 rounded border border-dashed border-border px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-secondary">
+            {scanning ? <Loader2 className="size-4 animate-spin" /> : <Camera className="size-4" />}
+            {scanning ? "Reading scan…" : "Scan document (camera)"}
+            <input
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              disabled={scanning}
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                event.target.value = "";
+                if (file) void handleScan(file);
               }}
             />
           </label>
@@ -161,10 +239,33 @@ export function DocumentIntelligence() {
               <div className="flex flex-wrap items-center gap-2">
                 <h3 className="font-semibold">{item.name}</h3>
                 {item.doc_kind ? <Tag tone="accent">{item.doc_kind}</Tag> : null}
+                <Tag tone={reviewTone[item.status] ?? "neutral"}>
+                  {reviewLabel[item.status] ?? item.status}
+                </Tag>
                 {item.matter_ref ? (
                   <span className="font-mono text-xs text-muted-foreground">
                     {item.matter_ref.split(" — ")[0]}
                   </span>
+                ) : null}
+                {item.status === "pending_review" ? (
+                  <div className="ml-auto flex gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => void reviewItem(item.id, "approved")}
+                      className="flex items-center gap-1 rounded border border-success/40 px-2 py-1 text-xs font-medium text-success transition-colors hover:bg-success/10"
+                    >
+                      <Check className="size-3.5" />
+                      Approve
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void reviewItem(item.id, "rejected")}
+                      className="flex items-center gap-1 rounded border border-destructive/40 px-2 py-1 text-xs font-medium text-destructive transition-colors hover:bg-destructive/10"
+                    >
+                      <X className="size-3.5" />
+                      Reject
+                    </button>
+                  </div>
                 ) : null}
               </div>
               {item.summary ? <p className="mt-2 text-sm leading-relaxed">{item.summary}</p> : null}

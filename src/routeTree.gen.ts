@@ -18,9 +18,11 @@ import { Route as FeaturesRouteImport } from './routes/features'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as AdminAdminRouteImport } from './routes/_admin/admin'
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
+import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as AdminAdminIndexRouteImport } from './routes/_admin/admin.index'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
 import { Route as AuthenticatedAppAssistantRouteImport } from './routes/_authenticated/app.assistant'
+import { Route as AuthenticatedAppAuditLogRouteImport } from './routes/_authenticated/app.audit-log'
 import { Route as AuthenticatedAppBillingRouteImport } from './routes/_authenticated/app.billing'
 import { Route as AuthenticatedAppCasesRouteImport } from './routes/_authenticated/app.cases'
 import { Route as AuthenticatedAppClientsRouteImport } from './routes/_authenticated/app.clients'
@@ -29,6 +31,8 @@ import { Route as AuthenticatedAppDictationRouteImport } from './routes/_authent
 import { Route as AuthenticatedAppDocumentsRouteImport } from './routes/_authenticated/app.documents'
 import { Route as AuthenticatedAppDraftingRouteImport } from './routes/_authenticated/app.drafting'
 import { Route as AuthenticatedAppInsightsRouteImport } from './routes/_authenticated/app.insights'
+import { Route as AuthenticatedAppTeamRouteImport } from './routes/_authenticated/app.team'
+import { Route as AdminAdminSettingsIntegrationsRouteImport } from './routes/_admin/admin.settings.integrations'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -73,6 +77,11 @@ const AuthenticatedAppRoute = AuthenticatedAppRouteImport.update({
   path: '/app',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const InviteTokenRoute = InviteTokenRouteImport.update({
+  id: '/invite/$token',
+  path: '/invite/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminAdminIndexRoute = AdminAdminIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -87,6 +96,12 @@ const AuthenticatedAppAssistantRoute =
   AuthenticatedAppAssistantRouteImport.update({
     id: '/assistant',
     path: '/assistant',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppAuditLogRoute =
+  AuthenticatedAppAuditLogRouteImport.update({
+    id: '/audit-log',
+    path: '/audit-log',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
 const AuthenticatedAppBillingRoute = AuthenticatedAppBillingRouteImport.update({
@@ -133,6 +148,17 @@ const AuthenticatedAppInsightsRoute =
     path: '/insights',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
+const AuthenticatedAppTeamRoute = AuthenticatedAppTeamRouteImport.update({
+  id: '/team',
+  path: '/team',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
+const AdminAdminSettingsIntegrationsRoute =
+  AdminAdminSettingsIntegrationsRouteImport.update({
+    id: '/settings/integrations',
+    path: '/settings/integrations',
+    getParentRoute: () => AdminAdminRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -142,7 +168,9 @@ export interface FileRoutesByFullPath {
   '/pricing': typeof PricingRoute
   '/admin': typeof AdminAdminRouteWithChildren
   '/app': typeof AuthenticatedAppRouteWithChildren
+  '/invite/$token': typeof InviteTokenRoute
   '/app/assistant': typeof AuthenticatedAppAssistantRoute
+  '/app/audit-log': typeof AuthenticatedAppAuditLogRoute
   '/app/billing': typeof AuthenticatedAppBillingRoute
   '/app/cases': typeof AuthenticatedAppCasesRoute
   '/app/clients': typeof AuthenticatedAppClientsRoute
@@ -151,8 +179,10 @@ export interface FileRoutesByFullPath {
   '/app/documents': typeof AuthenticatedAppDocumentsRoute
   '/app/drafting': typeof AuthenticatedAppDraftingRoute
   '/app/insights': typeof AuthenticatedAppInsightsRoute
+  '/app/team': typeof AuthenticatedAppTeamRoute
   '/admin/': typeof AdminAdminIndexRoute
   '/app/': typeof AuthenticatedAppIndexRoute
+  '/admin/settings/integrations': typeof AdminAdminSettingsIntegrationsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -160,7 +190,9 @@ export interface FileRoutesByTo {
   '/contact': typeof ContactRoute
   '/features': typeof FeaturesRoute
   '/pricing': typeof PricingRoute
+  '/invite/$token': typeof InviteTokenRoute
   '/app/assistant': typeof AuthenticatedAppAssistantRoute
+  '/app/audit-log': typeof AuthenticatedAppAuditLogRoute
   '/app/billing': typeof AuthenticatedAppBillingRoute
   '/app/cases': typeof AuthenticatedAppCasesRoute
   '/app/clients': typeof AuthenticatedAppClientsRoute
@@ -169,8 +201,10 @@ export interface FileRoutesByTo {
   '/app/documents': typeof AuthenticatedAppDocumentsRoute
   '/app/drafting': typeof AuthenticatedAppDraftingRoute
   '/app/insights': typeof AuthenticatedAppInsightsRoute
+  '/app/team': typeof AuthenticatedAppTeamRoute
   '/admin': typeof AdminAdminIndexRoute
   '/app': typeof AuthenticatedAppIndexRoute
+  '/admin/settings/integrations': typeof AdminAdminSettingsIntegrationsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -183,7 +217,9 @@ export interface FileRoutesById {
   '/pricing': typeof PricingRoute
   '/_admin/admin': typeof AdminAdminRouteWithChildren
   '/_authenticated/app': typeof AuthenticatedAppRouteWithChildren
+  '/invite/$token': typeof InviteTokenRoute
   '/_authenticated/app/assistant': typeof AuthenticatedAppAssistantRoute
+  '/_authenticated/app/audit-log': typeof AuthenticatedAppAuditLogRoute
   '/_authenticated/app/billing': typeof AuthenticatedAppBillingRoute
   '/_authenticated/app/cases': typeof AuthenticatedAppCasesRoute
   '/_authenticated/app/clients': typeof AuthenticatedAppClientsRoute
@@ -192,8 +228,10 @@ export interface FileRoutesById {
   '/_authenticated/app/documents': typeof AuthenticatedAppDocumentsRoute
   '/_authenticated/app/drafting': typeof AuthenticatedAppDraftingRoute
   '/_authenticated/app/insights': typeof AuthenticatedAppInsightsRoute
+  '/_authenticated/app/team': typeof AuthenticatedAppTeamRoute
   '/_admin/admin/': typeof AdminAdminIndexRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
+  '/_admin/admin/settings/integrations': typeof AdminAdminSettingsIntegrationsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -205,7 +243,9 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/admin'
     | '/app'
+    | '/invite/$token'
     | '/app/assistant'
+    | '/app/audit-log'
     | '/app/billing'
     | '/app/cases'
     | '/app/clients'
@@ -214,8 +254,10 @@ export interface FileRouteTypes {
     | '/app/documents'
     | '/app/drafting'
     | '/app/insights'
+    | '/app/team'
     | '/admin/'
     | '/app/'
+    | '/admin/settings/integrations'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -223,7 +265,9 @@ export interface FileRouteTypes {
     | '/contact'
     | '/features'
     | '/pricing'
+    | '/invite/$token'
     | '/app/assistant'
+    | '/app/audit-log'
     | '/app/billing'
     | '/app/cases'
     | '/app/clients'
@@ -232,8 +276,10 @@ export interface FileRouteTypes {
     | '/app/documents'
     | '/app/drafting'
     | '/app/insights'
+    | '/app/team'
     | '/admin'
     | '/app'
+    | '/admin/settings/integrations'
   id:
     | '__root__'
     | '/'
@@ -245,7 +291,9 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/_admin/admin'
     | '/_authenticated/app'
+    | '/invite/$token'
     | '/_authenticated/app/assistant'
+    | '/_authenticated/app/audit-log'
     | '/_authenticated/app/billing'
     | '/_authenticated/app/cases'
     | '/_authenticated/app/clients'
@@ -254,8 +302,10 @@ export interface FileRouteTypes {
     | '/_authenticated/app/documents'
     | '/_authenticated/app/drafting'
     | '/_authenticated/app/insights'
+    | '/_authenticated/app/team'
     | '/_admin/admin/'
     | '/_authenticated/app/'
+    | '/_admin/admin/settings/integrations'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -266,6 +316,7 @@ export interface RootRouteChildren {
   ContactRoute: typeof ContactRoute
   FeaturesRoute: typeof FeaturesRoute
   PricingRoute: typeof PricingRoute
+  InviteTokenRoute: typeof InviteTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -333,6 +384,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/invite/$token': {
+      id: '/invite/$token'
+      path: '/invite/$token'
+      fullPath: '/invite/$token'
+      preLoaderRoute: typeof InviteTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_admin/admin/': {
       id: '/_admin/admin/'
       path: '/'
@@ -352,6 +410,13 @@ declare module '@tanstack/react-router' {
       path: '/assistant'
       fullPath: '/app/assistant'
       preLoaderRoute: typeof AuthenticatedAppAssistantRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/audit-log': {
+      id: '/_authenticated/app/audit-log'
+      path: '/audit-log'
+      fullPath: '/app/audit-log'
+      preLoaderRoute: typeof AuthenticatedAppAuditLogRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
     '/_authenticated/app/billing': {
@@ -410,15 +475,31 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppInsightsRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/app/team': {
+      id: '/_authenticated/app/team'
+      path: '/team'
+      fullPath: '/app/team'
+      preLoaderRoute: typeof AuthenticatedAppTeamRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_admin/admin/settings/integrations': {
+      id: '/_admin/admin/settings/integrations'
+      path: '/settings/integrations'
+      fullPath: '/admin/settings/integrations'
+      preLoaderRoute: typeof AdminAdminSettingsIntegrationsRouteImport
+      parentRoute: typeof AdminAdminRoute
+    }
   }
 }
 
 interface AdminAdminRouteChildren {
   AdminAdminIndexRoute: typeof AdminAdminIndexRoute
+  AdminAdminSettingsIntegrationsRoute: typeof AdminAdminSettingsIntegrationsRoute
 }
 
 const AdminAdminRouteChildren: AdminAdminRouteChildren = {
   AdminAdminIndexRoute: AdminAdminIndexRoute,
+  AdminAdminSettingsIntegrationsRoute: AdminAdminSettingsIntegrationsRoute,
 }
 
 const AdminAdminRouteWithChildren = AdminAdminRoute._addFileChildren(
@@ -439,6 +520,7 @@ const AdminRouteRouteWithChildren = AdminRouteRoute._addFileChildren(
 
 interface AuthenticatedAppRouteChildren {
   AuthenticatedAppAssistantRoute: typeof AuthenticatedAppAssistantRoute
+  AuthenticatedAppAuditLogRoute: typeof AuthenticatedAppAuditLogRoute
   AuthenticatedAppBillingRoute: typeof AuthenticatedAppBillingRoute
   AuthenticatedAppCasesRoute: typeof AuthenticatedAppCasesRoute
   AuthenticatedAppClientsRoute: typeof AuthenticatedAppClientsRoute
@@ -447,11 +529,13 @@ interface AuthenticatedAppRouteChildren {
   AuthenticatedAppDocumentsRoute: typeof AuthenticatedAppDocumentsRoute
   AuthenticatedAppDraftingRoute: typeof AuthenticatedAppDraftingRoute
   AuthenticatedAppInsightsRoute: typeof AuthenticatedAppInsightsRoute
+  AuthenticatedAppTeamRoute: typeof AuthenticatedAppTeamRoute
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
 }
 
 const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppAssistantRoute: AuthenticatedAppAssistantRoute,
+  AuthenticatedAppAuditLogRoute: AuthenticatedAppAuditLogRoute,
   AuthenticatedAppBillingRoute: AuthenticatedAppBillingRoute,
   AuthenticatedAppCasesRoute: AuthenticatedAppCasesRoute,
   AuthenticatedAppClientsRoute: AuthenticatedAppClientsRoute,
@@ -460,6 +544,7 @@ const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppDocumentsRoute: AuthenticatedAppDocumentsRoute,
   AuthenticatedAppDraftingRoute: AuthenticatedAppDraftingRoute,
   AuthenticatedAppInsightsRoute: AuthenticatedAppInsightsRoute,
+  AuthenticatedAppTeamRoute: AuthenticatedAppTeamRoute,
   AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
 }
 
@@ -485,6 +570,7 @@ const rootRouteChildren: RootRouteChildren = {
   ContactRoute: ContactRoute,
   FeaturesRoute: FeaturesRoute,
   PricingRoute: PricingRoute,
+  InviteTokenRoute: InviteTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

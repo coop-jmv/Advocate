@@ -12,6 +12,8 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportError } from "../lib/error-reporting";
 import { Toaster } from "@/components/ui/sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { logAuthEvent } from "@/lib/edge-functions";
 
 function NotFoundComponent() {
   return (
@@ -78,16 +80,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Advocate Companion — Practice Management for Indian Advocates" },
+      { title: "Wakilio — Practice Management for Indian Advocates" },
       {
         name: "description",
         content:
           "Cases, court diary, documents with OCR, clients and GST billing in one mobile-first workspace built for Indian advocates and law firms.",
       },
-      { name: "author", content: "Advocate Companion" },
+      { name: "author", content: "Wakilio" },
       {
         property: "og:title",
-        content: "Advocate Companion — Practice Management for Indian Advocates",
+        content: "Wakilio — Practice Management for Indian Advocates",
       },
       {
         property: "og:description",
@@ -100,7 +102,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
-      { name: "apple-mobile-web-app-title", content: "Advocate" },
+      { name: "apple-mobile-web-app-title", content: "Wakilio" },
     ],
     links: [
       {
@@ -139,6 +141,10 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+// Module-scope (not component state) so it survives the effect
+// re-running across re-renders/HMR without needing a ref.
+let lastLoggedLoginToken: string | undefined;
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
@@ -148,6 +154,25 @@ function RootComponent() {
     navigator.serviceWorker.register("/sw.js").catch((cause) => {
       reportError(cause, { source: "service_worker_register" });
     });
+  }, []);
+
+  useEffect(() => {
+    // SIGNED_IN covers both password and OAuth sign-ins in one place.
+    // INITIAL_SESSION (session restored from localStorage on page load) is
+    // deliberately excluded — that's not a new login.
+    //
+    // supabase-js can re-fire SIGNED_IN for the *same* session (repeated
+    // effect re-subscriptions across HMR/StrictMode re-renders, cross-tab
+    // BroadcastChannel sync, etc.) — dedupe on the access token so one
+    // real sign-in produces exactly one log entry.
+    const { data: subscription } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event !== "SIGNED_IN") return;
+      const token = session?.access_token;
+      if (!token || token === lastLoggedLoginToken) return;
+      lastLoggedLoginToken = token;
+      void logAuthEvent({ event: "login_success" });
+    });
+    return () => subscription.subscription.unsubscribe();
   }, []);
 
   return (

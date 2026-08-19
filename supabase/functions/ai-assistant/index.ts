@@ -1,24 +1,30 @@
 import { handleOptions, jsonResponse, errorResponse } from "../_shared/cors.ts";
 import { authedClient, requireUserId } from "../_shared/auth.ts";
-import { chatComplete, LEGAL_SYSTEM_PROMPT } from "../_shared/ai.ts";
+import { chatComplete, enforceUsageQuota, LEGAL_SYSTEM_PROMPT } from "../_shared/ai.ts";
 
 Deno.serve(async (req) => {
   const preflight = handleOptions(req);
   if (preflight) return preflight;
 
   const auth = authedClient(req);
-  if (!auth) return errorResponse("Unauthorized", 401);
+  if (!auth) return errorResponse(req, "Unauthorized", 401);
   const userId = await requireUserId(auth.supabase);
-  if (!userId) return errorResponse("Unauthorized", 401);
+  if (!userId) return errorResponse(req, "Unauthorized", 401);
   const { supabase } = auth;
+
+  try {
+    await enforceUsageQuota(supabase);
+  } catch (cause) {
+    return errorResponse(req, cause instanceof Error ? cause.message : "Quota check failed.", 429);
+  }
 
   let body: { conversationId: string | null; matterRef?: string; question: string };
   try {
     body = await req.json();
   } catch {
-    return errorResponse("Invalid JSON body");
+    return errorResponse(req, "Invalid JSON body");
   }
-  if (!body.question?.trim()) return errorResponse("question is required");
+  if (!body.question?.trim()) return errorResponse(req, "question is required");
 
   let conversationId = body.conversationId;
   if (!conversationId) {
@@ -31,8 +37,18 @@ Deno.serve(async (req) => {
       })
       .select("id")
       .single();
-    if (error) return errorResponse(error.message, 500);
+    if (error) return errorResponse(req, error.message, 500);
     conversationId = created.id;
+  } else {
+    // RLS (tenant_id = current_tenant_id()) already scopes this to the
+    // caller's firm — any tenant member may continue a colleague's
+    // conversation. A row coming back at all confirms it's in-tenant.
+    const { data: visible } = await supabase
+      .from("ai_conversations")
+      .select("id")
+      .eq("id", conversationId)
+      .maybeSingle();
+    if (!visible) return errorResponse(req, "Conversation not found", 404);
   }
 
   const { data: history } = await supabase
@@ -56,7 +72,7 @@ Deno.serve(async (req) => {
       { role: "user", content: body.question },
     ]);
   } catch (cause) {
-    return errorResponse(cause instanceof Error ? cause.message : "AI request failed.", 502);
+    return errorResponse(req, cause instanceof Error ? cause.message : "AI request failed.", 502);
   }
 
   const { error: insertError } = await supabase.from("ai_messages").insert([
@@ -68,12 +84,12 @@ Deno.serve(async (req) => {
       content: answer || "No answer was generated. Please rephrase the question.",
     },
   ]);
-  if (insertError) return errorResponse(insertError.message, 500);
+  if (insertError) return errorResponse(req, insertError.message, 500);
 
   await supabase
     .from("ai_conversations")
     .update({ matter_ref: body.matterRef ?? null })
     .eq("id", conversationId);
 
-  return jsonResponse({ conversationId, answer });
+  return jsonResponse(req, { conversationId, answer });
 });

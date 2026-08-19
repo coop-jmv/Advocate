@@ -2,21 +2,22 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Scale, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { logAuthEvent } from "@/lib/edge-functions";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Sign in — Advocate Companion" },
+      { title: "Sign in — Wakilio" },
       {
         name: "description",
         content:
           "Sign in to your chamber workspace to manage matters, court diary, documents and AI drafting for your practice.",
       },
-      { property: "og:title", content: "Sign in — Advocate Companion" },
+      { property: "og:title", content: "Sign in — Wakilio" },
       {
         property: "og:description",
-        content: "Secure sign-in for Indian advocates using Advocate Companion.",
+        content: "Secure sign-in for Indian advocates using Wakilio.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -53,7 +54,7 @@ function AuthPage() {
     setNotice(null);
     try {
       if (mode === "signup") {
-        const { error: signUpError } = await supabase.auth.signUp({
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -62,6 +63,7 @@ function AuthPage() {
           },
         });
         if (signUpError) throw signUpError;
+        void logAuthEvent({ event: "signup", email, userId: signUpData.user?.id });
         const { data } = await supabase.auth.getSession();
         if (data.session) {
           void navigate({ to: "/app" });
@@ -74,6 +76,7 @@ function AuthPage() {
       if (signInError) throw signInError;
       void navigate({ to: "/app" });
     } catch (cause) {
+      if (mode === "signin") void logAuthEvent({ event: "login_failed", email });
       setError(cause instanceof Error ? cause.message : "Could not complete that request.");
     } finally {
       setBusy(false);
@@ -86,7 +89,10 @@ function AuthPage() {
       provider: "google",
       options: { redirectTo: `${window.location.origin}/app` },
     });
-    if (oauthError) setError(oauthError.message);
+    if (oauthError) {
+      void logAuthEvent({ event: "login_failed", email: "(google oauth)" });
+      setError(oauthError.message);
+    }
   }
 
   return (
@@ -96,7 +102,7 @@ function AuthPage() {
           <span className="flex size-9 items-center justify-center rounded bg-primary text-primary-foreground">
             <Scale className="size-4" />
           </span>
-          <span className="font-display text-base font-bold">Advocate Companion</span>
+          <span className="font-display text-base font-bold">Wakilio</span>
         </Link>
 
         <div className="surface-panel rounded p-6">
@@ -189,7 +195,7 @@ function AuthPage() {
           </form>
 
           <p className="mt-5 text-center text-sm text-muted-foreground">
-            {mode === "signin" ? "New to Advocate Companion?" : "Already have an account?"}{" "}
+            {mode === "signin" ? "New to Wakilio?" : "Already have an account?"}{" "}
             <button
               type="button"
               onClick={() => setMode(mode === "signin" ? "signup" : "signin")}

@@ -1,6 +1,6 @@
 {
-  "name": "Advocate Companion",
-  "short_name": "Advocate",
+  "name": "Wakilio",
+  "short_name": "Wakilio",
   "description": "Practice management for Indian advocates — matters, court diary, documents, dictation and AI drafting.",
   "start_url": "/app",
   "scope": "/",

@@ -1,5 +1,5 @@
 import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
-import { ShieldCheck, Building2 } from "lucide-react";
+import { ShieldCheck, Building2, Puzzle } from "lucide-react";
 
 export const Route = createFileRoute("/_admin/admin")({
   component: AdminLayout,
@@ -24,6 +24,14 @@ function AdminLayout() {
             >
               <Building2 className="size-4" />
               Tenants
+            </Link>
+            <Link
+              to="/admin/settings/integrations"
+              className="flex items-center gap-1.5 hover:text-foreground"
+              activeProps={{ className: "text-foreground" }}
+            >
+              <Puzzle className="size-4" />
+              Settings · Integrations
             </Link>
             <Link to="/app" className="hover:text-foreground">
               Back to app

@@ -1,74 +1,158 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { Loader2, Plus } from "lucide-react";
 import { AppShell } from "@/components/app/AppShell";
-import { DataTable, Tag, type Tone } from "@/components/app/primitives";
-import { clients } from "@/lib/mock-data";
+import { DataTable } from "@/components/app/primitives";
+import { createClient, listClients } from "@/lib/matters.functions";
 
 export const Route = createFileRoute("/_authenticated/app/clients")({
   head: () => ({
     meta: [
-      { title: "Clients — Advocate Companion" },
-      {
-        name: "description",
-        content:
-          "Client register with matter counts, outstanding balances, portal access status and conflict-of-interest flags.",
-      },
-      { property: "og:title", content: "Clients — Advocate Companion" },
-      {
-        property: "og:description",
-        content: "Client register with balances, portal access and conflict-of-interest flags.",
-      },
+      { title: "Clients — Wakilio" },
+      { name: "description", content: "Client register for your chamber." },
+      { property: "og:title", content: "Clients — Wakilio" },
+      { property: "og:description", content: "Client register for your chamber." },
     ],
   }),
   component: Clients,
 });
 
-const portalTone: Record<string, Tone> = {
-  Active: "success",
-  Invited: "warning",
-  "Not invited": "neutral",
+type ClientRow = {
+  id: string;
+  name: string;
+  phone: string | null;
+  email: string | null;
+  notes: string | null;
+  created_at: string;
 };
 
 function Clients() {
+  const loadClients = useServerFn(listClients);
+  const addClient = useServerFn(createClient);
+
+  const [clients, setClients] = useState<ClientRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [form, setForm] = useState({ name: "", phone: "", email: "", notes: "" });
+
+  async function reload() {
+    setLoading(true);
+    setError(null);
+    try {
+      setClients((await loadClients()) as ClientRow[]);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Failed to load clients.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void reload();
+  }, []);
+
+  async function handleCreate(event: React.FormEvent) {
+    event.preventDefault();
+    if (!form.name.trim()) return;
+    setCreating(true);
+    setError(null);
+    try {
+      await addClient({
+        data: {
+          name: form.name.trim(),
+          phone: form.phone.trim() || undefined,
+          email: form.email.trim() || undefined,
+          notes: form.notes.trim() || undefined,
+        },
+      });
+      setForm({ name: "", phone: "", email: "", notes: "" });
+      await reload();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Failed to create client.");
+    } finally {
+      setCreating(false);
+    }
+  }
+
   return (
     <AppShell
       title="Clients"
-      subtitle={`${clients.length} clients · 1 conflict check needs review`}
-      action={
-        <button
-          type="button"
-          className="rounded bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-ink"
-        >
-          New client
-        </button>
-      }
+      subtitle={loading ? "Loading…" : `${clients.length} clients in your chamber`}
     >
-      <div className="mb-6 rounded border-l-2 border-warning bg-warning/10 p-5">
-        <h2 className="font-display text-base font-bold">Conflict check pending</h2>
-        <p className="mt-1.5 text-sm text-muted-foreground">
-          Nandini Enterprises shares a director with an opposing party in AC-1031. Review before
-          filing further pleadings.
-        </p>
-      </div>
+      <form
+        onSubmit={handleCreate}
+        className="surface-panel mb-6 grid gap-3 rounded p-4 sm:grid-cols-2 lg:grid-cols-4"
+      >
+        <label className="text-sm">
+          <span className="text-eyebrow">Name</span>
+          <input
+            value={form.name}
+            onChange={(event) => setForm((f) => ({ ...f, name: event.target.value }))}
+            placeholder="Rakesh Malhotra"
+            className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
+          />
+        </label>
+        <label className="text-sm">
+          <span className="text-eyebrow">Phone</span>
+          <input
+            value={form.phone}
+            onChange={(event) => setForm((f) => ({ ...f, phone: event.target.value }))}
+            className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
+          />
+        </label>
+        <label className="text-sm">
+          <span className="text-eyebrow">Email</span>
+          <input
+            type="email"
+            value={form.email}
+            onChange={(event) => setForm((f) => ({ ...f, email: event.target.value }))}
+            className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
+          />
+        </label>
+        <label className="text-sm">
+          <span className="text-eyebrow">Notes</span>
+          <input
+            value={form.notes}
+            onChange={(event) => setForm((f) => ({ ...f, notes: event.target.value }))}
+            className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
+          />
+        </label>
+        <div className="flex items-end sm:col-span-2 lg:col-span-4">
+          <button
+            type="submit"
+            disabled={creating || !form.name.trim()}
+            className="flex items-center gap-2 rounded bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-ink disabled:opacity-60"
+          >
+            {creating ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
+            Add client
+          </button>
+        </div>
+      </form>
 
-      <DataTable headers={["Client", "City", "Matters", "Outstanding", "Portal", "Conflict"]}>
-        {clients.map((client) => (
-          <tr key={client.id} className="hover:bg-secondary/40">
-            <td className="px-4 py-3">
-              <p className="font-medium">{client.name}</p>
-              <p className="mt-0.5 font-mono text-xs text-muted-foreground">{client.id}</p>
-            </td>
-            <td className="px-4 py-3">{client.city}</td>
-            <td className="px-4 py-3 tabular-nums">{client.matters}</td>
-            <td className="px-4 py-3 font-medium tabular-nums">{client.outstanding}</td>
-            <td className="px-4 py-3">
-              <Tag tone={portalTone[client.portal]}>{client.portal}</Tag>
-            </td>
-            <td className="px-4 py-3">
-              <Tag tone={client.conflict === "Clear" ? "success" : "danger"}>{client.conflict}</Tag>
-            </td>
-          </tr>
-        ))}
-      </DataTable>
+      {error ? (
+        <p className="mb-4 rounded border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          {error}
+        </p>
+      ) : null}
+
+      {loading ? (
+        <p className="text-sm text-muted-foreground">Loading clients…</p>
+      ) : clients.length === 0 ? (
+        <p className="text-sm text-muted-foreground">No clients yet — add your first one above.</p>
+      ) : (
+        <DataTable headers={["Client", "Phone", "Email", "Notes"]}>
+          {clients.map((client) => (
+            <tr key={client.id} className="hover:bg-secondary/40">
+              <td className="px-4 py-3 font-medium">{client.name}</td>
+              <td className="px-4 py-3 whitespace-nowrap">{client.phone ?? "—"}</td>
+              <td className="px-4 py-3 whitespace-nowrap">{client.email ?? "—"}</td>
+              <td className="px-4 py-3 text-muted-foreground">{client.notes ?? "—"}</td>
+            </tr>
+          ))}
+        </DataTable>
+      )}
     </AppShell>
   );
 }

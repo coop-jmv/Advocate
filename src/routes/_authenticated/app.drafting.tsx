@@ -1,23 +1,23 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { FileText, Loader2, Printer, Save, Sparkles } from "lucide-react";
+import { Check, FileText, Loader2, Printer, Save, Sparkles, X } from "lucide-react";
 import { AppShell } from "@/components/app/AppShell";
-import { Tag } from "@/components/app/primitives";
-import { listDrafts, saveDraft } from "@/lib/ai.functions";
+import { Tag, type Tone } from "@/components/app/primitives";
+import { listDrafts, saveDraft, updateDraftStatus } from "@/lib/ai.functions";
 import { generateDraft } from "@/lib/edge-functions";
-import { matters } from "@/lib/mock-data";
+import { listMatters } from "@/lib/matters.functions";
 
 export const Route = createFileRoute("/_authenticated/app/drafting")({
   head: () => ({
     meta: [
-      { title: "AI drafting studio — Advocate Companion" },
+      { title: "AI drafting studio — Wakilio" },
       {
         name: "description",
         content:
           "Generate court-ready notices, applications, replies and client letters with AI, edit them inline and print from your chamber workspace.",
       },
-      { property: "og:title", content: "AI drafting studio — Advocate Companion" },
+      { property: "og:title", content: "AI drafting studio — Wakilio" },
       {
         property: "og:description",
         content:
@@ -36,7 +36,21 @@ type Draft = {
   matter_ref: string | null;
   instructions: string;
   content: string;
+  status: string;
   created_at: string;
+};
+
+type MatterOption = { id: string; title: string };
+
+const reviewLabel: Record<string, string> = {
+  pending_review: "Pending review",
+  approved: "Approved",
+  rejected: "Rejected",
+};
+const reviewTone: Record<string, Tone> = {
+  pending_review: "warning",
+  approved: "success",
+  rejected: "danger",
 };
 
 const DOC_TYPES = [
@@ -53,8 +67,11 @@ const DOC_TYPES = [
 function Drafting() {
   const load = useServerFn(listDrafts);
   const persist = useServerFn(saveDraft);
+  const loadMatters = useServerFn(listMatters);
+  const setReviewStatus = useServerFn(updateDraftStatus);
 
   const [drafts, setDrafts] = useState<Draft[]>([]);
+  const [matters, setMatters] = useState<MatterOption[]>([]);
   const [active, setActive] = useState<Draft | null>(null);
   const [docType, setDocType] = useState<string>(DOC_TYPES[0]);
   const [matterRef, setMatterRef] = useState("");
@@ -67,7 +84,24 @@ function Drafting() {
     void load()
       .then((rows) => setDrafts(rows as Draft[]))
       .catch(() => setDrafts([]));
-  }, [load]);
+    void loadMatters()
+      .then((rows) => setMatters((rows as { id: string; title: string }[]).map((m) => ({ id: m.id, title: m.title }))))
+      .catch(() => setMatters([]));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function reviewDraft(status: "approved" | "rejected") {
+    if (!active) return;
+    setActive({ ...active, status });
+    setDrafts((prev) => prev.map((d) => (d.id === active.id ? { ...d, status } : d)));
+    try {
+      await setReviewStatus({ data: { id: active.id, status } });
+    } catch {
+      void load()
+        .then((rows) => setDrafts(rows as Draft[]))
+        .catch(() => undefined);
+    }
+  }
 
   async function handleGenerate() {
     if (!instructions.trim()) return;
@@ -136,11 +170,8 @@ function Drafting() {
               >
                 <option value="">Not linked</option>
                 {matters.map((matter) => (
-                  <option
-                    key={matter.id}
-                    value={`${matter.id} — ${matter.title} (${matter.court})`}
-                  >
-                    {matter.id} — {matter.client}
+                  <option key={matter.id} value={matter.title}>
+                    {matter.title}
                   </option>
                 ))}
               </select>
@@ -177,10 +208,15 @@ function Drafting() {
                     key={draft.id}
                     type="button"
                     onClick={() => setActive(draft)}
-                    className="block w-full truncate rounded px-2.5 py-2 text-left text-sm transition-colors hover:bg-secondary"
+                    className="flex w-full items-center gap-2 truncate rounded px-2.5 py-2 text-left text-sm transition-colors hover:bg-secondary"
                   >
-                    {draft.doc_type}
-                    {draft.matter_ref ? ` · ${draft.matter_ref.split(" — ")[0]}` : ""}
+                    <span className="truncate">
+                      {draft.doc_type}
+                      {draft.matter_ref ? ` · ${draft.matter_ref}` : ""}
+                    </span>
+                    <Tag tone={reviewTone[draft.status] ?? "neutral"}>
+                      {reviewLabel[draft.status] ?? draft.status}
+                    </Tag>
                   </button>
                 ))
               )}
@@ -197,7 +233,31 @@ function Drafting() {
               </p>
             </div>
             <div className="flex items-center gap-2">
-              {active ? <Tag tone="warning">AI draft — verify</Tag> : null}
+              {active ? (
+                <Tag tone={reviewTone[active.status] ?? "neutral"}>
+                  {reviewLabel[active.status] ?? active.status}
+                </Tag>
+              ) : null}
+              {active && active.status === "pending_review" ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => void reviewDraft("approved")}
+                    className="flex items-center gap-1 rounded border border-success/40 px-2.5 py-2 text-xs font-medium text-success transition-colors hover:bg-success/10"
+                  >
+                    <Check className="size-3.5" />
+                    Approve
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void reviewDraft("rejected")}
+                    className="flex items-center gap-1 rounded border border-destructive/40 px-2.5 py-2 text-xs font-medium text-destructive transition-colors hover:bg-destructive/10"
+                  >
+                    <X className="size-3.5" />
+                    Reject
+                  </button>
+                </>
+              ) : null}
               <button
                 type="button"
                 onClick={handleSave}

@@ -25,6 +25,15 @@ export const listMessages = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => z.object({ conversationId: z.string().uuid() }).parse(data))
   .handler(async ({ data, context }) => {
+    // RLS (tenant_id = current_tenant_id()) already scopes this to the
+    // caller's firm — a row coming back at all confirms it's in-tenant.
+    const { data: visible } = await context.supabase
+      .from("ai_conversations")
+      .select("id")
+      .eq("id", data.conversationId)
+      .maybeSingle();
+    if (!visible) throw new Error("Conversation not found");
+
     const { data: rows, error } = await context.supabase
       .from("ai_messages")
       .select("id, role, content, created_at")
@@ -52,7 +61,7 @@ export const listDocumentAnalyses = createServerFn({ method: "GET" })
     const { data, error } = await context.supabase
       .from("ai_documents")
       .select(
-        "id, name, matter_ref, doc_kind, summary, parties, key_dates, tags, risk_notes, created_at",
+        "id, name, matter_ref, doc_kind, summary, parties, key_dates, tags, risk_notes, status, created_at",
       )
       .order("created_at", { ascending: false })
       .limit(20);
@@ -60,16 +69,46 @@ export const listDocumentAnalyses = createServerFn({ method: "GET" })
     return data ?? [];
   });
 
+const REVIEW_STATUS = z.enum(["pending_review", "approved", "rejected"]);
+
+export const updateDocumentAnalysisStatus = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z.object({ id: z.string().uuid(), status: REVIEW_STATUS }).parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase
+      .from("ai_documents")
+      .update({ status: data.status })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 export const listDrafts = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("ai_drafts")
-      .select("id, doc_type, matter_ref, instructions, content, created_at")
+      .select("id, doc_type, matter_ref, instructions, content, status, created_at")
       .order("created_at", { ascending: false })
       .limit(20);
     if (error) throw new Error(error.message);
     return data ?? [];
+  });
+
+export const updateDraftStatus = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z.object({ id: z.string().uuid(), status: REVIEW_STATUS }).parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase
+      .from("ai_drafts")
+      .update({ status: data.status })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
   });
 
 export const saveDraft = createServerFn({ method: "POST" })
@@ -84,4 +123,35 @@ export const saveDraft = createServerFn({ method: "POST" })
       .eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
+  });
+
+// Dictation formatting (dictation-format edge function) doesn't persist —
+// it's a stateless text-cleanup call. This saves the result into the same
+// ai_drafts table the drafting studio uses, so dictated drafts aren't lost
+// and show up alongside AI-generated ones.
+export const saveDictatedDraft = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        docType: z.string().min(1),
+        matterRef: z.string().optional(),
+        content: z.string().min(1),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: saved, error } = await context.supabase
+      .from("ai_drafts")
+      .insert({
+        user_id: context.userId,
+        doc_type: data.docType,
+        matter_ref: data.matterRef ?? null,
+        instructions: "(Dictated)",
+        content: data.content,
+      })
+      .select("id, doc_type, matter_ref, instructions, content, status, created_at")
+      .single();
+    if (error) throw new Error(error.message);
+    return saved;
   });

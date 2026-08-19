@@ -1,25 +1,26 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Loader2, RefreshCw, ShieldAlert, Sparkles } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { Loader2, RefreshCw, Sparkles } from "lucide-react";
 import { AppShell } from "@/components/app/AppShell";
 import { Markdown } from "@/components/app/Markdown";
-import { Tag } from "@/components/app/primitives";
 import { generateBriefing } from "@/lib/edge-functions";
-import { limitationAlerts, matters, todaysDiary, weeklyLoad } from "@/lib/mock-data";
+import { listHearings } from "@/lib/diary.functions";
+import { listMatters } from "@/lib/matters.functions";
 
 export const Route = createFileRoute("/_authenticated/app/insights")({
   head: () => ({
     meta: [
-      { title: "Diary & risk insights — Advocate Companion" },
+      { title: "Diary & risk insights — Wakilio" },
       {
         name: "description",
         content:
-          "AI briefings on hearing readiness, limitation risk, conflicts and priority actions across your matters and court diary.",
+          "AI briefing on hearing readiness and today's priorities, generated from your chamber's real matters and diary.",
       },
-      { property: "og:title", content: "Diary & risk insights — Advocate Companion" },
+      { property: "og:title", content: "Diary & risk insights — Wakilio" },
       {
         property: "og:description",
-        content: "Daily AI briefing on hearings, limitation deadlines and chamber workload risk.",
+        content: "Daily AI briefing generated from your chamber's real matters and diary.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -28,29 +29,68 @@ export const Route = createFileRoute("/_authenticated/app/insights")({
   component: Insights,
 });
 
-function buildContext() {
+type Hearing = {
+  id: string;
+  matter_title: string;
+  court: string | null;
+  hearing_date: string;
+  hearing_time: string | null;
+  purpose: string | null;
+  status: string;
+};
+
+type Matter = {
+  id: string;
+  title: string;
+  client_name: string | null;
+  case_number: string | null;
+  court: string | null;
+  status: string;
+  opposing_party: string | null;
+  filed_date: string | null;
+};
+
+function todayIso() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function buildContext(matters: Matter[], hearings: Hearing[]) {
+  const today = todayIso();
+  const todaysHearings = hearings.filter((h) => h.hearing_date === today);
+
+  if (matters.length === 0 && hearings.length === 0) {
+    return "This chamber has no matters or hearings on record yet. Say so plainly and suggest adding the first matter and hearing.";
+  }
+
   return [
     "Today's hearings:",
-    ...todaysDiary.map(
-      (hearing) =>
-        `- ${hearing.time} · ${hearing.court} · ${hearing.matter} · ${hearing.item} · ${hearing.purpose} · status ${hearing.status}`,
-    ),
+    ...(todaysHearings.length
+      ? todaysHearings.map(
+          (h) =>
+            `- ${h.hearing_time ?? "time not set"} · ${h.court ?? "court not set"} · ${h.matter_title} · ${h.purpose ?? "no purpose noted"} · status ${h.status}`,
+        )
+      : ["- None listed for today."]),
+    "",
+    "Upcoming hearings (next 14 days):",
+    ...hearings
+      .filter((h) => h.hearing_date > today)
+      .slice(0, 20)
+      .map((h) => `- ${h.hearing_date} ${h.hearing_time ?? ""} · ${h.matter_title} · ${h.court ?? ""}`),
     "",
     "Active matters:",
     ...matters.map(
-      (matter) =>
-        `- ${matter.id} (${matter.cnr}) ${matter.title} · ${matter.court} · stage ${matter.stage} · next hearing ${matter.nextHearing} · ${matter.practice} · opposing ${matter.opposing}`,
+      (m) =>
+        `- ${m.title}${m.case_number ? ` (${m.case_number})` : ""} · ${m.court ?? "court not set"} · status ${m.status}${m.opposing_party ? ` · opposing ${m.opposing_party}` : ""}${m.filed_date ? ` · filed ${m.filed_date}` : ""}`,
     ),
-    "",
-    "Limitation and deadline alerts:",
-    ...limitationAlerts.map((alert) => `- ${alert.matter}: ${alert.note} (${alert.severity})`),
-    "",
-    "Weekly load (hearings / billed hours):",
-    ...weeklyLoad.map((day) => `- ${day.day}: ${day.hearings} hearings, ${day.billed}h billed`),
   ].join("\n");
 }
 
 function Insights() {
+  const loadMatters = useServerFn(listMatters);
+  const loadHearings = useServerFn(listHearings);
+  const [matters, setMatters] = useState<Matter[]>([]);
+  const [hearings, setHearings] = useState<Hearing[]>([]);
+  const [dataLoaded, setDataLoaded] = useState(false);
   const [briefing, setBriefing] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -59,7 +99,13 @@ function Insights() {
     setBusy(true);
     setError(null);
     try {
-      const result = await generateBriefing({ context: buildContext() });
+      const [matterRows, hearingRows] = await Promise.all([loadMatters(), loadHearings()]);
+      const m = matterRows as Matter[];
+      const h = hearingRows as Hearing[];
+      setMatters(m);
+      setHearings(h);
+      setDataLoaded(true);
+      const result = await generateBriefing({ context: buildContext(m, h) });
       setBriefing(result.briefing);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "The briefing could not be generated.");
@@ -70,12 +116,16 @@ function Insights() {
 
   useEffect(() => {
     void refresh();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const today = todayIso();
+  const todaysHearings = hearings.filter((h) => h.hearing_date === today);
 
   return (
     <AppShell
       title="Diary &amp; risk insights"
-      subtitle="An AI briefing on hearing readiness, limitation risk and today's priorities"
+      subtitle="An AI briefing generated from your chamber's real matters and diary"
       action={
         <button
           type="button"
@@ -104,7 +154,7 @@ function Insights() {
           {busy && !briefing ? (
             <p className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
               <Loader2 className="size-4 animate-spin" />
-              Reviewing your diary, matters and deadlines…
+              Reviewing your diary and matters…
             </p>
           ) : (
             <Markdown content={briefing} className="mt-4" />
@@ -113,47 +163,33 @@ function Insights() {
 
         <aside className="space-y-6">
           <section className="surface-panel rounded p-5">
-            <div className="flex items-center gap-2">
-              <ShieldAlert className="size-4 text-destructive" />
-              <h2 className="font-display text-sm font-bold">Deadline watch</h2>
-            </div>
-            <ul className="mt-3 space-y-3">
-              {limitationAlerts.map((alert) => (
-                <li key={alert.matter} className="text-sm">
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold">{alert.matter}</span>
-                    <Tag
-                      tone={
-                        alert.severity === "high"
-                          ? "danger"
-                          : alert.severity === "medium"
-                            ? "warning"
-                            : "neutral"
-                      }
-                    >
-                      {alert.severity}
-                    </Tag>
-                  </div>
-                  <p className="mt-0.5 text-muted-foreground">{alert.note}</p>
-                </li>
-              ))}
-            </ul>
+            <h2 className="font-display text-sm font-bold">Today in court</h2>
+            {!dataLoaded ? (
+              <p className="mt-3 text-sm text-muted-foreground">Loading…</p>
+            ) : todaysHearings.length === 0 ? (
+              <p className="mt-3 text-sm text-muted-foreground">No hearings listed for today.</p>
+            ) : (
+              <ul className="mt-3 space-y-3 text-sm">
+                {todaysHearings.map((hearing) => (
+                  <li key={hearing.id}>
+                    <p className="font-semibold">
+                      {hearing.hearing_time ?? "Time not set"} · {hearing.matter_title}
+                    </p>
+                    <p className="text-muted-foreground">
+                      {hearing.court ?? "Court not set"}
+                      {hearing.purpose ? ` · ${hearing.purpose}` : ""}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            )}
           </section>
 
           <section className="surface-panel rounded p-5">
-            <h2 className="font-display text-sm font-bold">Today in court</h2>
-            <ul className="mt-3 space-y-3 text-sm">
-              {todaysDiary.map((hearing) => (
-                <li key={hearing.id}>
-                  <p className="font-semibold">
-                    {hearing.time} · {hearing.matter}
-                  </p>
-                  <p className="text-muted-foreground">
-                    {hearing.court} · {hearing.purpose}
-                  </p>
-                </li>
-              ))}
-            </ul>
+            <h2 className="font-display text-sm font-bold">Chamber snapshot</h2>
+            <p className="mt-3 text-sm text-muted-foreground">
+              {dataLoaded ? `${matters.length} matters · ${hearings.length} hearings on record` : "Loading…"}
+            </p>
           </section>
         </aside>
       </div>

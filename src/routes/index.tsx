@@ -14,7 +14,7 @@ import heroImage from "@/assets/hero-advocate.jpg";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Advocate Companion — Practice Management for Indian Advocates" },
+      { title: "Wakilio — Practice Management for Indian Advocates" },
       {
         name: "description",
         content:
@@ -22,7 +22,7 @@ export const Route = createFileRoute("/")({
       },
       {
         property: "og:title",
-        content: "Advocate Companion — Practice Management for Indian Advocates",
+        content: "Wakilio — Practice Management for Indian Advocates",
       },
       {
         property: "og:description",
@@ -87,7 +87,7 @@ function Landing() {
                 A disciplined practice, run from a single workspace.
               </h1>
               <p className="mt-6 max-w-xl text-base leading-relaxed text-primary-foreground/80">
-                Advocate Companion brings matters, cause lists, documents, clients and billing
+                Wakilio brings matters, cause lists, documents, clients and billing
                 together in one platform, purpose-built for how litigation is practised in Indian
                 courts — accessible from your phone, wherever the day takes you.
               </p>

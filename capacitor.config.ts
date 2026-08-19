@@ -8,11 +8,11 @@ import type { CapacitorConfig } from "@capacitor/cli";
 // config schema; it's unused at runtime since server.url takes priority,
 // but `cap sync` needs it to exist.
 const config: CapacitorConfig = {
-  appId: "com.advocatecompanion.app",
-  appName: "Advocate Companion",
+  appId: "com.wakilio.app",
+  appName: "Wakilio",
   webDir: "dist/client",
   server: {
-    url: "https://advocate.dhanapalan-advocate.workers.dev",
+    url: "https://wakilio.dhanapalan-advocate.workers.dev",
     androidScheme: "https",
     cleartext: false,
   },

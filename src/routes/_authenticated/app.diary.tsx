@@ -1,167 +1,287 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { Loader2, Plus } from "lucide-react";
 import { AppShell } from "@/components/app/AppShell";
 import { Tag, type Tone } from "@/components/app/primitives";
-import { todaysDiary } from "@/lib/mock-data";
+import { createHearing, listHearings, updateHearingStatus } from "@/lib/diary.functions";
 
 export const Route = createFileRoute("/_authenticated/app/diary")({
   head: () => ({
     meta: [
-      { title: "Court diary — Advocate Companion" },
-      {
-        name: "description",
-        content:
-          "Week view of listed hearings with cause-list status, appearance marking and conflict detection.",
-      },
-      { property: "og:title", content: "Court diary — Advocate Companion" },
-      {
-        property: "og:description",
-        content: "Week view of listed hearings with cause-list status and conflict detection.",
-      },
+      { title: "Court diary — Wakilio" },
+      { name: "description", content: "Hearings for your chamber, grouped by date." },
+      { property: "og:title", content: "Court diary — Wakilio" },
+      { property: "og:description", content: "Hearings for your chamber, grouped by date." },
     ],
   }),
   component: Diary,
 });
 
-const statusTone: Record<string, Tone> = {
-  Confirmed: "success",
-  "Cause list awaited": "warning",
-  Adjourned: "neutral",
+type Hearing = {
+  id: string;
+  matter_title: string;
+  court: string | null;
+  hearing_date: string;
+  hearing_time: string | null;
+  purpose: string | null;
+  status: string;
+  created_at: string;
 };
 
-type DiaryItem = { time: string; matter: string; court: string; clash?: boolean };
-type DiaryDay = { day: string; date: string; today?: boolean; items: DiaryItem[] };
+const statusLabel: Record<string, string> = {
+  confirmed: "Confirmed",
+  cause_list_awaited: "Cause list awaited",
+  adjourned: "Adjourned",
+  completed: "Completed",
+};
 
-const week: DiaryDay[] = [
-  {
-    day: "Mon",
-    date: "3 Aug",
-    items: [{ time: "11:00", matter: "Yadav v. Gram Panchayat", court: "District Court, Lucknow" }],
-  },
-  {
-    day: "Tue",
-    date: "4 Aug",
-    today: true,
-    items: [
-      { time: "10:30", matter: "Malhotra v. Sunrise", court: "Delhi HC — Court 12" },
-      { time: "11:45", matter: "Iyer v. Coastal Insurance", court: "Consumer Forum, Chennai" },
-      { time: "14:15", matter: "State v. Imran Sheikh", court: "Sessions Court, Pune" },
-    ],
-  },
-  {
-    day: "Wed",
-    date: "5 Aug",
-    items: [{ time: "10:00", matter: "Nandini Enterprises v. CGST", court: "Karnataka HC" }],
-  },
-  {
-    day: "Thu",
-    date: "6 Aug",
-    items: [
-      { time: "10:30", matter: "Malhotra v. Sunrise", court: "Delhi HC — Court 12" },
-      { time: "10:30", matter: "Kapoor v. Kapoor", court: "Family Court, Saket", clash: true },
-    ],
-  },
-  {
-    day: "Fri",
-    date: "7 Aug",
-    items: [
-      { time: "11:30", matter: "Iyer v. Coastal Insurance", court: "Consumer Forum, Chennai" },
-    ],
-  },
-  { day: "Sat", date: "8 Aug", items: [] },
-];
+const statusTone: Record<string, Tone> = {
+  confirmed: "success",
+  cause_list_awaited: "warning",
+  adjourned: "neutral",
+  completed: "accent",
+};
+
+function todayIso() {
+  return new Date().toISOString().slice(0, 10);
+}
 
 function Diary() {
+  const loadHearings = useServerFn(listHearings);
+  const addHearing = useServerFn(createHearing);
+  const setStatus = useServerFn(updateHearingStatus);
+
+  const [hearings, setHearings] = useState<Hearing[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [form, setForm] = useState({
+    matterTitle: "",
+    court: "",
+    hearingDate: todayIso(),
+    hearingTime: "",
+    purpose: "",
+  });
+
+  async function reload() {
+    setLoading(true);
+    setError(null);
+    try {
+      setHearings((await loadHearings()) as Hearing[]);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Failed to load hearings.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void reload();
+  }, []);
+
+  async function handleCreate(event: React.FormEvent) {
+    event.preventDefault();
+    if (!form.matterTitle.trim() || !form.hearingDate) return;
+    setCreating(true);
+    setError(null);
+    try {
+      await addHearing({
+        data: {
+          matterTitle: form.matterTitle.trim(),
+          court: form.court.trim() || undefined,
+          hearingDate: form.hearingDate,
+          hearingTime: form.hearingTime || undefined,
+          purpose: form.purpose.trim() || undefined,
+        },
+      });
+      setForm({ matterTitle: "", court: "", hearingDate: todayIso(), hearingTime: "", purpose: "" });
+      await reload();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Failed to add hearing.");
+    } finally {
+      setCreating(false);
+    }
+  }
+
+  async function markStatus(id: string, status: Hearing["status"]) {
+    setError(null);
+    try {
+      await setStatus({ data: { id, status: status as "confirmed" | "cause_list_awaited" | "adjourned" | "completed" } });
+      await reload();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Failed to update hearing.");
+    }
+  }
+
+  const grouped = useMemo(() => {
+    const byDate = new Map<string, Hearing[]>();
+    for (const h of hearings) {
+      const list = byDate.get(h.hearing_date) ?? [];
+      list.push(h);
+      byDate.set(h.hearing_date, list);
+    }
+    return [...byDate.entries()].sort(([a], [b]) => a.localeCompare(b));
+  }, [hearings]);
+
+  // Real conflict detection: two hearings on the same date and the same
+  // clock time.
+  const clashKeys = useMemo(() => {
+    const seen = new Map<string, number>();
+    for (const h of hearings) {
+      if (!h.hearing_time) continue;
+      const key = `${h.hearing_date}|${h.hearing_time}`;
+      seen.set(key, (seen.get(key) ?? 0) + 1);
+    }
+    return new Set([...seen.entries()].filter(([, count]) => count > 1).map(([key]) => key));
+  }, [hearings]);
+
+  const today = todayIso();
+  const conflictCount = clashKeys.size;
+
   return (
     <AppShell
       title="Court diary"
-      subtitle="Week of 3–8 August 2026 · 1 listing conflict detected"
-      action={
-        <button
-          type="button"
-          className="rounded bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-ink"
-        >
-          Add hearing
-        </button>
+      subtitle={
+        loading
+          ? "Loading…"
+          : `${hearings.length} hearings on record${conflictCount > 0 ? ` · ${conflictCount} listing conflict${conflictCount > 1 ? "s" : ""} detected` : ""}`
       }
     >
-      <div className="grid gap-4 xl:grid-cols-[1.5fr_1fr]">
-        <section className="grid gap-px overflow-hidden rounded border border-border bg-border sm:grid-cols-3">
-          {week.map((day) => (
-            <div key={day.day} className="min-h-36 bg-card p-4">
+      <form
+        onSubmit={handleCreate}
+        className="surface-panel mb-6 grid gap-3 rounded p-4 sm:grid-cols-2 lg:grid-cols-5"
+      >
+        <label className="text-sm sm:col-span-2 lg:col-span-1">
+          <span className="text-eyebrow">Matter</span>
+          <input
+            value={form.matterTitle}
+            onChange={(event) => setForm((f) => ({ ...f, matterTitle: event.target.value }))}
+            placeholder="Malhotra v. Sunrise Developers"
+            className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
+          />
+        </label>
+        <label className="text-sm">
+          <span className="text-eyebrow">Court</span>
+          <input
+            value={form.court}
+            onChange={(event) => setForm((f) => ({ ...f, court: event.target.value }))}
+            className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
+          />
+        </label>
+        <label className="text-sm">
+          <span className="text-eyebrow">Date</span>
+          <input
+            type="date"
+            value={form.hearingDate}
+            onChange={(event) => setForm((f) => ({ ...f, hearingDate: event.target.value }))}
+            className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
+          />
+        </label>
+        <label className="text-sm">
+          <span className="text-eyebrow">Time</span>
+          <input
+            type="time"
+            value={form.hearingTime}
+            onChange={(event) => setForm((f) => ({ ...f, hearingTime: event.target.value }))}
+            className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
+          />
+        </label>
+        <label className="text-sm">
+          <span className="text-eyebrow">Purpose</span>
+          <input
+            value={form.purpose}
+            onChange={(event) => setForm((f) => ({ ...f, purpose: event.target.value }))}
+            className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
+          />
+        </label>
+        <div className="flex items-end sm:col-span-2 lg:col-span-5">
+          <button
+            type="submit"
+            disabled={creating || !form.matterTitle.trim() || !form.hearingDate}
+            className="flex items-center gap-2 rounded bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-ink disabled:opacity-60"
+          >
+            {creating ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
+            Add hearing
+          </button>
+        </div>
+      </form>
+
+      {error ? (
+        <p className="mb-4 rounded border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          {error}
+        </p>
+      ) : null}
+
+      {loading ? (
+        <p className="text-sm text-muted-foreground">Loading hearings…</p>
+      ) : grouped.length === 0 ? (
+        <p className="text-sm text-muted-foreground">No hearings yet — add your first one above.</p>
+      ) : (
+        <div className="space-y-6">
+          {grouped.map(([date, items]) => (
+            <section key={date} className="surface-panel rounded p-5">
               <div className="flex items-baseline justify-between">
-                <p className="font-display text-sm font-bold">
-                  {day.day} {day.date}
-                </p>
-                {day.today ? <Tag tone="accent">Today</Tag> : null}
+                <h2 className="font-display text-base font-bold">
+                  {new Date(date + "T00:00:00").toLocaleDateString("en-IN", {
+                    weekday: "long",
+                    day: "numeric",
+                    month: "long",
+                  })}
+                </h2>
+                {date === today ? <Tag tone="accent">Today</Tag> : null}
               </div>
-              <ul className="mt-3 space-y-2">
-                {day.items.length === 0 ? (
-                  <li className="text-xs text-muted-foreground">No listings</li>
-                ) : (
-                  day.items.map((item) => (
+              <ul className="mt-4 space-y-3">
+                {items.map((hearing) => {
+                  const isClash = hearing.hearing_time
+                    ? clashKeys.has(`${hearing.hearing_date}|${hearing.hearing_time}`)
+                    : false;
+                  return (
                     <li
-                      key={`${day.day}-${item.time}-${item.matter}`}
+                      key={hearing.id}
                       className={
-                        item.clash
-                          ? "rounded border-l-2 border-destructive bg-destructive/5 p-2"
-                          : "rounded border-l-2 border-accent bg-secondary/50 p-2"
+                        isClash
+                          ? "rounded border-l-2 border-destructive bg-destructive/5 p-3"
+                          : "rounded border-l-2 border-accent bg-secondary/50 p-3"
                       }
                     >
-                      <p className="text-xs font-semibold">{item.time}</p>
-                      <p className="mt-0.5 text-xs">{item.matter}</p>
-                      <p className="mt-0.5 text-[11px] text-muted-foreground">{item.court}</p>
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-medium">{hearing.matter_title}</p>
+                          <p className="mt-0.5 text-xs text-muted-foreground">
+                            {hearing.hearing_time ?? "No time set"} · {hearing.court ?? "Court not set"}
+                            {hearing.purpose ? ` · ${hearing.purpose}` : ""}
+                          </p>
+                          {isClash ? (
+                            <p className="mt-1 text-xs font-medium text-destructive">
+                              Clashes with another hearing at the same time
+                            </p>
+                          ) : null}
+                        </div>
+                        <Tag tone={statusTone[hearing.status] ?? "neutral"}>
+                          {statusLabel[hearing.status] ?? hearing.status}
+                        </Tag>
+                      </div>
+                      <div className="mt-2 flex gap-2">
+                        {(["confirmed", "adjourned", "completed"] as const).map((s) => (
+                          <button
+                            key={s}
+                            type="button"
+                            onClick={() => markStatus(hearing.id, s)}
+                            className="rounded border border-input px-2.5 py-1 text-xs transition-colors hover:bg-secondary"
+                          >
+                            {statusLabel[s]}
+                          </button>
+                        ))}
+                      </div>
                     </li>
-                  ))
-                )}
+                  );
+                })}
               </ul>
-            </div>
+            </section>
           ))}
-        </section>
-
-        <div className="space-y-4">
-          <section className="surface-panel rounded p-5">
-            <h2 className="font-display text-lg font-bold">Today's appearances</h2>
-            <ul className="mt-4 space-y-4">
-              {todaysDiary.map((hearing) => (
-                <li
-                  key={hearing.id}
-                  className="border-b border-border pb-4 last:border-0 last:pb-0"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-medium">{hearing.matter}</p>
-                      <p className="mt-0.5 text-xs text-muted-foreground">
-                        {hearing.time} · {hearing.court} · {hearing.item}
-                      </p>
-                      <p className="mt-1 text-xs">{hearing.purpose}</p>
-                    </div>
-                    <Tag tone={statusTone[hearing.status]}>{hearing.status}</Tag>
-                  </div>
-                  <div className="mt-3 flex gap-2">
-                    {["Mark appearance", "Adjourned", "Record outcome"].map((label) => (
-                      <button
-                        key={label}
-                        type="button"
-                        className="rounded border border-input px-2.5 py-1 text-xs transition-colors hover:bg-secondary"
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </section>
-
-          <section className="rounded border-l-2 border-destructive bg-destructive/5 p-5">
-            <h2 className="font-display text-base font-bold">Conflict on 6 August</h2>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Two matters are listed at 10:30 — Delhi High Court Court 12 and Family Court, Saket.
-              Brief a junior or move for a pass-over.
-            </p>
-          </section>
         </div>
-      </div>
+      )}
     </AppShell>
   );
 }
