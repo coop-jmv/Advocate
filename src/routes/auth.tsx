@@ -8,16 +8,16 @@ export const Route = createFileRoute("/auth")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Sign in — Advocate Companion" },
+      { title: "Sign in — Wakilio" },
       {
         name: "description",
         content:
           "Sign in to your chamber workspace to manage matters, court diary, documents and AI drafting for your practice.",
       },
-      { property: "og:title", content: "Sign in — Advocate Companion" },
+      { property: "og:title", content: "Sign in — Wakilio" },
       {
         property: "og:description",
-        content: "Secure sign-in for Indian advocates using Advocate Companion.",
+        content: "Secure sign-in for Indian advocates using Wakilio.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -102,7 +102,7 @@ function AuthPage() {
           <span className="flex size-9 items-center justify-center rounded bg-primary text-primary-foreground">
             <Scale className="size-4" />
           </span>
-          <span className="font-display text-base font-bold">Advocate Companion</span>
+          <span className="font-display text-base font-bold">Wakilio</span>
         </Link>
 
         <div className="surface-panel rounded p-6">
@@ -195,7 +195,7 @@ function AuthPage() {
           </form>
 
           <p className="mt-5 text-center text-sm text-muted-foreground">
-            {mode === "signin" ? "New to Advocate Companion?" : "Already have an account?"}{" "}
+            {mode === "signin" ? "New to Wakilio?" : "Already have an account?"}{" "}
             <button
               type="button"
               onClick={() => setMode(mode === "signin" ? "signup" : "signin")}

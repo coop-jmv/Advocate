@@ -5,13 +5,13 @@ import { SiteHeader, SiteFooter } from "@/components/site/SiteChrome";
 export const Route = createFileRoute("/pricing")({
   head: () => ({
     meta: [
-      { title: "Pricing — Advocate Companion" },
+      { title: "Pricing — Wakilio" },
       {
         name: "description",
         content:
           "Subscription plans for solo advocates, chambers and small law firms, billed per user per month in Indian rupees with GST invoices.",
       },
-      { property: "og:title", content: "Pricing — Advocate Companion" },
+      { property: "og:title", content: "Pricing — Wakilio" },
       {
         property: "og:description",
         content:

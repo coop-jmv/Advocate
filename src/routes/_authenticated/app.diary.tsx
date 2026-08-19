@@ -9,9 +9,9 @@ import { createHearing, listHearings, updateHearingStatus } from "@/lib/diary.fu
 export const Route = createFileRoute("/_authenticated/app/diary")({
   head: () => ({
     meta: [
-      { title: "Court diary — Advocate Companion" },
+      { title: "Court diary — Wakilio" },
       { name: "description", content: "Hearings for your chamber, grouped by date." },
-      { property: "og:title", content: "Court diary — Advocate Companion" },
+      { property: "og:title", content: "Court diary — Wakilio" },
       { property: "og:description", content: "Hearings for your chamber, grouped by date." },
     ],
   }),

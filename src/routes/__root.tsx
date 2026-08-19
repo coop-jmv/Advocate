@@ -80,16 +80,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Advocate Companion — Practice Management for Indian Advocates" },
+      { title: "Wakilio — Practice Management for Indian Advocates" },
       {
         name: "description",
         content:
           "Cases, court diary, documents with OCR, clients and GST billing in one mobile-first workspace built for Indian advocates and law firms.",
       },
-      { name: "author", content: "Advocate Companion" },
+      { name: "author", content: "Wakilio" },
       {
         property: "og:title",
-        content: "Advocate Companion — Practice Management for Indian Advocates",
+        content: "Wakilio — Practice Management for Indian Advocates",
       },
       {
         property: "og:description",
@@ -102,7 +102,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
-      { name: "apple-mobile-web-app-title", content: "Advocate" },
+      { name: "apple-mobile-web-app-title", content: "Wakilio" },
     ],
     links: [
       {

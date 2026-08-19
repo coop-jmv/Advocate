@@ -16,7 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 export const Route = createFileRoute("/_authenticated/app/team")({
   head: () => ({
     meta: [
-      { title: "Team — Advocate Companion" },
+      { title: "Team — Wakilio" },
       { name: "description", content: "Manage who has access to your chamber's account." },
     ],
   }),

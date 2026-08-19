@@ -9,9 +9,9 @@ import { createClient, listClients } from "@/lib/matters.functions";
 export const Route = createFileRoute("/_authenticated/app/clients")({
   head: () => ({
     meta: [
-      { title: "Clients — Advocate Companion" },
+      { title: "Clients — Wakilio" },
       { name: "description", content: "Client register for your chamber." },
-      { property: "og:title", content: "Clients — Advocate Companion" },
+      { property: "og:title", content: "Clients — Wakilio" },
       { property: "og:description", content: "Client register for your chamber." },
     ],
   }),

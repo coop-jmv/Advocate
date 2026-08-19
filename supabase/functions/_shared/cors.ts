@@ -2,7 +2,7 @@
 // origin is the same as the web app's — there's no separate capacitor://
 // origin to allow here. localhost entries cover `vite dev`.
 const ALLOWED_ORIGINS = new Set([
-  "https://advocate.dhanapalan-advocate.workers.dev",
+  "https://wakilio.dhanapalan-advocate.workers.dev",
   "http://localhost:5173",
   "http://localhost:3000",
 ]);

@@ -8,7 +8,7 @@ import { listAuditLog } from "@/lib/audit.functions";
 export const Route = createFileRoute("/_authenticated/app/audit-log")({
   head: () => ({
     meta: [
-      { title: "Audit log — Advocate Companion" },
+      { title: "Audit log — Wakilio" },
       {
         name: "description",
         content: "Security-relevant activity for your chamber: logins, and every create, update and delete.",

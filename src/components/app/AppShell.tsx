@@ -66,7 +66,7 @@ export function AppShell({
             <Scale className="size-4" />
           </span>
           <span className="font-display text-sm font-bold text-sidebar-accent-foreground md:hidden lg:inline">
-            Advocate Companion
+            Wakilio
           </span>
         </Link>
 

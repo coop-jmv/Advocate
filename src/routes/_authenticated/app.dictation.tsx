@@ -46,13 +46,13 @@ const reviewTone: Record<string, Tone> = {
 export const Route = createFileRoute("/_authenticated/app/dictation")({
   head: () => ({
     meta: [
-      { title: "Voice dictation — Advocate Companion" },
+      { title: "Voice dictation — Wakilio" },
       {
         name: "description",
         content:
           "Dictate notes, drafts and case briefs by voice, convert speech to text, review the formatted draft and print it from your chamber workspace.",
       },
-      { property: "og:title", content: "Voice dictation — Advocate Companion" },
+      { property: "og:title", content: "Voice dictation — Wakilio" },
       {
         property: "og:description",
         content:

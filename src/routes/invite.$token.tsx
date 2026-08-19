@@ -6,7 +6,7 @@ import { logAuthEvent } from "@/lib/edge-functions";
 
 export const Route = createFileRoute("/invite/$token")({
   ssr: false,
-  head: () => ({ meta: [{ title: "You're invited — Advocate Companion" }] }),
+  head: () => ({ meta: [{ title: "You're invited — Wakilio" }] }),
   component: InvitePage,
 });
 
@@ -78,7 +78,7 @@ function InvitePage() {
           <span className="flex size-9 items-center justify-center rounded bg-primary text-primary-foreground">
             <Scale className="size-4" />
           </span>
-          <span className="font-display text-base font-bold">Advocate Companion</span>
+          <span className="font-display text-base font-bold">Wakilio</span>
         </Link>
 
         <div className="surface-panel rounded p-6">
