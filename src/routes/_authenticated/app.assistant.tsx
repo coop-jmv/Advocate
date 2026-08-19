@@ -6,7 +6,7 @@ import { AppShell } from "@/components/app/AppShell";
 import { Markdown } from "@/components/app/Markdown";
 import { deleteConversation, listConversations, listMessages } from "@/lib/ai.functions";
 import { askAssistant } from "@/lib/edge-functions";
-import { matters } from "@/lib/mock-data";
+import { listMatters } from "@/lib/matters.functions";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/app/assistant")({
@@ -33,6 +33,7 @@ export const Route = createFileRoute("/_authenticated/app/assistant")({
 
 type Thread = { id: string; title: string; matter_ref: string | null; updated_at: string };
 type Message = { id: string; role: string; content: string };
+type MatterOption = { id: string; title: string };
 
 const SUGGESTIONS = [
   "What must I file before the next hearing in this matter?",
@@ -45,12 +46,14 @@ function Assistant() {
   const loadThreads = useServerFn(listConversations);
   const loadMessages = useServerFn(listMessages);
   const removeThread = useServerFn(deleteConversation);
+  const loadMatters = useServerFn(listMatters);
 
   const [threads, setThreads] = useState<Thread[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [matterRef, setMatterRef] = useState("");
+  const [matters, setMatters] = useState<MatterOption[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const endRef = useRef<HTMLDivElement | null>(null);
@@ -59,7 +62,11 @@ function Assistant() {
     void loadThreads()
       .then(setThreads)
       .catch(() => setThreads([]));
-  }, [loadThreads]);
+    void loadMatters()
+      .then((rows) => setMatters((rows as { id: string; title: string }[]).map((m) => ({ id: m.id, title: m.title }))))
+      .catch(() => setMatters([]));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (!activeId) {
@@ -168,8 +175,8 @@ function Assistant() {
             >
               <option value="">No specific matter</option>
               {matters.map((matter) => (
-                <option key={matter.id} value={`${matter.id} — ${matter.title} (${matter.court})`}>
-                  {matter.id} — {matter.client}
+                <option key={matter.id} value={matter.title}>
+                  {matter.title}
                 </option>
               ))}
             </select>

@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Scale, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { logAuthEvent } from "@/lib/edge-functions";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -53,7 +54,7 @@ function AuthPage() {
     setNotice(null);
     try {
       if (mode === "signup") {
-        const { error: signUpError } = await supabase.auth.signUp({
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -62,6 +63,7 @@ function AuthPage() {
           },
         });
         if (signUpError) throw signUpError;
+        void logAuthEvent({ event: "signup", email, userId: signUpData.user?.id });
         const { data } = await supabase.auth.getSession();
         if (data.session) {
           void navigate({ to: "/app" });
@@ -74,6 +76,7 @@ function AuthPage() {
       if (signInError) throw signInError;
       void navigate({ to: "/app" });
     } catch (cause) {
+      if (mode === "signin") void logAuthEvent({ event: "login_failed", email });
       setError(cause instanceof Error ? cause.message : "Could not complete that request.");
     } finally {
       setBusy(false);
@@ -86,7 +89,10 @@ function AuthPage() {
       provider: "google",
       options: { redirectTo: `${window.location.origin}/app` },
     });
-    if (oauthError) setError(oauthError.message);
+    if (oauthError) {
+      void logAuthEvent({ event: "login_failed", email: "(google oauth)" });
+      setError(oauthError.message);
+    }
   }
 
   return (

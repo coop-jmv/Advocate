@@ -1,4 +1,4 @@
-import { Link, Outlet } from "@tanstack/react-router";
+import { Link, Outlet, useNavigate } from "@tanstack/react-router";
 import {
   LayoutDashboard,
   Briefcase,
@@ -14,7 +14,12 @@ import {
   Sparkles,
   PenLine,
   WifiOff,
+  LogOut,
+  ShieldCheck,
+  UsersRound,
 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { logAuthEvent } from "@/lib/edge-functions";
 
 const navItems = [
   { to: "/app", label: "Dashboard", icon: LayoutDashboard, exact: true },
@@ -27,6 +32,8 @@ const navItems = [
   { to: "/app/dictation", label: "Voice dictation", icon: Mic },
   { to: "/app/clients", label: "Clients", icon: Users },
   { to: "/app/billing", label: "Billing", icon: ReceiptIndianRupee },
+  { to: "/app/team", label: "Team", icon: UsersRound },
+  { to: "/app/audit-log", label: "Audit log", icon: ShieldCheck },
 ] as const;
 
 export function AppShell({
@@ -40,6 +47,14 @@ export function AppShell({
   action?: React.ReactNode;
   children: React.ReactNode;
 }) {
+  const navigate = useNavigate();
+
+  async function handleSignOut() {
+    await logAuthEvent({ event: "logout" });
+    await supabase.auth.signOut();
+    void navigate({ to: "/auth" });
+  }
+
   return (
     <div className="min-h-screen bg-background md:flex">
       <aside className="bg-sidebar text-sidebar-foreground md:flex md:w-16 md:shrink-0 md:flex-col md:items-center lg:w-60 lg:items-stretch">
@@ -89,6 +104,15 @@ export function AppShell({
               <p className="font-semibold text-sidebar-accent-foreground">Adv. Priya Nair</p>
               <p className="text-sidebar-foreground/65">Nair &amp; Associates</p>
             </div>
+            <button
+              type="button"
+              onClick={() => void handleSignOut()}
+              title="Sign out"
+              aria-label="Sign out"
+              className="ml-auto rounded p-2 text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground lg:ml-2"
+            >
+              <LogOut className="size-4" />
+            </button>
           </div>
         </div>
       </aside>

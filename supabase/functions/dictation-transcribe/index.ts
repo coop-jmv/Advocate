@@ -1,6 +1,6 @@
 import { handleOptions, jsonResponse, errorResponse } from "../_shared/cors.ts";
 import { authedClient, requireUserId } from "../_shared/auth.ts";
-import { transcribeAudio } from "../_shared/ai.ts";
+import { enforceUsageQuota, transcribeAudio } from "../_shared/ai.ts";
 
 function decodeBase64(base64: string): Uint8Array {
   const binary = atob(base64);
@@ -14,27 +14,33 @@ Deno.serve(async (req) => {
   if (preflight) return preflight;
 
   const auth = authedClient(req);
-  if (!auth) return errorResponse("Unauthorized", 401);
+  if (!auth) return errorResponse(req, "Unauthorized", 401);
   const userId = await requireUserId(auth.supabase);
-  if (!userId) return errorResponse("Unauthorized", 401);
+  if (!userId) return errorResponse(req, "Unauthorized", 401);
+
+  try {
+    await enforceUsageQuota(auth.supabase);
+  } catch (cause) {
+    return errorResponse(req, cause instanceof Error ? cause.message : "Quota check failed.", 429);
+  }
 
   let body: { audioBase64: string; language?: string };
   try {
     body = await req.json();
   } catch {
-    return errorResponse("Invalid JSON body");
+    return errorResponse(req, "Invalid JSON body");
   }
-  if (!body.audioBase64) return errorResponse("audioBase64 is required");
+  if (!body.audioBase64) return errorResponse(req, "audioBase64 is required");
 
   const bytes = decodeBase64(body.audioBase64);
   if (bytes.byteLength < 2048) {
-    return errorResponse("That recording was empty — please dictate again.");
+    return errorResponse(req, "That recording was empty — please dictate again.");
   }
 
   try {
     const result = await transcribeAudio(bytes, body.language);
-    return jsonResponse(result);
+    return jsonResponse(req, result);
   } catch (cause) {
-    return errorResponse(cause instanceof Error ? cause.message : "Transcription failed.", 502);
+    return errorResponse(req, cause instanceof Error ? cause.message : "Transcription failed.", 502);
   }
 });

@@ -1,4 +1,4 @@
-project_id = "uwsouirbmhdoldicfxze"
+project_id = "cjcjfdwdlsdgyvshuncn"
 
 # Logflare analytics needs the Docker daemon exposed over TCP on Windows, which
 # Docker Desktop does not do by default. Not needed for local development.

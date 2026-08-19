@@ -1,25 +1,31 @@
 import { handleOptions, jsonResponse, errorResponse } from "../_shared/cors.ts";
 import { authedClient, requireUserId } from "../_shared/auth.ts";
-import { chatComplete, extractJson, LEGAL_SYSTEM_PROMPT } from "../_shared/ai.ts";
+import { chatComplete, enforceUsageQuota, extractJson, LEGAL_SYSTEM_PROMPT } from "../_shared/ai.ts";
 
 Deno.serve(async (req) => {
   const preflight = handleOptions(req);
   if (preflight) return preflight;
 
   const auth = authedClient(req);
-  if (!auth) return errorResponse("Unauthorized", 401);
+  if (!auth) return errorResponse(req, "Unauthorized", 401);
   const userId = await requireUserId(auth.supabase);
-  if (!userId) return errorResponse("Unauthorized", 401);
+  if (!userId) return errorResponse(req, "Unauthorized", 401);
   const { supabase } = auth;
+
+  try {
+    await enforceUsageQuota(supabase);
+  } catch (cause) {
+    return errorResponse(req, cause instanceof Error ? cause.message : "Quota check failed.", 429);
+  }
 
   let body: { name: string; matterRef?: string; text: string };
   try {
     body = await req.json();
   } catch {
-    return errorResponse("Invalid JSON body");
+    return errorResponse(req, "Invalid JSON body");
   }
   if (!body.name?.trim() || !body.text || body.text.length < 20) {
-    return errorResponse("name and text (min 20 chars) are required");
+    return errorResponse(req, "name and text (min 20 chars) are required");
   }
 
   let raw: string;
@@ -28,11 +34,11 @@ Deno.serve(async (req) => {
       { role: "system", content: LEGAL_SYSTEM_PROMPT },
       {
         role: "user",
-        content: `Analyse this legal document for an Indian advocate. Reply with ONLY a JSON object using keys: doc_kind (string), summary (string, max 6 sentences), parties (array of strings), key_dates (array of objects with date and what), tags (array of short strings), risk_notes (string covering limitation, missing annexures, compliance and drafting risks).\n\nDocument name: ${body.name}\n\n---\n${body.text.slice(0, 24000)}`,
+        content: `Analyse this legal document for an Indian advocate. Reply with ONLY a JSON object using keys: doc_kind (string), summary (string, max 6 sentences), parties (array of strings), key_dates (array of objects with date and what), tags (array of short strings), risk_notes (string covering limitation, missing annexures, compliance and drafting risks). All string values must be plain text — no markdown syntax (no **bold**, no _italics_, no # headings) — they are displayed as plain text, not rendered as markdown.\n\nDocument name: ${body.name}\n\n---\n${body.text.slice(0, 24000)}`,
       },
     ]);
   } catch (cause) {
-    return errorResponse(cause instanceof Error ? cause.message : "AI request failed.", 502);
+    return errorResponse(req, cause instanceof Error ? cause.message : "AI request failed.", 502);
   }
 
   const parsed = extractJson(raw) as Record<string, unknown> | null;
@@ -54,10 +60,10 @@ Deno.serve(async (req) => {
     .from("ai_documents")
     .insert(record)
     .select(
-      "id, name, matter_ref, doc_kind, summary, parties, key_dates, tags, risk_notes, created_at",
+      "id, name, matter_ref, doc_kind, summary, parties, key_dates, tags, risk_notes, status, created_at",
     )
     .single();
-  if (error) return errorResponse(error.message, 500);
+  if (error) return errorResponse(req, error.message, 500);
 
-  return jsonResponse(saved);
+  return jsonResponse(req, saved);
 });
