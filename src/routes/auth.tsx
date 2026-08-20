@@ -131,18 +131,6 @@ function AuthPage() {
     }
   }
 
-  async function handleGoogle() {
-    setError(null);
-    const { error: oauthError } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: `${window.location.origin}/app` },
-    });
-    if (oauthError) {
-      void logAuthEvent({ event: "login_failed", email: "(google oauth)" });
-      setError(oauthError.message);
-    }
-  }
-
   return (
     <main className="flex min-h-screen items-center justify-center bg-secondary/40 px-4 py-12">
       <div className="w-full max-w-md">
@@ -185,27 +173,7 @@ function AuthPage() {
             </ul>
           ) : null}
 
-          {mode !== "forgot" ? (
-            <>
-              <button
-                type="button"
-                onClick={handleGoogle}
-                className="mt-5 flex w-full items-center justify-center gap-2 rounded border border-input px-4 py-2.5 text-sm font-semibold transition-colors hover:bg-secondary"
-              >
-                Continue with Google
-              </button>
-
-              <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground">
-                <span className="h-px flex-1 bg-border" />
-                or use email
-                <span className="h-px flex-1 bg-border" />
-              </div>
-            </>
-          ) : (
-            <div className="mt-5" />
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="mt-5 space-y-4">
             {mode === "signup" ? (
               <>
                 <label className="block text-sm">
