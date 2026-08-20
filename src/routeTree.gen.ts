@@ -23,6 +23,7 @@ import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/ap
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as AdminAdminIndexRouteImport } from './routes/_admin/admin.index'
 import { Route as AdminAdminAuditLogRouteImport } from './routes/_admin/admin.audit-log'
+import { Route as AdminAdminCauseListSourcesRouteImport } from './routes/_admin/admin.cause-list-sources'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
 import { Route as AuthenticatedAppAssistantRouteImport } from './routes/_authenticated/app.assistant'
 import { Route as AuthenticatedAppAuditLogRouteImport } from './routes/_authenticated/app.audit-log'
@@ -109,6 +110,12 @@ const AdminAdminAuditLogRoute = AdminAdminAuditLogRouteImport.update({
   path: '/audit-log',
   getParentRoute: () => AdminAdminRoute,
 } as any)
+const AdminAdminCauseListSourcesRoute =
+  AdminAdminCauseListSourcesRouteImport.update({
+    id: '/cause-list-sources',
+    path: '/cause-list-sources',
+    getParentRoute: () => AdminAdminRoute,
+  } as any)
 const AuthenticatedAppIndexRoute = AuthenticatedAppIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -216,6 +223,7 @@ export interface FileRoutesByFullPath {
   '/app': typeof AuthenticatedAppRouteWithChildren
   '/invite/$token': typeof InviteTokenRoute
   '/admin/audit-log': typeof AdminAdminAuditLogRoute
+  '/admin/cause-list-sources': typeof AdminAdminCauseListSourcesRoute
   '/app/assistant': typeof AuthenticatedAppAssistantRoute
   '/app/audit-log': typeof AuthenticatedAppAuditLogRoute
   '/app/billing': typeof AuthenticatedAppBillingRoute
@@ -245,6 +253,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/invite/$token': typeof InviteTokenRoute
   '/admin/audit-log': typeof AdminAdminAuditLogRoute
+  '/admin/cause-list-sources': typeof AdminAdminCauseListSourcesRoute
   '/app/assistant': typeof AuthenticatedAppAssistantRoute
   '/app/audit-log': typeof AuthenticatedAppAuditLogRoute
   '/app/billing': typeof AuthenticatedAppBillingRoute
@@ -279,6 +288,7 @@ export interface FileRoutesById {
   '/_authenticated/app': typeof AuthenticatedAppRouteWithChildren
   '/invite/$token': typeof InviteTokenRoute
   '/_admin/admin/audit-log': typeof AdminAdminAuditLogRoute
+  '/_admin/admin/cause-list-sources': typeof AdminAdminCauseListSourcesRoute
   '/_authenticated/app/assistant': typeof AuthenticatedAppAssistantRoute
   '/_authenticated/app/audit-log': typeof AuthenticatedAppAuditLogRoute
   '/_authenticated/app/billing': typeof AuthenticatedAppBillingRoute
@@ -312,6 +322,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/invite/$token'
     | '/admin/audit-log'
+    | '/admin/cause-list-sources'
     | '/app/assistant'
     | '/app/audit-log'
     | '/app/billing'
@@ -341,6 +352,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/invite/$token'
     | '/admin/audit-log'
+    | '/admin/cause-list-sources'
     | '/app/assistant'
     | '/app/audit-log'
     | '/app/billing'
@@ -374,6 +386,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app'
     | '/invite/$token'
     | '/_admin/admin/audit-log'
+    | '/_admin/admin/cause-list-sources'
     | '/_authenticated/app/assistant'
     | '/_authenticated/app/audit-log'
     | '/_authenticated/app/billing'
@@ -507,6 +520,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAdminAuditLogRouteImport
       parentRoute: typeof AdminAdminRoute
     }
+    '/_admin/admin/cause-list-sources': {
+      id: '/_admin/admin/cause-list-sources'
+      path: '/cause-list-sources'
+      fullPath: '/admin/cause-list-sources'
+      preLoaderRoute: typeof AdminAdminCauseListSourcesRouteImport
+      parentRoute: typeof AdminAdminRoute
+    }
     '/_authenticated/app/': {
       id: '/_authenticated/app/'
       path: '/'
@@ -631,12 +651,14 @@ declare module '@tanstack/react-router' {
 
 interface AdminAdminRouteChildren {
   AdminAdminAuditLogRoute: typeof AdminAdminAuditLogRoute
+  AdminAdminCauseListSourcesRoute: typeof AdminAdminCauseListSourcesRoute
   AdminAdminIndexRoute: typeof AdminAdminIndexRoute
   AdminAdminSettingsIntegrationsRoute: typeof AdminAdminSettingsIntegrationsRoute
 }
 
 const AdminAdminRouteChildren: AdminAdminRouteChildren = {
   AdminAdminAuditLogRoute: AdminAdminAuditLogRoute,
+  AdminAdminCauseListSourcesRoute: AdminAdminCauseListSourcesRoute,
   AdminAdminIndexRoute: AdminAdminIndexRoute,
   AdminAdminSettingsIntegrationsRoute: AdminAdminSettingsIntegrationsRoute,
 }
