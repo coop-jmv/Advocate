@@ -50,6 +50,9 @@ function Cases() {
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [filterText, setFilterText] = useState(() =>
+    typeof window === "undefined" ? "" : new URLSearchParams(window.location.search).get("q") || "",
+  );
   const [form, setForm] = useState({
     title: "",
     clientName: "",
@@ -108,6 +111,15 @@ function Cases() {
       setCreating(false);
     }
   }
+
+  const needle = filterText.trim().toLowerCase();
+  const filteredMatters = needle
+    ? matters.filter((m) =>
+        [m.title, m.case_number, m.client_name, m.opposing_party, m.court]
+          .filter(Boolean)
+          .some((field) => field!.toLowerCase().includes(needle)),
+      )
+    : matters;
 
   return (
     <AppShell
@@ -186,13 +198,24 @@ function Cases() {
         </p>
       ) : null}
 
+      {!loading && matters.length > 0 ? (
+        <input
+          value={filterText}
+          onChange={(event) => setFilterText(event.target.value)}
+          placeholder="Filter by matter, case number, client or opposing party"
+          className="mb-4 w-full max-w-md rounded border border-input bg-background px-3 py-2 text-sm"
+        />
+      ) : null}
+
       {loading ? (
         <p className="text-sm text-muted-foreground">Loading matters…</p>
       ) : matters.length === 0 ? (
         <p className="text-sm text-muted-foreground">No matters yet — add your first one above.</p>
+      ) : filteredMatters.length === 0 ? (
+        <p className="text-sm text-muted-foreground">No matters match "{filterText.trim()}".</p>
       ) : (
         <DataTable headers={["Matter", "Case number", "Court", "Status", "Filed"]}>
-          {matters.map((matter) => (
+          {filteredMatters.map((matter) => (
             <tr key={matter.id} className="hover:bg-secondary/40">
               <td className="px-4 py-3">
                 <p className="font-medium">{matter.title}</p>

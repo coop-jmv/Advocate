@@ -1,9 +1,10 @@
 import { Link, Outlet, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { LayoutGrid, Scale, Search, Bell, LogOut } from "lucide-react";
+import { LayoutGrid, Scale, Bell, LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { logAuthEvent } from "@/lib/edge-functions";
 import { APP_DESTINATIONS } from "@/lib/navigation";
+import { HeaderSearch } from "@/components/app/HeaderSearch";
 
 export function AppShell({
   title,
@@ -130,10 +131,7 @@ export function AppShell({
             ) : null}
           </div>
           <div className="flex items-center gap-2">
-            <div className="hidden items-center gap-2 rounded border border-input px-3 py-2 text-sm text-muted-foreground md:flex">
-              <Search className="size-4" />
-              <span>Search CNR, matter or client</span>
-            </div>
+            <HeaderSearch />
             <button
               type="button"
               className="relative rounded border border-input p-2 transition-colors hover:bg-secondary"

@@ -881,6 +881,15 @@ export type Database = {
       };
       purge_expired_chambers: { Args: { p_dry_run?: boolean }; Returns: Json };
       remove_member: { Args: { p_user_id: string }; Returns: undefined };
+      search_records: {
+        Args: { p_query: string };
+        Returns: {
+          id: string;
+          kind: string;
+          subtitle: string;
+          title: string;
+        }[];
+      };
       set_member_role: {
         Args: { p_role: string; p_user_id: string };
         Returns: undefined;
