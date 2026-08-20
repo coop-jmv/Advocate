@@ -102,19 +102,20 @@ export function AppShell({
           </span>
         </Link>
 
-        <nav className="flex flex-wrap gap-1 p-3 md:w-full md:flex-col md:flex-nowrap md:items-center lg:items-stretch">
+        <nav className="grid grid-cols-4 gap-1 border-b border-sidebar-border/60 px-2.5 py-2.5 sm:grid-cols-6 md:flex md:w-full md:flex-col md:gap-1 md:border-b-0 md:p-3 md:px-0 md:items-center lg:items-stretch">
           {navItems.map((item) => (
             <Link
               key={item.to}
               to={item.to}
               activeOptions={{ exact: "exact" in item ? item.exact : false }}
               title={item.label}
-              className="flex shrink-0 items-center gap-2 rounded px-2.5 py-1.5 text-xs text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground sm:gap-2.5 sm:px-3 sm:py-2 sm:text-sm md:w-11 md:justify-center md:px-0 lg:w-full lg:justify-start lg:px-3"
+              className="flex min-h-[3.25rem] shrink-0 flex-col items-center justify-center gap-1 rounded-lg px-1 py-1.5 text-center text-[11px] leading-tight text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground md:min-h-0 md:w-11 md:flex-row md:justify-center md:gap-2.5 md:rounded md:px-0 md:py-2 md:text-sm lg:w-full lg:justify-start lg:px-3"
               activeProps={{
-                className: "bg-sidebar-accent text-sidebar-accent-foreground font-medium",
+                className:
+                  "bg-sidebar-accent text-sidebar-accent-foreground font-semibold shadow-sm ring-1 ring-sidebar-primary/40 md:ring-0",
               }}
             >
-              <item.icon className="size-4 shrink-0" />
+              <item.icon className="size-5 shrink-0 md:size-4" />
               <span className="md:hidden lg:inline">{item.label}</span>
             </Link>
           ))}
@@ -154,7 +155,9 @@ export function AppShell({
           <div className="min-w-0 flex-1">
             <h1 className="truncate text-lg font-bold sm:text-xl">{title}</h1>
             {subtitle ? (
-              <p className="mt-0.5 truncate text-sm text-muted-foreground">{subtitle}</p>
+              <p className="mt-0.5 line-clamp-2 text-sm text-muted-foreground sm:truncate">
+                {subtitle}
+              </p>
             ) : null}
           </div>
           <div className="flex items-center gap-2">
