@@ -1,9 +1,8 @@
-// Platform-agnostic request handler shared by the Cloudflare Workers entry
-// (src/server.ts) and the Vercel Edge Function entry (src/server.vercel.ts).
-// Deliberately Web-standard Request -> Response only, no env/ctx params:
-// both platforms expose configured environment variables via the native
-// process.env in their respective runtimes, so nothing platform-specific
-// needs to be threaded through here.
+// The app's request handling, kept separate from the Cloudflare Workers entry
+// that wraps it (src/server.ts). Deliberately Web-standard Request -> Response
+// with no env/ctx params: configured values are read from process.env (via
+// wrangler.toml's [vars], which nodejs_compat exposes), so nothing
+// platform-specific is threaded through here and this stays portable.
 import { consumeLastCapturedError } from "./error-capture";
 import { renderErrorPage } from "./error-page";
 

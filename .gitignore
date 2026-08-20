@@ -30,8 +30,6 @@ supabase/snippets/
 .wrangler/
 .dev.vars
 
-# Vercel
-.vercel/
 
 # Editor directories and files
 .vscode/*
