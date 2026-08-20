@@ -5,6 +5,7 @@ import {
   CreditCard,
   FolderOpen,
   LayoutDashboard,
+  ListChecks,
   type LucideIcon,
   Mic,
   PenLine,
@@ -79,6 +80,13 @@ export const APP_DESTINATIONS = [
     icon: CalendarDays,
     group: "Today",
     blurb: "Cause lists, hearings and reminders",
+  },
+  {
+    to: "/app/cause-list",
+    label: "Cause list",
+    icon: ListChecks,
+    group: "Today",
+    blurb: "New and changed listings, matched to your matters",
   },
   {
     to: "/app/documents",
