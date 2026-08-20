@@ -26,12 +26,13 @@ export const Route = createFileRoute("/auth")({
   component: AuthPage,
 });
 
-// On a phone the sidebar collapses to a Menu button, so signing in lands on
-// the launcher (every section as a tile) rather than straight into the
-// dashboard. Wider screens keep the sidebar and go to the dashboard as before.
-function landingRoute(): "/app" | "/app/menu" {
+// On a phone, checking today's hearings is the first thing a lawyer does —
+// signing in lands straight on the court diary rather than the dashboard or
+// the tile menu. Wider screens keep the sidebar and go to the dashboard as
+// before, where the diary is already front and center in the Court Brief.
+function landingRoute(): "/app" | "/app/diary" {
   if (typeof window === "undefined") return "/app";
-  return window.matchMedia("(max-width: 767px)").matches ? "/app/menu" : "/app";
+  return window.matchMedia("(max-width: 767px)").matches ? "/app/diary" : "/app";
 }
 
 // Indian mobiles are the norm here, so a bare 10-digit number is accepted and
