@@ -104,6 +104,20 @@ export const getMorningBrief = createServerFn({ method: "GET" })
       .maybeSingle();
     const advocateName = profile?.full_name ?? null;
 
+    // Governance checkpoint: a platform admin can turn the AI layer off for a
+    // specific chamber from /admin/settings/integrations, independent of the
+    // deterministic Brief itself (which always works). This is the value the
+    // client uses to decide whether to offer "Generate AI prep notes" at
+    // all — the real enforcement, which this can't bypass, lives in the
+    // ai-morning-brief edge function, which checks the same flag itself
+    // before ever calling the AI service layer.
+    const { data: license } = await context.supabase
+      .from("licenses")
+      .select("integrations")
+      .maybeSingle();
+    const integrations = (license?.integrations ?? {}) as { ai_morning_brief_enabled?: boolean };
+    const aiEnabled = integrations.ai_morning_brief_enabled ?? true;
+
     const { data: todaysHearingsRaw, error: hearingsError } = await context.supabase
       .from("hearings")
       .select("id, matter_id, matter_title, court, hearing_date, hearing_time, purpose, status")
@@ -113,7 +127,13 @@ export const getMorningBrief = createServerFn({ method: "GET" })
 
     const hearings = todaysHearingsRaw ?? [];
     if (hearings.length === 0) {
-      return { date: targetDate, advocateName, items: [] as BriefItem[], conflictCount: 0 };
+      return {
+        date: targetDate,
+        advocateName,
+        aiEnabled,
+        items: [] as BriefItem[],
+        conflictCount: 0,
+      };
     }
 
     const matterIds = [
@@ -263,5 +283,5 @@ export const getMorningBrief = createServerFn({ method: "GET" })
       };
     });
 
-    return { date: targetDate, advocateName, items, conflictCount: clashKeys.size };
+    return { date: targetDate, advocateName, aiEnabled, items, conflictCount: clashKeys.size };
   });

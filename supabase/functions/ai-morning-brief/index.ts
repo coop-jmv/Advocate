@@ -60,6 +60,24 @@ Deno.serve(async (req) => {
   const userId = await requireUserId(auth.supabase);
   if (!userId) return errorResponse(req, "Unauthorized", 401);
 
+  // Governance checkpoint, enforced here rather than trusted from the
+  // client: a platform admin can turn the AI layer off for a chamber from
+  // /admin/settings/integrations independent of the deterministic Brief
+  // itself. Calling this function directly (bypassing the UI's own check in
+  // CourtMorningBrief.tsx) still gets refused.
+  const { data: license } = await auth.supabase
+    .from("licenses")
+    .select("integrations")
+    .maybeSingle();
+  const integrations = (license?.integrations ?? {}) as { ai_morning_brief_enabled?: boolean };
+  if (integrations.ai_morning_brief_enabled === false) {
+    return errorResponse(
+      req,
+      "AI prep notes are turned off for this chamber by your workspace administrator.",
+      403,
+    );
+  }
+
   try {
     await enforceUsageQuota(auth.supabase);
   } catch (cause) {
