@@ -59,15 +59,19 @@ function isServerFnRequest(request: Request): boolean {
 // document ends up dumped verbatim into the UI as if it were an error
 // string. Server function callers get a short, plain-text message instead.
 function catastrophicResponse(request: Request): Response {
+  // X-Error-Kind is a deliberately permanent diagnostic: it names which of
+  // the two branches below served this specific error, straight from the
+  // deployed code — the fastest way to confirm what's actually live without
+  // needing platform log access, on any host.
   if (isServerFnRequest(request)) {
     return new Response("Something went wrong loading that data. Please try again.", {
       status: 500,
-      headers: { "content-type": "text/plain; charset=utf-8" },
+      headers: { "content-type": "text/plain; charset=utf-8", "x-error-kind": "server-fn" },
     });
   }
   return new Response(renderErrorPage(), {
     status: 500,
-    headers: { "content-type": "text/html; charset=utf-8" },
+    headers: { "content-type": "text/html; charset=utf-8", "x-error-kind": "page" },
   });
 }
 
