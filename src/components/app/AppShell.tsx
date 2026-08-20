@@ -2,6 +2,7 @@ import { Link, Outlet, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
   LayoutDashboard,
+  LayoutGrid,
   Briefcase,
   CalendarDays,
   FolderOpen,
@@ -102,7 +103,7 @@ export function AppShell({
           </span>
         </Link>
 
-        <nav className="grid grid-cols-4 gap-1 border-b border-sidebar-border/60 px-2.5 py-2.5 sm:grid-cols-6 md:flex md:w-full md:flex-col md:gap-1 md:border-b-0 md:p-3 md:px-0 md:items-center lg:items-stretch">
+        <nav className="hidden md:flex md:w-full md:flex-col md:gap-1 md:p-3 md:items-center lg:items-stretch">
           {navItems.map((item) => (
             <Link
               key={item.to}
@@ -173,6 +174,15 @@ export function AppShell({
               <Bell className="size-4" />
               <span className="absolute top-1.5 right-1.5 size-1.5 rounded-full bg-destructive" />
             </button>
+            <Link
+              to="/app/menu"
+              title="Menu"
+              aria-label="Menu"
+              className="rounded border border-input p-2 transition-colors hover:bg-secondary md:hidden"
+              activeProps={{ className: "bg-secondary" }}
+            >
+              <LayoutGrid className="size-4" />
+            </Link>
             <button
               type="button"
               onClick={() => void handleSignOut()}

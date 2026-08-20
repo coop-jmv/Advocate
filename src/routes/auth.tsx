@@ -26,6 +26,14 @@ export const Route = createFileRoute("/auth")({
   component: AuthPage,
 });
 
+// On a phone the sidebar collapses to a Menu button, so signing in lands on
+// the launcher (every section as a tile) rather than straight into the
+// dashboard. Wider screens keep the sidebar and go to the dashboard as before.
+function landingRoute(): "/app" | "/app/menu" {
+  if (typeof window === "undefined") return "/app";
+  return window.matchMedia("(max-width: 767px)").matches ? "/app/menu" : "/app";
+}
+
 function AuthPage() {
   const navigate = useNavigate();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
@@ -40,7 +48,7 @@ function AuthPage() {
   useEffect(() => {
     let active = true;
     void supabase.auth.getSession().then(({ data }) => {
-      if (active && data.session) void navigate({ to: "/app" });
+      if (active && data.session) void navigate({ to: landingRoute() });
     });
     return () => {
       active = false;
@@ -66,7 +74,7 @@ function AuthPage() {
         void logAuthEvent({ event: "signup", email, userId: signUpData.user?.id });
         const { data } = await supabase.auth.getSession();
         if (data.session) {
-          void navigate({ to: "/app" });
+          void navigate({ to: landingRoute() });
           return;
         }
         setNotice("Check your inbox to confirm the email address, then sign in.");
@@ -74,7 +82,7 @@ function AuthPage() {
       }
       const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
       if (signInError) throw signInError;
-      void navigate({ to: "/app" });
+      void navigate({ to: landingRoute() });
     } catch (cause) {
       if (mode === "signin") void logAuthEvent({ event: "login_failed", email });
       setError(cause instanceof Error ? cause.message : "Could not complete that request.");
