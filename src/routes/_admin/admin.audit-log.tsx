@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { ScrollText } from "lucide-react";
+import { Search, ScrollText } from "lucide-react";
 import { DataTable, Tag, type Tone } from "@/components/app/primitives";
 import { listPlatformAuditLog } from "@/lib/audit.functions";
 
@@ -75,6 +75,7 @@ function PlatformAuditLog() {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
 
   useEffect(() => {
     void loadLog()
@@ -85,6 +86,29 @@ function PlatformAuditLog() {
       .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Client-side filter over the already-loaded 200 rows (same approach as
+  // the cases/clients list filters) — matches tenant, actor, action,
+  // resource type or the rendered change summary, so "cancelled" or an
+  // advocate's email both find what you'd expect.
+  const needle = query.trim().toLowerCase();
+  const filteredEntries = useMemo(() => {
+    if (!needle) return entries;
+    return entries.filter((entry) => {
+      const haystack = [
+        entry.tenants?.name,
+        entry.metadata?.name,
+        entry.actor_email,
+        entry.action,
+        entry.resource_type,
+        changeSummary(entry),
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(needle);
+    });
+  }, [entries, needle]);
 
   return (
     <div>
@@ -97,6 +121,16 @@ function PlatformAuditLog() {
         changed from/to.
       </p>
 
+      <label className="relative mt-5 block max-w-sm">
+        <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+        <input
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Search tenant, actor, action, change…"
+          className="w-full rounded border border-input bg-background py-2 pr-3 pl-9 text-sm"
+        />
+      </label>
+
       {error ? (
         <p className="mt-4 rounded border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {error}
@@ -108,9 +142,11 @@ function PlatformAuditLog() {
           <p className="text-sm text-muted-foreground">Loading…</p>
         ) : entries.length === 0 ? (
           <p className="text-sm text-muted-foreground">No tenant or plan changes recorded yet.</p>
+        ) : filteredEntries.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No entries match "{query.trim()}".</p>
         ) : (
           <DataTable headers={["When", "Tenant", "Action", "Resource", "Change", "Actor"]}>
-            {entries.map((entry) => (
+            {filteredEntries.map((entry) => (
               <tr key={entry.id} className="hover:bg-secondary/40">
                 <td className="px-4 py-3 whitespace-nowrap text-xs text-muted-foreground">
                   {new Date(entry.created_at).toLocaleString("en-IN")}
