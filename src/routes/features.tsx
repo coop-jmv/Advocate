@@ -8,13 +8,13 @@ export const Route = createFileRoute("/features")({
       {
         name: "description",
         content:
-          "Module-by-module detail: CNR case linking, cause-list diary, Indic OCR document vault, client portal, GST billing, offline court mode and audit logs.",
+          "Module-by-module detail: case & matter management, hearing diary, Indic OCR document vault, client portal, GST billing and audit logs.",
       },
       { property: "og:title", content: "Features — Wakilio" },
       {
         property: "og:description",
         content:
-          "CNR case linking, cause-list diary, Indic OCR, client portal, GST billing, offline court mode and audit logs.",
+          "Case & matter management, hearing diary, Indic OCR, client portal, GST billing and audit logs.",
       },
     ],
   }),
@@ -36,10 +36,10 @@ const modules = [
     id: "FR-2",
     name: "Case & matter management",
     points: [
-      "Create matters manually or link by 16-character CNR",
-      "Case status, orders and hearing history from e-Courts data providers",
-      "Stage tracking, party details and opposing counsel records",
-      "Conflict-of-interest check before a matter is opened",
+      "Create and track matters by case number, court and stage",
+      "Party details, opposing counsel and case notes in one file",
+      "Filed date, status and full case history retained per matter",
+      "e-Courts (CNR) linking and automated conflict-of-interest checks are on the roadmap",
     ],
   },
   {
@@ -56,10 +56,10 @@ const modules = [
     id: "FR-4",
     name: "Court diary & calendar",
     points: [
-      "Diary synchronised with cause lists where available",
-      "Reminders on push, SMS and WhatsApp for hearings and limitation periods",
-      "Mark appearances, adjournments and outcomes in one tap",
-      "Day, week and month views with conflict detection",
+      "Day, week and month views with listing-conflict detection",
+      "Track hearing purpose, status and outcome per listing",
+      "WhatsApp is licensed on Solo Pro and Chamber; automated sending is on the roadmap",
+      "Push and SMS reminders, and automated cause-list sync, are on the roadmap",
     ],
   },
   {
@@ -98,8 +98,8 @@ const modules = [
     points: [
       "Self-service access, correction and erasure for data principals",
       "Consent capture and withdrawal logging",
-      "Breach-notification workflow to data principals and the Data Protection Board",
-      "Per-firm data export and deletion",
+      "Documented breach-notification commitment to data principals and the Data Protection Board",
+      "Per-chamber data export and account deletion",
     ],
   },
 ];

@@ -47,7 +47,7 @@ const plans = [
     features: [
       "Everything in Solo Basic",
       "Indic OCR intake with review and approval",
-      "WhatsApp reminders and client updates",
+      "WhatsApp licensed for your chamber (automated sending on the roadmap)",
       "Up to 200 matters and 200 clients",
       "AI drafting assistant — 150 requests a day",
       "5 GB document storage",

@@ -337,6 +337,44 @@ export type Database = {
           },
         ];
       };
+      consents: {
+        Row: {
+          granted_at: string;
+          id: string;
+          notice_version: string;
+          purpose: string;
+          tenant_id: string | null;
+          user_id: string;
+          withdrawn_at: string | null;
+        };
+        Insert: {
+          granted_at?: string;
+          id?: string;
+          notice_version: string;
+          purpose: string;
+          tenant_id?: string | null;
+          user_id: string;
+          withdrawn_at?: string | null;
+        };
+        Update: {
+          granted_at?: string;
+          id?: string;
+          notice_version?: string;
+          purpose?: string;
+          tenant_id?: string | null;
+          user_id?: string;
+          withdrawn_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "consents_tenant_id_fkey";
+            columns: ["tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "tenants";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       hearings: {
         Row: {
           court: string | null;
@@ -766,7 +804,11 @@ export type Database = {
     };
     Functions: {
       assert_feature: { Args: { p_feature: string }; Returns: undefined };
+      current_notice_version: { Args: never; Returns: string };
       current_tenant_id: { Args: never; Returns: string };
+      delete_my_account: { Args: never; Returns: Json };
+      export_chamber_data: { Args: never; Returns: Json };
+      export_my_personal_data: { Args: never; Returns: Json };
       get_invite_info: {
         Args: { p_token: string };
         Returns: {
@@ -776,6 +818,7 @@ export type Database = {
           valid: boolean;
         }[];
       };
+      grant_consent: { Args: { p_purpose: string }; Returns: undefined };
       increment_ai_usage: { Args: never; Returns: number };
       is_platform_admin: { Args: { uid: string }; Returns: boolean };
       is_tenant_admin: { Args: { target_tenant: string }; Returns: boolean };
@@ -836,7 +879,17 @@ export type Database = {
         Args: { p_component?: string; p_plan: string };
         Returns: number;
       };
+      purge_expired_chambers: { Args: { p_dry_run?: boolean }; Returns: Json };
       remove_member: { Args: { p_user_id: string }; Returns: undefined };
+      search_records: {
+        Args: { p_query: string };
+        Returns: {
+          id: string;
+          kind: string;
+          subtitle: string;
+          title: string;
+        }[];
+      };
       set_member_role: {
         Args: { p_role: string; p_user_id: string };
         Returns: undefined;
@@ -848,6 +901,7 @@ export type Database = {
       };
       trial_expired: { Args: { p_tenant_id: string }; Returns: boolean };
       trial_period_days: { Args: never; Returns: number };
+      withdraw_consent: { Args: { p_purpose: string }; Returns: undefined };
     };
     Enums: {
       [_ in never]: never;

@@ -36,6 +36,9 @@ function Clients() {
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", phone: "", email: "", notes: "" });
+  const [filterText, setFilterText] = useState(() =>
+    typeof window === "undefined" ? "" : new URLSearchParams(window.location.search).get("q") || "",
+  );
 
   async function reload() {
     setLoading(true);
@@ -77,6 +80,15 @@ function Clients() {
       setCreating(false);
     }
   }
+
+  const needle = filterText.trim().toLowerCase();
+  const filteredClients = needle
+    ? clients.filter((c) =>
+        [c.name, c.phone, c.email]
+          .filter(Boolean)
+          .some((field) => field!.toLowerCase().includes(needle)),
+      )
+    : clients;
 
   return (
     <AppShell
@@ -139,13 +151,24 @@ function Clients() {
         </p>
       ) : null}
 
+      {!loading && clients.length > 0 ? (
+        <input
+          value={filterText}
+          onChange={(event) => setFilterText(event.target.value)}
+          placeholder="Filter by name, phone or email"
+          className="mb-4 w-full max-w-md rounded border border-input bg-background px-3 py-2 text-sm"
+        />
+      ) : null}
+
       {loading ? (
         <p className="text-sm text-muted-foreground">Loading clients…</p>
       ) : clients.length === 0 ? (
         <p className="text-sm text-muted-foreground">No clients yet — add your first one above.</p>
+      ) : filteredClients.length === 0 ? (
+        <p className="text-sm text-muted-foreground">No clients match "{filterText.trim()}".</p>
       ) : (
         <DataTable headers={["Client", "Phone", "Email", "Notes"]}>
-          {clients.map((client) => (
+          {filteredClients.map((client) => (
             <tr key={client.id} className="hover:bg-secondary/40">
               <td className="px-4 py-3 font-medium">{client.name}</td>
               <td className="px-4 py-3 whitespace-nowrap">{client.phone ?? "—"}</td>

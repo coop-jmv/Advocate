@@ -9,6 +9,7 @@ import {
   PenLine,
   ReceiptIndianRupee,
   ShieldCheck,
+  ShieldQuestion,
   Sparkles,
   Users,
   UsersRound,
@@ -126,6 +127,13 @@ export const APP_DESTINATIONS = [
     icon: ShieldCheck,
     group: "Chamber",
     blurb: "Who did what, and when",
+  },
+  {
+    to: "/app/profile",
+    label: "Profile & privacy",
+    icon: ShieldQuestion,
+    group: "Chamber",
+    blurb: "Your account, consent and data rights",
   },
 ] as const satisfies readonly DestinationShape[];
 

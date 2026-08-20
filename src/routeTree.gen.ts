@@ -16,6 +16,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as FeaturesRouteImport } from './routes/features'
 import { Route as PricingRouteImport } from './routes/pricing'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as AdminAdminRouteImport } from './routes/_admin/admin'
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
@@ -32,6 +33,7 @@ import { Route as AuthenticatedAppDocumentsRouteImport } from './routes/_authent
 import { Route as AuthenticatedAppDraftingRouteImport } from './routes/_authenticated/app.drafting'
 import { Route as AuthenticatedAppInsightsRouteImport } from './routes/_authenticated/app.insights'
 import { Route as AuthenticatedAppMenuRouteImport } from './routes/_authenticated/app.menu'
+import { Route as AuthenticatedAppProfileRouteImport } from './routes/_authenticated/app.profile'
 import { Route as AuthenticatedAppTeamRouteImport } from './routes/_authenticated/app.team'
 import { Route as AdminAdminSettingsIntegrationsRouteImport } from './routes/_admin/admin.settings.integrations'
 
@@ -66,6 +68,11 @@ const FeaturesRoute = FeaturesRouteImport.update({
 const PricingRoute = PricingRouteImport.update({
   id: '/pricing',
   path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminAdminRoute = AdminAdminRouteImport.update({
@@ -154,6 +161,11 @@ const AuthenticatedAppMenuRoute = AuthenticatedAppMenuRouteImport.update({
   path: '/menu',
   getParentRoute: () => AuthenticatedAppRoute,
 } as any)
+const AuthenticatedAppProfileRoute = AuthenticatedAppProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
 const AuthenticatedAppTeamRoute = AuthenticatedAppTeamRouteImport.update({
   id: '/team',
   path: '/team',
@@ -172,6 +184,7 @@ export interface FileRoutesByFullPath {
   '/contact': typeof ContactRoute
   '/features': typeof FeaturesRoute
   '/pricing': typeof PricingRoute
+  '/privacy': typeof PrivacyRoute
   '/admin': typeof AdminAdminRouteWithChildren
   '/app': typeof AuthenticatedAppRouteWithChildren
   '/invite/$token': typeof InviteTokenRoute
@@ -186,6 +199,7 @@ export interface FileRoutesByFullPath {
   '/app/drafting': typeof AuthenticatedAppDraftingRoute
   '/app/insights': typeof AuthenticatedAppInsightsRoute
   '/app/menu': typeof AuthenticatedAppMenuRoute
+  '/app/profile': typeof AuthenticatedAppProfileRoute
   '/app/team': typeof AuthenticatedAppTeamRoute
   '/admin/': typeof AdminAdminIndexRoute
   '/app/': typeof AuthenticatedAppIndexRoute
@@ -197,6 +211,7 @@ export interface FileRoutesByTo {
   '/contact': typeof ContactRoute
   '/features': typeof FeaturesRoute
   '/pricing': typeof PricingRoute
+  '/privacy': typeof PrivacyRoute
   '/invite/$token': typeof InviteTokenRoute
   '/app/assistant': typeof AuthenticatedAppAssistantRoute
   '/app/audit-log': typeof AuthenticatedAppAuditLogRoute
@@ -209,6 +224,7 @@ export interface FileRoutesByTo {
   '/app/drafting': typeof AuthenticatedAppDraftingRoute
   '/app/insights': typeof AuthenticatedAppInsightsRoute
   '/app/menu': typeof AuthenticatedAppMenuRoute
+  '/app/profile': typeof AuthenticatedAppProfileRoute
   '/app/team': typeof AuthenticatedAppTeamRoute
   '/admin': typeof AdminAdminIndexRoute
   '/app': typeof AuthenticatedAppIndexRoute
@@ -223,6 +239,7 @@ export interface FileRoutesById {
   '/contact': typeof ContactRoute
   '/features': typeof FeaturesRoute
   '/pricing': typeof PricingRoute
+  '/privacy': typeof PrivacyRoute
   '/_admin/admin': typeof AdminAdminRouteWithChildren
   '/_authenticated/app': typeof AuthenticatedAppRouteWithChildren
   '/invite/$token': typeof InviteTokenRoute
@@ -237,6 +254,7 @@ export interface FileRoutesById {
   '/_authenticated/app/drafting': typeof AuthenticatedAppDraftingRoute
   '/_authenticated/app/insights': typeof AuthenticatedAppInsightsRoute
   '/_authenticated/app/menu': typeof AuthenticatedAppMenuRoute
+  '/_authenticated/app/profile': typeof AuthenticatedAppProfileRoute
   '/_authenticated/app/team': typeof AuthenticatedAppTeamRoute
   '/_admin/admin/': typeof AdminAdminIndexRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
@@ -250,6 +268,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/features'
     | '/pricing'
+    | '/privacy'
     | '/admin'
     | '/app'
     | '/invite/$token'
@@ -264,6 +283,7 @@ export interface FileRouteTypes {
     | '/app/drafting'
     | '/app/insights'
     | '/app/menu'
+    | '/app/profile'
     | '/app/team'
     | '/admin/'
     | '/app/'
@@ -275,6 +295,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/features'
     | '/pricing'
+    | '/privacy'
     | '/invite/$token'
     | '/app/assistant'
     | '/app/audit-log'
@@ -287,6 +308,7 @@ export interface FileRouteTypes {
     | '/app/drafting'
     | '/app/insights'
     | '/app/menu'
+    | '/app/profile'
     | '/app/team'
     | '/admin'
     | '/app'
@@ -300,6 +322,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/features'
     | '/pricing'
+    | '/privacy'
     | '/_admin/admin'
     | '/_authenticated/app'
     | '/invite/$token'
@@ -314,6 +337,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/drafting'
     | '/_authenticated/app/insights'
     | '/_authenticated/app/menu'
+    | '/_authenticated/app/profile'
     | '/_authenticated/app/team'
     | '/_admin/admin/'
     | '/_authenticated/app/'
@@ -328,6 +352,7 @@ export interface RootRouteChildren {
   ContactRoute: typeof ContactRoute
   FeaturesRoute: typeof FeaturesRoute
   PricingRoute: typeof PricingRoute
+  PrivacyRoute: typeof PrivacyRoute
   InviteTokenRoute: typeof InviteTokenRoute
 }
 
@@ -380,6 +405,13 @@ declare module '@tanstack/react-router' {
       path: '/pricing'
       fullPath: '/pricing'
       preLoaderRoute: typeof PricingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_admin/admin': {
@@ -494,6 +526,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppMenuRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/app/profile': {
+      id: '/_authenticated/app/profile'
+      path: '/profile'
+      fullPath: '/app/profile'
+      preLoaderRoute: typeof AuthenticatedAppProfileRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
     '/_authenticated/app/team': {
       id: '/_authenticated/app/team'
       path: '/team'
@@ -549,6 +588,7 @@ interface AuthenticatedAppRouteChildren {
   AuthenticatedAppDraftingRoute: typeof AuthenticatedAppDraftingRoute
   AuthenticatedAppInsightsRoute: typeof AuthenticatedAppInsightsRoute
   AuthenticatedAppMenuRoute: typeof AuthenticatedAppMenuRoute
+  AuthenticatedAppProfileRoute: typeof AuthenticatedAppProfileRoute
   AuthenticatedAppTeamRoute: typeof AuthenticatedAppTeamRoute
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
 }
@@ -565,6 +605,7 @@ const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppDraftingRoute: AuthenticatedAppDraftingRoute,
   AuthenticatedAppInsightsRoute: AuthenticatedAppInsightsRoute,
   AuthenticatedAppMenuRoute: AuthenticatedAppMenuRoute,
+  AuthenticatedAppProfileRoute: AuthenticatedAppProfileRoute,
   AuthenticatedAppTeamRoute: AuthenticatedAppTeamRoute,
   AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
 }
@@ -591,6 +632,7 @@ const rootRouteChildren: RootRouteChildren = {
   ContactRoute: ContactRoute,
   FeaturesRoute: FeaturesRoute,
   PricingRoute: PricingRoute,
+  PrivacyRoute: PrivacyRoute,
   InviteTokenRoute: InviteTokenRoute,
 }
 export const routeTree = rootRouteImport
