@@ -1,42 +1,9 @@
 import { Link, Outlet, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import {
-  LayoutDashboard,
-  LayoutGrid,
-  Briefcase,
-  CalendarDays,
-  FolderOpen,
-  Users,
-  ReceiptIndianRupee,
-  Scale,
-  Search,
-  Mic,
-  Bell,
-  Bot,
-  Sparkles,
-  PenLine,
-  WifiOff,
-  LogOut,
-  ShieldCheck,
-  UsersRound,
-} from "lucide-react";
+import { LayoutGrid, Scale, Search, Bell, WifiOff, LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { logAuthEvent } from "@/lib/edge-functions";
-
-const navItems = [
-  { to: "/app", label: "Dashboard", icon: LayoutDashboard, exact: true },
-  { to: "/app/assistant", label: "AI assistant", icon: Bot },
-  { to: "/app/insights", label: "Diary insights", icon: Sparkles },
-  { to: "/app/cases", label: "Cases", icon: Briefcase },
-  { to: "/app/diary", label: "Court diary", icon: CalendarDays },
-  { to: "/app/documents", label: "Documents", icon: FolderOpen },
-  { to: "/app/drafting", label: "Drafting studio", icon: PenLine },
-  { to: "/app/dictation", label: "Voice dictation", icon: Mic },
-  { to: "/app/clients", label: "Clients", icon: Users },
-  { to: "/app/billing", label: "Billing", icon: ReceiptIndianRupee },
-  { to: "/app/team", label: "Team", icon: UsersRound },
-  { to: "/app/audit-log", label: "Audit log", icon: ShieldCheck },
-] as const;
+import { APP_DESTINATIONS } from "@/lib/navigation";
 
 export function AppShell({
   title,
@@ -104,7 +71,7 @@ export function AppShell({
         </Link>
 
         <nav className="hidden md:flex md:w-full md:flex-col md:gap-1 md:p-3 md:items-center lg:items-stretch">
-          {navItems.map((item) => (
+          {APP_DESTINATIONS.map((item) => (
             <Link
               key={item.to}
               to={item.to}

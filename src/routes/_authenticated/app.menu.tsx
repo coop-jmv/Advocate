@@ -1,19 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import {
-  Bot,
-  Briefcase,
-  CalendarDays,
-  FolderOpen,
-  LayoutDashboard,
-  Mic,
-  PenLine,
-  ReceiptIndianRupee,
-  ShieldCheck,
-  Sparkles,
-  Users,
-  UsersRound,
-} from "lucide-react";
 import { AppShell } from "@/components/app/AppShell";
+import { groupedDestinations } from "@/lib/navigation";
 
 export const Route = createFileRoute("/_authenticated/app/menu")({
   head: () => ({
@@ -25,91 +12,13 @@ export const Route = createFileRoute("/_authenticated/app/menu")({
   component: Menu,
 });
 
-// The mobile home screen. On a phone the sidebar collapses to a single Menu
-// button, so this is the landing page after signing in: every destination as
-// a tile, tap to open. On larger screens the sidebar already does this job,
-// which is why this page is reachable but never forced there.
-const sections = [
-  {
-    group: "Today",
-    items: [
-      {
-        to: "/app",
-        label: "Dashboard",
-        icon: LayoutDashboard,
-        blurb: "Hearings, WIP and outstanding at a glance",
-      },
-      {
-        to: "/app/diary",
-        label: "Court diary",
-        icon: CalendarDays,
-        blurb: "Cause lists, hearings and reminders",
-      },
-      {
-        to: "/app/insights",
-        label: "Diary insights",
-        icon: Sparkles,
-        blurb: "Risks and gaps across the week ahead",
-      },
-    ],
-  },
-  {
-    group: "Casework",
-    items: [
-      { to: "/app/cases", label: "Cases", icon: Briefcase, blurb: "Matters, parties and status" },
-      { to: "/app/clients", label: "Clients", icon: Users, blurb: "Contacts and instructions" },
-      {
-        to: "/app/documents",
-        label: "Documents",
-        icon: FolderOpen,
-        blurb: "Scan, OCR and review",
-      },
-    ],
-  },
-  {
-    group: "Drafting",
-    items: [
-      {
-        to: "/app/drafting",
-        label: "Drafting studio",
-        icon: PenLine,
-        blurb: "Notices, petitions and opinions",
-      },
-      {
-        to: "/app/dictation",
-        label: "Voice dictation",
-        icon: Mic,
-        blurb: "Dictate and format on the move",
-      },
-      {
-        to: "/app/assistant",
-        label: "AI assistant",
-        icon: Bot,
-        blurb: "Procedure, limitation and strategy",
-      },
-    ],
-  },
-  {
-    group: "Chamber",
-    items: [
-      {
-        to: "/app/billing",
-        label: "Billing",
-        icon: ReceiptIndianRupee,
-        blurb: "Time entries and GST invoices",
-      },
-      { to: "/app/team", label: "Team", icon: UsersRound, blurb: "Members, roles and seats" },
-      {
-        to: "/app/audit-log",
-        label: "Audit log",
-        icon: ShieldCheck,
-        blurb: "Who did what, and when",
-      },
-    ],
-  },
-] as const;
-
+// The mobile home screen. On a phone the sidebar collapses to a Menu button,
+// so this is the landing page after signing in: every destination as a tile,
+// tap to open. Destinations and their grouping come from @/lib/navigation, the
+// same list the sidebar renders, so the two can never fall out of step.
 function Menu() {
+  const sections = groupedDestinations();
+
   return (
     <AppShell title="Menu" subtitle="Every part of your chamber, one tap away">
       <div className="space-y-7">
@@ -121,7 +30,7 @@ function Menu() {
                 <Link
                   key={item.to}
                   to={item.to}
-                  activeOptions={{ exact: item.to === "/app" }}
+                  activeOptions={{ exact: "exact" in item ? item.exact : false }}
                   title={item.blurb}
                   className="group surface-panel flex min-h-28 flex-col items-center justify-center gap-2.5 rounded-xl p-3 text-center transition-colors hover:border-primary/40 hover:bg-secondary"
                 >
