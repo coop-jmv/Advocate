@@ -5,13 +5,13 @@ import { SiteHeader, SiteFooter } from "@/components/site/SiteChrome";
 export const Route = createFileRoute("/pricing")({
   head: () => ({
     meta: [
-      { title: "Pricing — Wakilio" },
+      { title: "Pricing — LexDiary" },
       {
         name: "description",
         content:
           "Start with a 15-day free trial — no card required. Solo plans from ₹499 a month, Chamber from ₹999 for two users with extra seats at ₹499.",
       },
-      { property: "og:title", content: "Pricing — Wakilio" },
+      { property: "og:title", content: "Pricing — LexDiary" },
       {
         property: "og:description",
         content:

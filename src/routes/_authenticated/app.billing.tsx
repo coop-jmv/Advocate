@@ -15,12 +15,12 @@ import {
 export const Route = createFileRoute("/_authenticated/app/billing")({
   head: () => ({
     meta: [
-      { title: "Time & billing — Wakilio" },
+      { title: "Time & billing — LexDiary" },
       {
         name: "description",
         content: "Billable time entries and invoices for your chamber, tracked manually.",
       },
-      { property: "og:title", content: "Time & billing — Wakilio" },
+      { property: "og:title", content: "Time & billing — LexDiary" },
       {
         property: "og:description",
         content: "Billable time entries and invoices for your chamber.",

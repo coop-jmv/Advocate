@@ -1,4 +1,4 @@
-# Wakilio
+# LexDiary
 
 A practice management workspace for Indian advocates — matters, court diary, documents, dictation and AI drafting.
 

@@ -11,13 +11,13 @@ import { listMatters } from "@/lib/matters.functions";
 export const Route = createFileRoute("/_authenticated/app/drafting")({
   head: () => ({
     meta: [
-      { title: "AI drafting studio — Wakilio" },
+      { title: "AI drafting studio — LexDiary" },
       {
         name: "description",
         content:
           "Generate court-ready notices, applications, replies and client letters with AI, edit them inline and print from your chamber workspace.",
       },
-      { property: "og:title", content: "AI drafting studio — Wakilio" },
+      { property: "og:title", content: "AI drafting studio — LexDiary" },
       {
         property: "og:description",
         content:

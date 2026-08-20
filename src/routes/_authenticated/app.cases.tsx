@@ -9,12 +9,12 @@ import { createMatter, listMatters } from "@/lib/matters.functions";
 export const Route = createFileRoute("/_authenticated/app/cases")({
   head: () => ({
     meta: [
-      { title: "Cases & matters — Wakilio" },
+      { title: "Cases & matters — LexDiary" },
       {
         name: "description",
         content: "Every matter for your chamber, with client, court and status.",
       },
-      { property: "og:title", content: "Cases & matters — Wakilio" },
+      { property: "og:title", content: "Cases & matters — LexDiary" },
       {
         property: "og:description",
         content: "Every matter for your chamber, with client, court and status.",

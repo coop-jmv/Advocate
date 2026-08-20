@@ -21,7 +21,7 @@ import {
 export const Route = createFileRoute("/_authenticated/app/profile")({
   head: () => ({
     meta: [
-      { title: "Profile & privacy — Wakilio" },
+      { title: "Profile & privacy — LexDiary" },
       { name: "description", content: "Your account, consent and data rights under the DPDP Act." },
     ],
   }),
@@ -153,7 +153,7 @@ function Profile() {
     setError(null);
     try {
       const data = await exportMine();
-      downloadJson(`wakilio-my-data-${new Date().toISOString().slice(0, 10)}.json`, data);
+      downloadJson(`lexdiary-my-data-${new Date().toISOString().slice(0, 10)}.json`, data);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Failed to export your data.");
     } finally {
@@ -166,7 +166,7 @@ function Profile() {
     setError(null);
     try {
       const data = await exportChamber();
-      downloadJson(`wakilio-chamber-export-${new Date().toISOString().slice(0, 10)}.json`, data);
+      downloadJson(`lexdiary-chamber-export-${new Date().toISOString().slice(0, 10)}.json`, data);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Failed to export the chamber's records.");
     } finally {
@@ -286,7 +286,7 @@ function Profile() {
                   <div>
                     <p className="text-sm font-medium">{purposeLabel["service_provision"]}</p>
                     <p className="text-xs text-muted-foreground">
-                      Required to use Wakilio — withdraw by deleting your account.
+                      Required to use LexDiary — withdraw by deleting your account.
                     </p>
                   </div>
                   <Tag tone="success">Granted</Tag>
@@ -339,7 +339,7 @@ function Profile() {
             <section className="surface-panel rounded p-5">
               <h2 className="font-display text-sm font-bold">Export your data</h2>
               <p className="mt-2 text-xs text-muted-foreground">
-                Everything Wakilio holds about you as a person — profile, consent history and
+                Everything LexDiary holds about you as a person — profile, consent history and
                 account activity.
               </p>
               <button

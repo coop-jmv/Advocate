@@ -1,4 +1,4 @@
-package com.advocatecompanion.app;
+package com.lexdiary.app;
 
 import com.getcapacitor.BridgeActivity;
 

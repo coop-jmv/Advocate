@@ -4,10 +4,10 @@ import { SiteHeader, SiteFooter } from "@/components/site/SiteChrome";
 export const Route = createFileRoute("/privacy")({
   head: () => ({
     meta: [
-      { title: "Privacy notice — Wakilio" },
+      { title: "Privacy notice — LexDiary" },
       {
         name: "description",
-        content: "How Wakilio collects, uses and protects personal data under the DPDP Act, 2023.",
+        content: "How LexDiary collects, uses and protects personal data under the DPDP Act, 2023.",
       },
     ],
   }),
@@ -32,18 +32,18 @@ function Privacy() {
           <section>
             <h2 className="font-display text-lg font-bold">Who this notice covers</h2>
             <p className="mt-2 text-muted-foreground">
-              Two kinds of personal data pass through Wakilio, and they are treated differently:
+              Two kinds of personal data pass through LexDiary, and they are treated differently:
             </p>
             <ul className="mt-3 list-disc space-y-1.5 pl-5 text-muted-foreground">
               <li>
                 <strong className="text-foreground">Your account data</strong> — your name, email,
-                firm name and enrolment number. Wakilio is the data fiduciary for this, and this
+                firm name and enrolment number. LexDiary is the data fiduciary for this, and this
                 notice describes what we do with it.
               </li>
               <li>
                 <strong className="text-foreground">Client and matter data</strong> — anything you
                 enter about your own clients, opposing parties or witnesses. Your chamber is the
-                data fiduciary for that data; Wakilio processes it on your chamber's instructions,
+                data fiduciary for that data; LexDiary processes it on your chamber's instructions,
                 as a data processor. Your chamber's own privacy practices govern that data, and you
                 should have your own notice for your clients.
               </li>
@@ -163,7 +163,7 @@ function Privacy() {
             <p className="mt-2 text-muted-foreground">
               For any question about this notice, or to exercise a right above, contact:
             </p>
-            <p className="mt-3 font-medium">grievance@wakilio.in</p>
+            <p className="mt-3 font-medium">grievance@lexdiary.online</p>
             <p className="mt-1 text-xs text-muted-foreground">
               We aim to respond within 7 days, per Section 13 of the DPDP Act.
             </p>

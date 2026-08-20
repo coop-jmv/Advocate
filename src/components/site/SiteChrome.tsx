@@ -15,7 +15,7 @@ export function SiteHeader() {
           <span className="flex size-8 items-center justify-center rounded bg-primary text-primary-foreground">
             <Scale className="size-4" />
           </span>
-          <span className="font-display text-base font-bold tracking-tight">Wakilio</span>
+          <span className="font-display text-base font-bold tracking-tight">LexDiary</span>
         </Link>
 
         <nav className="hidden items-center gap-7 md:flex">
@@ -46,7 +46,7 @@ export function SiteFooter() {
   return (
     <footer className="border-t border-border bg-secondary/60">
       <div className="mx-auto flex max-w-6xl flex-col gap-3 px-5 py-8 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-        <p>Wakilio — practice management for Indian advocates.</p>
+        <p>LexDiary — practice management for Indian advocates.</p>
         <p className="flex items-center gap-4">
           <span>Data hosted in Mumbai, India</span>
           <Link to="/privacy" className="underline-offset-4 hover:underline">

@@ -2,7 +2,10 @@
 // origin is the same as the web app's — there's no separate capacitor://
 // origin to allow here. localhost entries cover `vite dev`.
 const ALLOWED_ORIGINS = new Set([
-  "https://wakilio.dhanapalan-advocate.workers.dev",
+  // The custom domain is what the mobile app and users actually load. The
+  // workers.dev address stays allowed so a direct visit there still works.
+  "https://lexdiary.online",
+  "https://lexdiary.dhanapalan-advocate.workers.dev",
   "http://localhost:5173",
   "http://localhost:3000",
 ]);
