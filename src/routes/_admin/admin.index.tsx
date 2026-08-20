@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Loader2, Plus, ReceiptIndianRupee } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { confirmPermanentRemoval } from "@/lib/confirm";
+import { confirmDestructive, confirmPermanentRemoval } from "@/lib/confirm";
 import { DataTable, Tag, type Tone } from "@/components/app/primitives";
 import { activateSubscription } from "@/lib/subscription-invoice";
 import type { Database } from "@/integrations/supabase/types";
@@ -172,6 +172,42 @@ function AdminTenants() {
     }
   }
 
+  // The control that actually locks a chamber out: enforce_tenant_writable()
+  // blocks writes once licenses.status = 'cancelled'. tenants.status (the
+  // "Status" dropdown above) isn't read by any RLS policy or trigger — it's
+  // informational only — so this, not that, is the real "cancel license".
+  async function handleCancelLicense(licenseId: string, tenantName: string) {
+    if (
+      !confirmDestructive(
+        `Cancel ${tenantName}'s subscription? Their chamber goes read-only immediately — matters, diary and documents stay readable, but nothing new can be added until reactivated.`,
+      )
+    )
+      return;
+    setError(null);
+    const { error: updateError } = await supabase
+      .from("licenses")
+      .update({ status: "cancelled" })
+      .eq("id", licenseId);
+    if (updateError) {
+      setError(updateError.message);
+      return;
+    }
+    await reload();
+  }
+
+  async function handleReactivateLicense(licenseId: string) {
+    setError(null);
+    const { error: updateError } = await supabase
+      .from("licenses")
+      .update({ status: "active" })
+      .eq("id", licenseId);
+    if (updateError) {
+      setError(updateError.message);
+      return;
+    }
+    await reload();
+  }
+
   async function handleDelete(tenantId: string) {
     if (
       !confirmPermanentRemoval(
@@ -287,6 +323,25 @@ function AdminTenants() {
                           {tenant.license.billing_cadence} · through{" "}
                           {new Date(tenant.license.current_period_end).toLocaleDateString("en-IN")}
                         </p>
+                      ) : null}
+                      {tenant.license.plan !== "trial" ? (
+                        tenant.license.status === "cancelled" ? (
+                          <button
+                            type="button"
+                            onClick={() => handleReactivateLicense(tenant.license!.id)}
+                            className="block text-xs text-accent underline-offset-4 hover:underline"
+                          >
+                            Reactivate
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleCancelLicense(tenant.license!.id, tenant.name)}
+                            className="block text-xs text-destructive underline-offset-4 hover:underline"
+                          >
+                            Cancel license
+                          </button>
+                        )
                       ) : null}
                     </div>
                   ) : (
