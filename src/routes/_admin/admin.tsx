@@ -1,5 +1,5 @@
 import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
-import { ShieldCheck, Building2, Puzzle, ScrollText } from "lucide-react";
+import { ShieldCheck, Building2, ListChecks, Puzzle, ScrollText } from "lucide-react";
 
 export const Route = createFileRoute("/_admin/admin")({
   component: AdminLayout,
@@ -32,6 +32,14 @@ function AdminLayout() {
             >
               <Puzzle className="size-4" />
               Settings · Integrations
+            </Link>
+            <Link
+              to="/admin/cause-list-sources"
+              className="flex items-center gap-1.5 hover:text-foreground"
+              activeProps={{ className: "text-foreground" }}
+            >
+              <ListChecks className="size-4" />
+              Cause list sources
             </Link>
             <Link
               to="/admin/audit-log"

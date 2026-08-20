@@ -8,6 +8,7 @@ import { StatCard, Tag, type Tone } from "@/components/app/primitives";
 import { listMatters } from "@/lib/matters.functions";
 import {
   createCauseListSource,
+  getCauseListFeatureEnabled,
   ingestCauseList,
   listCauseListChangeHistory,
   listCauseListEntries,
@@ -87,7 +88,9 @@ function CauseListIntelligence() {
   const doMatch = useServerFn(matchMatterManually);
   const doReject = useServerFn(rejectCauseListMatch);
   const loadHistory = useServerFn(listCauseListChangeHistory);
+  const loadFeatureStatus = useServerFn(getCauseListFeatureEnabled);
 
+  const [featureEnabled, setFeatureEnabled] = useState(true);
   const [sources, setSources] = useState<Source[]>([]);
   const [matters, setMatters] = useState<MatterOption[]>([]);
   const [entries, setEntries] = useState<Entry[]>([]);
@@ -150,6 +153,9 @@ function CauseListIntelligence() {
   }
 
   useEffect(() => {
+    void loadFeatureStatus()
+      .then((result) => setFeatureEnabled(result.enabled))
+      .catch(() => setFeatureEnabled(true));
     void reloadSources();
     void loadMatters()
       .then((rows) =>
@@ -286,158 +292,171 @@ function CauseListIntelligence() {
         <StatCard label="Conflicts" value={String(summary.conflicts)} />
       </div>
 
-      <section className="surface-panel mb-6 rounded p-5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="font-display text-base font-bold">Sources</h2>
-          <button
-            type="button"
-            onClick={() => setShowAddSource((v) => !v)}
-            className="flex items-center gap-1.5 rounded border border-input px-3 py-1.5 text-sm font-medium transition-colors hover:bg-secondary"
-          >
-            <Plus className="size-3.5" />
-            Add source
-          </button>
-        </div>
-        <p className="mt-1.5 text-sm text-muted-foreground">
-          A source is one court/bench you track a cause list for. No live court integration is
-          connected — every import here is a list you paste in yourself, from whatever you already
-          have (a court PDF, a clerk's list, a spreadsheet).
+      {!featureEnabled ? (
+        <p className="surface-panel mb-6 rounded p-4 text-sm text-muted-foreground">
+          Cause List Intelligence is turned off for this chamber by your workspace administrator.
+          Listings already imported and matched below stay visible.
         </p>
-
-        {showAddSource ? (
-          <form
-            onSubmit={handleAddSource}
-            className="mt-4 grid gap-3 rounded border border-dashed border-border p-3 sm:grid-cols-3"
-          >
-            <label className="text-sm">
-              <span className="text-eyebrow">Court</span>
-              <input
-                value={newSource.court}
-                onChange={(e) => setNewSource((s) => ({ ...s, court: e.target.value }))}
-                placeholder="Delhi High Court"
-                className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
-              />
-            </label>
-            <label className="text-sm">
-              <span className="text-eyebrow">Bench (optional)</span>
-              <input
-                value={newSource.bench}
-                onChange={(e) => setNewSource((s) => ({ ...s, bench: e.target.value }))}
-                placeholder="Court 4, Justice Sharma"
-                className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
-              />
-            </label>
-            <div className="flex items-end">
+      ) : (
+        <>
+          <section className="surface-panel mb-6 rounded p-5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 className="font-display text-base font-bold">Sources</h2>
               <button
-                type="submit"
-                disabled={creatingSource || !newSource.court.trim()}
-                className="flex items-center gap-2 rounded bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-ink disabled:opacity-60"
+                type="button"
+                onClick={() => setShowAddSource((v) => !v)}
+                className="flex items-center gap-1.5 rounded border border-input px-3 py-1.5 text-sm font-medium transition-colors hover:bg-secondary"
               >
-                {creatingSource ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : (
-                  <Plus className="size-4" />
-                )}
-                Save
+                <Plus className="size-3.5" />
+                Add source
               </button>
             </div>
-          </form>
-        ) : null}
+            <p className="mt-1.5 text-sm text-muted-foreground">
+              A source is one court/bench you track a cause list for. No live court integration is
+              connected — every import here is a list you paste in yourself, from whatever you
+              already have (a court PDF, a clerk's list, a spreadsheet).
+            </p>
 
-        {sources.length === 0 ? (
-          <p className="mt-4 text-sm text-muted-foreground">
-            No sources yet — add the court/bench you want to track above.
-          </p>
-        ) : (
-          <ul className="mt-4 space-y-2">
-            {sources.map((source) => (
-              <li
-                key={source.id}
-                className="flex flex-wrap items-center justify-between gap-2 rounded border border-border p-3 text-sm"
+            {showAddSource ? (
+              <form
+                onSubmit={handleAddSource}
+                className="mt-4 grid gap-3 rounded border border-dashed border-border p-3 sm:grid-cols-3"
               >
-                <div>
-                  <p className="font-medium">
-                    {source.court}
-                    {source.bench ? ` · ${source.bench}` : ""}
-                  </p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
-                    {source.last_sync_at
-                      ? `Last successful import: ${new Date(source.last_sync_at).toLocaleString("en-IN")}`
-                      : "Never imported"}
-                    {source.error_message ? ` · ${source.error_message}` : ""}
-                  </p>
+                <label className="text-sm">
+                  <span className="text-eyebrow">Court</span>
+                  <input
+                    value={newSource.court}
+                    onChange={(e) => setNewSource((s) => ({ ...s, court: e.target.value }))}
+                    placeholder="Delhi High Court"
+                    className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
+                  />
+                </label>
+                <label className="text-sm">
+                  <span className="text-eyebrow">Bench (optional)</span>
+                  <input
+                    value={newSource.bench}
+                    onChange={(e) => setNewSource((s) => ({ ...s, bench: e.target.value }))}
+                    placeholder="Court 4, Justice Sharma"
+                    className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
+                  />
+                </label>
+                <div className="flex items-end">
+                  <button
+                    type="submit"
+                    disabled={creatingSource || !newSource.court.trim()}
+                    className="flex items-center gap-2 rounded bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-ink disabled:opacity-60"
+                  >
+                    {creatingSource ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <Plus className="size-4" />
+                    )}
+                    Save
+                  </button>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Tag tone={syncStatusTone[source.sync_status] ?? "neutral"}>
-                    {source.sync_status.replace("_", " ")}
-                  </Tag>
-                  <label className="flex items-center gap-1.5 text-xs">
-                    <input
-                      type="checkbox"
-                      checked={source.enabled}
-                      onChange={(e) => void handleToggleSource(source.id, e.target.checked)}
-                      className="size-3.5 rounded border-input"
-                    />
-                    Enabled
-                  </label>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+              </form>
+            ) : null}
 
-      <section className="surface-panel mb-6 rounded p-5">
-        <h2 className="font-display text-base font-bold">Import a cause list</h2>
-        <p className="mt-1.5 text-sm text-muted-foreground">
-          One listing per line, columns separated by a tab or <code>|</code>: serial number, case
-          number, CNR, petitioner, respondent, advocates, stage, court hall. Trailing columns are
-          optional.
-        </p>
-        <div className="mt-3 grid gap-3 sm:grid-cols-3">
-          <label className="text-sm">
-            <span className="text-eyebrow">Source</span>
-            <select
-              value={importSourceId}
-              onChange={(e) => setImportSourceId(e.target.value)}
-              className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
-            >
-              {sources.length === 0 ? <option value="">Add a source first</option> : null}
-              {sources.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.court}
-                  {s.bench ? ` · ${s.bench}` : ""}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="text-sm">
-            <span className="text-eyebrow">List date</span>
-            <input
-              type="date"
-              value={listDate}
-              onChange={(e) => setListDate(e.target.value)}
-              className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
+            {sources.length === 0 ? (
+              <p className="mt-4 text-sm text-muted-foreground">
+                No sources yet — add the court/bench you want to track above.
+              </p>
+            ) : (
+              <ul className="mt-4 space-y-2">
+                {sources.map((source) => (
+                  <li
+                    key={source.id}
+                    className="flex flex-wrap items-center justify-between gap-2 rounded border border-border p-3 text-sm"
+                  >
+                    <div>
+                      <p className="font-medium">
+                        {source.court}
+                        {source.bench ? ` · ${source.bench}` : ""}
+                      </p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        {source.last_sync_at
+                          ? `Last successful import: ${new Date(source.last_sync_at).toLocaleString("en-IN")}`
+                          : "Never imported"}
+                        {source.error_message ? ` · ${source.error_message}` : ""}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Tag tone={syncStatusTone[source.sync_status] ?? "neutral"}>
+                        {source.sync_status.replace("_", " ")}
+                      </Tag>
+                      <label className="flex items-center gap-1.5 text-xs">
+                        <input
+                          type="checkbox"
+                          checked={source.enabled}
+                          onChange={(e) => void handleToggleSource(source.id, e.target.checked)}
+                          className="size-3.5 rounded border-input"
+                        />
+                        Enabled
+                      </label>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          <section className="surface-panel mb-6 rounded p-5">
+            <h2 className="font-display text-base font-bold">Import a cause list</h2>
+            <p className="mt-1.5 text-sm text-muted-foreground">
+              One listing per line, columns separated by a tab or <code>|</code>: serial number,
+              case number, CNR, petitioner, respondent, advocates, stage, court hall. Trailing
+              columns are optional.
+            </p>
+            <div className="mt-3 grid gap-3 sm:grid-cols-3">
+              <label className="text-sm">
+                <span className="text-eyebrow">Source</span>
+                <select
+                  value={importSourceId}
+                  onChange={(e) => setImportSourceId(e.target.value)}
+                  className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
+                >
+                  {sources.length === 0 ? <option value="">Add a source first</option> : null}
+                  {sources.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.court}
+                      {s.bench ? ` · ${s.bench}` : ""}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="text-sm">
+                <span className="text-eyebrow">List date</span>
+                <input
+                  type="date"
+                  value={listDate}
+                  onChange={(e) => setListDate(e.target.value)}
+                  className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
+                />
+              </label>
+            </div>
+            <textarea
+              value={pastedText}
+              onChange={(e) => setPastedText(e.target.value)}
+              rows={6}
+              placeholder="1	WP(C) 1234/2024	DLHC010012342024	Ramesh Kumar	State of Delhi	Adv. Priya Nair	Arguments	Hall 4"
+              className="mt-3 w-full rounded border border-input bg-background p-3 font-mono text-xs"
             />
-          </label>
-        </div>
-        <textarea
-          value={pastedText}
-          onChange={(e) => setPastedText(e.target.value)}
-          rows={6}
-          placeholder="1	WP(C) 1234/2024	DLHC010012342024	Ramesh Kumar	State of Delhi	Adv. Priya Nair	Arguments	Hall 4"
-          className="mt-3 w-full rounded border border-input bg-background p-3 font-mono text-xs"
-        />
-        <button
-          type="button"
-          onClick={handleImport}
-          disabled={importing || !importSourceId || !pastedText.trim()}
-          className="mt-3 flex items-center gap-2 rounded bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-ink disabled:opacity-50"
-        >
-          {importing ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
-          Import list
-        </button>
-      </section>
+            <button
+              type="button"
+              onClick={handleImport}
+              disabled={importing || !importSourceId || !pastedText.trim()}
+              className="mt-3 flex items-center gap-2 rounded bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-ink disabled:opacity-50"
+            >
+              {importing ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Upload className="size-4" />
+              )}
+              Import list
+            </button>
+          </section>
+        </>
+      )}
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">

@@ -9,7 +9,11 @@ export const Route = createFileRoute("/_admin/admin/settings/integrations")({
   component: AdminIntegrations,
 });
 
-type Integrations = { whatsapp_enabled?: boolean; ai_morning_brief_enabled?: boolean };
+type Integrations = {
+  whatsapp_enabled?: boolean;
+  ai_morning_brief_enabled?: boolean;
+  cause_list_enabled?: boolean;
+};
 type TenantIntegrations = {
   id: string;
   name: string;
@@ -91,6 +95,11 @@ function AdminIntegrations() {
         turning it off here actually stops the AI call, not just the button. The deterministic
         Morning Brief (hearings, conflicts, documents) keeps working either way.
       </p>
+      <p className="mt-2 text-sm text-muted-foreground">
+        Cause List Intelligence governs whether that chamber can import cause lists at all — checked
+        here first, and enforced again server-side in the import itself. Listings already imported
+        and matched stay visible either way; turning it off only blocks new imports.
+      </p>
 
       {error ? (
         <p className="mt-4 rounded border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
@@ -104,7 +113,9 @@ function AdminIntegrations() {
         ) : rows.length === 0 ? (
           <p className="text-sm text-muted-foreground">No tenants yet.</p>
         ) : (
-          <DataTable headers={["Tenant", "WhatsApp API", "AI Morning Brief"]}>
+          <DataTable
+            headers={["Tenant", "WhatsApp API", "AI Morning Brief", "Cause List Intelligence"]}
+          >
             {rows.map((row) => (
               <tr key={row.id} className="hover:bg-secondary/40">
                 <td className="px-4 py-3 font-medium">{row.name}</td>
@@ -136,6 +147,19 @@ function AdminIntegrations() {
                       className="size-4 rounded border-input"
                     />
                     {(row.integrations?.ai_morning_brief_enabled ?? true) ? "Enabled" : "Disabled"}
+                  </label>
+                </td>
+                <td className="px-4 py-3">
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={row.integrations?.cause_list_enabled ?? true}
+                      onChange={(event) =>
+                        void setIntegration(row.id, "cause_list_enabled", event.target.checked)
+                      }
+                      className="size-4 rounded border-input"
+                    />
+                    {(row.integrations?.cause_list_enabled ?? true) ? "Enabled" : "Disabled"}
                   </label>
                 </td>
               </tr>

@@ -44,6 +44,21 @@ function normalizeCnrKey(raw: string): string {
   return raw.toUpperCase().replace(/\s+/g, "");
 }
 
+// Client-side governance check — lets the Diary Portal hide the import UI
+// entirely (not just disable a button) when a platform admin has turned
+// Cause List Intelligence off for this chamber. The real enforcement is the
+// identical check inside ingestCauseList itself, which this can't bypass.
+export const getCauseListFeatureEnabled = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data: license } = await context.supabase
+      .from("licenses")
+      .select("integrations")
+      .maybeSingle();
+    const integrations = (license?.integrations ?? {}) as { cause_list_enabled?: boolean };
+    return { enabled: integrations.cause_list_enabled ?? true };
+  });
+
 export const listCauseListSources = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
@@ -172,6 +187,21 @@ export const ingestCauseList = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase } = context;
     const now = new Date().toISOString();
+
+    // Governance checkpoint, same pattern as the AI Morning Brief layer: a
+    // platform admin can turn this off for a chamber from
+    // /admin/settings/integrations. This is the real enforcement — the
+    // Diary Portal UI hides the import panel when disabled, but a direct
+    // call to this function is stopped here regardless.
+    const { data: license } = await supabase.from("licenses").select("integrations").maybeSingle();
+    const causeListEnabled =
+      ((license?.integrations ?? {}) as { cause_list_enabled?: boolean }).cause_list_enabled ??
+      true;
+    if (!causeListEnabled) {
+      throw new Error(
+        "Cause List Intelligence is turned off for this chamber by your workspace administrator.",
+      );
+    }
 
     const { data: source, error: sourceError } = await supabase
       .from("cause_list_sources")

@@ -50,6 +50,11 @@ export type BriefInvoiceAlert = {
 
 export type BriefPriority = "critical" | "attention" | "upcoming" | "informational";
 
+export type BriefCauseListSignal = {
+  isNewListing: boolean;
+  changeSummary: string[];
+};
+
 export type BriefItem = {
   hearingId: string;
   matterTitle: string;
@@ -62,6 +67,7 @@ export type BriefItem = {
   documents: BriefDocument[];
   invoiceAlerts: BriefInvoiceAlert[];
   hasConflict: boolean;
+  causeList: BriefCauseListSignal | null;
   priority: BriefPriority;
   priorityReasons: string[];
 };
@@ -76,11 +82,17 @@ function classifyPriority(input: {
   hasDocuments: boolean;
   hasOverdueInvoice: boolean;
   hearingTimeMissing: boolean;
+  isNewCauseListListing: boolean;
+  causeListChanged: boolean;
 }): { priority: BriefPriority; reasons: string[] } {
   const reasons: string[] = [];
   if (input.hasConflict) reasons.push("Clashes with another hearing at the same time today");
   if (input.hasOverdueInvoice) reasons.push("This matter has an overdue invoice");
+  if (input.isNewCauseListListing)
+    reasons.push("New listing on today's cause list — wasn't on record before");
   if (reasons.length > 0) return { priority: "critical", reasons };
+
+  if (input.causeListChanged) reasons.push("Cause-list details changed since it was last imported");
 
   if (input.status === "adjourned")
     reasons.push("Last recorded as adjourned — confirm today's listing");
@@ -115,12 +127,18 @@ export const getMorningBrief = createServerFn({ method: "GET" })
       .from("licenses")
       .select("integrations")
       .maybeSingle();
-    const integrations = (license?.integrations ?? {}) as { ai_morning_brief_enabled?: boolean };
+    const integrations = (license?.integrations ?? {}) as {
+      ai_morning_brief_enabled?: boolean;
+      cause_list_enabled?: boolean;
+    };
     const aiEnabled = integrations.ai_morning_brief_enabled ?? true;
+    const causeListEnabled = integrations.cause_list_enabled ?? true;
 
     const { data: todaysHearingsRaw, error: hearingsError } = await context.supabase
       .from("hearings")
-      .select("id, matter_id, matter_title, court, hearing_date, hearing_time, purpose, status")
+      .select(
+        "id, matter_id, matter_title, court, hearing_date, hearing_time, purpose, status, cause_list_record_id",
+      )
       .eq("hearing_date", targetDate)
       .order("hearing_time", { ascending: true, nullsFirst: false });
     if (hearingsError) throw new Error(hearingsError.message);
@@ -131,6 +149,7 @@ export const getMorningBrief = createServerFn({ method: "GET" })
         date: targetDate,
         advocateName,
         aiEnabled,
+        causeListEnabled,
         items: [] as BriefItem[],
         conflictCount: 0,
       };
@@ -232,6 +251,46 @@ export const getMorningBrief = createServerFn({ method: "GET" })
 
     const clashKeys = findClashKeys(hearings);
 
+    // Cause-list-derived signals (K2): hearings reconciled from an imported
+    // cause list carry cause_list_record_id, and every non-"unchanged" diff
+    // detected for that record is what surfaces here — same deterministic
+    // change log the Cause List Intelligence page reads, not a second
+    // notion of "changed". Suppressed entirely when the tenant has cause
+    // lists turned off, same governance pattern as aiEnabled above.
+    const causeListRecordIds = causeListEnabled
+      ? hearings.map((h) => h.cause_list_record_id).filter((id): id is string => !!id)
+      : [];
+    const { data: causeListChangesRaw } = causeListRecordIds.length
+      ? await context.supabase
+          .from("cause_list_changes")
+          .select("record_id, change_type, field_name, old_value, new_value")
+          .in("record_id", causeListRecordIds)
+          .neq("change_type", "unchanged")
+      : {
+          data: [] as {
+            record_id: string;
+            change_type: string;
+            field_name: string | null;
+            old_value: string | null;
+            new_value: string | null;
+          }[],
+        };
+    const causeListChangesByRecordId = new Map<string, BriefCauseListSignal>();
+    for (const change of causeListChangesRaw ?? []) {
+      const existing = causeListChangesByRecordId.get(change.record_id) ?? {
+        isNewListing: false,
+        changeSummary: [],
+      };
+      if (change.change_type === "new_listing") {
+        existing.isNewListing = true;
+      } else if (change.field_name) {
+        existing.changeSummary.push(
+          `${change.field_name.replace("_", " ")}: ${change.old_value ?? "—"} → ${change.new_value ?? "—"}`,
+        );
+      }
+      causeListChangesByRecordId.set(change.record_id, existing);
+    }
+
     const items: BriefItem[] = hearings.map((h) => {
       const matterRow =
         (h.matter_id ? matterById.get(h.matter_id) : null) ??
@@ -241,6 +300,9 @@ export const getMorningBrief = createServerFn({ method: "GET" })
       const documents = docsByTitle.get(h.matter_title) ?? [];
       const invoiceAlerts = matterRow ? (invoicesByMatterId.get(matterRow.id) ?? []) : [];
       const hasConflict = isClashing(h, clashKeys);
+      const causeList = h.cause_list_record_id
+        ? (causeListChangesByRecordId.get(h.cause_list_record_id) ?? null)
+        : null;
 
       const { priority, reasons } = classifyPriority({
         hasConflict,
@@ -248,6 +310,9 @@ export const getMorningBrief = createServerFn({ method: "GET" })
         hasDocuments: documents.length > 0,
         hasOverdueInvoice: invoiceAlerts.some((i) => i.overdue),
         hearingTimeMissing: !h.hearing_time,
+        isNewCauseListListing: causeList?.isNewListing ?? false,
+        causeListChanged:
+          !!causeList && !causeList.isNewListing && causeList.changeSummary.length > 0,
       });
 
       return {
@@ -278,10 +343,18 @@ export const getMorningBrief = createServerFn({ method: "GET" })
         documents,
         invoiceAlerts,
         hasConflict,
+        causeList,
         priority,
         priorityReasons: reasons,
       };
     });
 
-    return { date: targetDate, advocateName, aiEnabled, items, conflictCount: clashKeys.size };
+    return {
+      date: targetDate,
+      advocateName,
+      aiEnabled,
+      causeListEnabled,
+      items,
+      conflictCount: clashKeys.size,
+    };
   });

@@ -48,6 +48,10 @@ function buildDeterministicSummary(item: BriefItem): string {
   if (item.hasConflict)
     parts.push("This hearing clashes with another listing at the same time today.");
   if (item.invoiceAlerts.some((i) => i.overdue)) parts.push("This matter has an overdue invoice.");
+  if (item.causeList?.isNewListing)
+    parts.push("This is a new listing on today's cause list — wasn't on record before.");
+  else if (item.causeList?.changeSummary.length)
+    parts.push(`Cause-list details changed: ${item.causeList.changeSummary.join("; ")}.`);
   return parts.join(" ");
 }
 
@@ -121,7 +125,17 @@ export function CourtMorningBrief() {
       (sum, i) => sum + i.invoiceAlerts.filter((a) => a.overdue).length,
       0,
     );
-    return { hearings: items.length, critical, conflicts, withoutDocuments, pendingActions };
+    const causeListChanges = items.filter(
+      (i) => i.causeList?.isNewListing || (i.causeList?.changeSummary.length ?? 0) > 0,
+    ).length;
+    return {
+      hearings: items.length,
+      critical,
+      conflicts,
+      withoutDocuments,
+      pendingActions,
+      causeListChanges,
+    };
   }, [items]);
 
   const nextHearing = items[0] ?? null;
@@ -237,9 +251,13 @@ export function CourtMorningBrief() {
             <p>
               <span className="font-semibold">Without documents:</span> {counts.withoutDocuments}
             </p>
+            <p>
+              <span className="font-semibold">New/changed on cause list:</span>{" "}
+              {counts.causeListChanges}
+            </p>
           </div>
 
-          <div className="mt-5 hidden gap-4 sm:grid sm:grid-cols-2 lg:grid-cols-5 [&>*]:min-w-0">
+          <div className="mt-5 hidden gap-4 sm:grid sm:grid-cols-2 lg:grid-cols-6 [&>*]:min-w-0">
             <StatCard label="Hearings today" value={String(counts.hearings)} />
             <StatCard
               label="Critical"
@@ -253,6 +271,11 @@ export function CourtMorningBrief() {
             />
             <StatCard label="Conflicts" value={String(counts.conflicts)} />
             <StatCard label="Without documents" value={String(counts.withoutDocuments)} />
+            <StatCard
+              label="Cause list"
+              value={String(counts.causeListChanges)}
+              note="New or changed since last import"
+            />
           </div>
 
           {aiError ? (
@@ -289,6 +312,11 @@ export function CourtMorningBrief() {
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
+                      {item.causeList?.isNewListing ? (
+                        <Tag tone="danger">New on cause list</Tag>
+                      ) : item.causeList?.changeSummary.length ? (
+                        <Tag tone="warning">Cause list changed</Tag>
+                      ) : null}
                       <Tag tone={priorityTone[item.priority]}>{priorityLabel[item.priority]}</Tag>
                       <Tag tone="neutral">{statusLabel[item.status] ?? item.status}</Tag>
                       {expanded ? (
@@ -369,6 +397,19 @@ export function CourtMorningBrief() {
                         )}
                       </div>
 
+                      {item.causeList?.changeSummary.length ? (
+                        <div>
+                          <p className="text-eyebrow text-muted-foreground">
+                            Changed since last cause-list import
+                          </p>
+                          <ul className="mt-1 list-inside list-disc text-sm">
+                            {item.causeList.changeSummary.map((line) => (
+                              <li key={line}>{line}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : null}
+
                       <div className="rounded border border-border bg-card p-3">
                         <p className="text-eyebrow flex items-center gap-1.5 text-accent">
                           <Sparkles className="size-3.5" />
@@ -392,6 +433,14 @@ export function CourtMorningBrief() {
                         >
                           View documents
                         </Link>
+                        {item.causeList ? (
+                          <Link
+                            to="/app/cause-list"
+                            className="rounded border border-input px-3 py-1.5 text-xs font-medium transition-colors hover:bg-secondary"
+                          >
+                            View in cause list
+                          </Link>
+                        ) : null}
                       </div>
                     </div>
                   ) : null}
