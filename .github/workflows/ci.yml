@@ -23,4 +23,12 @@ jobs:
         run: bun run lint
 
       - name: Build
+        # Publishable, non-secret values — same pair already committed in
+        # plain text in wrangler.toml's [vars]. CI has no deploy target of
+        # its own, so there's no separate "real" project config to keep
+        # these in sync with; this build only needs to prove the app builds
+        # correctly, which (since PR #8) requires these to be present at all.
+        env:
+          VITE_SUPABASE_URL: https://cjcjfdwdlsdgyvshuncn.supabase.co
+          VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_DnB_8STNU8FST_sCkRAM4w_K9c8A4Ft
         run: bun run build
