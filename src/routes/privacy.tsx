@@ -62,7 +62,9 @@ function Privacy() {
                 </thead>
                 <tbody className="divide-y divide-border">
                   <tr>
-                    <td className="px-3 py-2">Name, email, firm name, enrolment number</td>
+                    <td className="px-3 py-2">
+                      Name, email, mobile number, firm name, enrolment number
+                    </td>
                     <td className="px-3 py-2 text-muted-foreground">
                       Providing your account and the service
                     </td>

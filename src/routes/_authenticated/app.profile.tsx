@@ -33,6 +33,7 @@ type ProfileData = {
   full_name: string | null;
   firm_name: string | null;
   enrolment_no: string | null;
+  phone: string | null;
   tenant_role: string;
   created_at: string;
 };
@@ -82,6 +83,7 @@ function Profile() {
   const [fullName, setFullName] = useState("");
   const [firmName, setFirmName] = useState("");
   const [enrolmentNo, setEnrolmentNo] = useState("");
+  const [phone, setPhone] = useState("");
 
   const [exportingMine, setExportingMine] = useState(false);
   const [exportingChamber, setExportingChamber] = useState(false);
@@ -100,6 +102,7 @@ function Profile() {
       setFullName(pd.full_name ?? "");
       setFirmName(pd.firm_name ?? "");
       setEnrolmentNo(pd.enrolment_no ?? "");
+      setPhone(pd.phone ?? "");
       setConsents(c as Consent[]);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Failed to load your profile.");
@@ -119,7 +122,7 @@ function Profile() {
     setError(null);
     setNotice(null);
     try {
-      await saveProfile({ data: { fullName, firmName, enrolmentNo } });
+      await saveProfile({ data: { fullName, firmName, enrolmentNo, phone } });
       await reload();
       setNotice("Profile updated.");
     } catch (cause) {
@@ -248,6 +251,21 @@ function Profile() {
                     placeholder="MH/1234/2015"
                     className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
                   />
+                </label>
+                <label className="block text-sm">
+                  <span className="text-eyebrow">Mobile number</span>
+                  <input
+                    type="tel"
+                    inputMode="tel"
+                    autoComplete="tel"
+                    value={phone}
+                    onChange={(event) => setPhone(event.target.value)}
+                    placeholder="+919820041122"
+                    className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
+                  />
+                  <span className="mt-1 block text-xs text-muted-foreground">
+                    Include the country code, e.g. +91 for India.
+                  </span>
                 </label>
                 <label className="block text-sm">
                   <span className="text-eyebrow">Email</span>
