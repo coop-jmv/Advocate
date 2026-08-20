@@ -13,6 +13,8 @@ export const Route = createFileRoute("/_authenticated/app/subscription")({
 const RAZORPAY_LINK = "https://razorpay.me/@lexdiary";
 const BILLING_EMAIL = "chambers@lexdiary.online";
 const GST_RATE = 0.18;
+// Annual bills for 10 months' worth — 2 months free relative to paying monthly.
+const ANNUAL_MONTHS_CHARGED = 10;
 
 type Entitlements = {
   plan: string;
@@ -20,6 +22,10 @@ type Entitlements = {
   trial_days_left: number | null;
   trial_expired: boolean;
   monthly_total_inr: number;
+  billing_cadence: string | null;
+  current_period_end: string | null;
+  subscription_expired: boolean;
+  subscription_grace_days_left: number | null;
 };
 
 const plans = [
@@ -75,6 +81,7 @@ function Subscription() {
   const loadEntitlements = useServerFn(getEntitlements);
   const [entitlements, setEntitlements] = useState<Entitlements | null>(null);
   const [loading, setLoading] = useState(true);
+  const [cadence, setCadence] = useState<"monthly" | "annual">("monthly");
 
   useEffect(() => {
     let cancelled = false;
@@ -91,6 +98,14 @@ function Subscription() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const inGrace =
+    entitlements &&
+    !entitlements.subscription_expired &&
+    entitlements.plan !== "trial" &&
+    entitlements.subscription_grace_days_left !== null &&
+    entitlements.current_period_end !== null &&
+    new Date(entitlements.current_period_end) <= new Date();
+
   return (
     <AppShell title="Subscription" subtitle="Choose a plan to keep adding to your chamber">
       {loading ? (
@@ -103,6 +118,27 @@ function Subscription() {
           <p className="mt-1.5 text-sm text-muted-foreground">
             Your matters, diary, documents and clients are all still here and fully readable — you
             just can't add anything new until you pick a plan below.
+          </p>
+        </div>
+      ) : entitlements?.subscription_expired ? (
+        <div className="surface-panel rounded border-l-4 border-destructive p-5">
+          <h2 className="font-display text-base font-bold">Your subscription has lapsed</h2>
+          <p className="mt-1.5 text-sm text-muted-foreground">
+            Your data is safe and still readable — you just can't add anything new until you renew
+            below. Already paid? Email us the reference and we'll reactivate your chamber.
+          </p>
+        </div>
+      ) : inGrace ? (
+        <div className="surface-panel rounded border-l-4 border-warning p-5">
+          <h2 className="font-display text-base font-bold">
+            Renewal due — {entitlements!.subscription_grace_days_left} day
+            {entitlements!.subscription_grace_days_left === 1 ? "" : "s"} left before your chamber
+            goes read-only
+          </h2>
+          <p className="mt-1.5 text-sm text-muted-foreground">
+            Your subscription period ended on{" "}
+            {new Date(entitlements!.current_period_end!).toLocaleDateString("en-IN")}. Renew below
+            to avoid any interruption.
           </p>
         </div>
       ) : entitlements && entitlements.plan === "trial" ? (
@@ -123,18 +159,47 @@ function Subscription() {
             plan
           </h2>
           <p className="mt-1.5 text-sm text-muted-foreground">
-            {rupees(entitlements.monthly_total_inr)} +{" "}
-            {rupees(withGst(entitlements.monthly_total_inr).gst)} GST ={" "}
-            {rupees(withGst(entitlements.monthly_total_inr).total)} / month. Need a different plan
-            or more seats? Pay via Razorpay below, then email us the reference so we can update your
-            chamber.
+            Billed {entitlements.billing_cadence ?? "monthly"}
+            {entitlements.current_period_end
+              ? `, active through ${new Date(entitlements.current_period_end).toLocaleDateString("en-IN")}`
+              : ""}
+            . Need a different plan, more seats, or want to switch to annual? Pay via Razorpay
+            below, then email us the reference.
           </p>
         </div>
       ) : null}
 
-      <div className="mt-8 grid gap-6 lg:grid-cols-3">
+      <div className="mt-8 flex items-center justify-center gap-1 rounded border border-border bg-secondary/60 p-1 text-sm">
+        <button
+          type="button"
+          onClick={() => setCadence("monthly")}
+          className={
+            cadence === "monthly"
+              ? "rounded bg-card px-4 py-1.5 font-semibold shadow-sm"
+              : "rounded px-4 py-1.5 text-muted-foreground"
+          }
+        >
+          Monthly
+        </button>
+        <button
+          type="button"
+          onClick={() => setCadence("annual")}
+          className={
+            cadence === "annual"
+              ? "rounded bg-card px-4 py-1.5 font-semibold shadow-sm"
+              : "rounded px-4 py-1.5 text-muted-foreground"
+          }
+        >
+          Annual — 2 months free
+        </button>
+      </div>
+
+      <div className="mt-6 grid gap-6 lg:grid-cols-3">
         {plans.map((plan) => {
-          const { gst, total } = withGst(plan.basePrice);
+          const effectiveBase =
+            cadence === "annual" ? plan.basePrice * ANNUAL_MONTHS_CHARGED : plan.basePrice;
+          const { gst, total } = withGst(effectiveBase);
+          const annualSavings = plan.basePrice * (12 - ANNUAL_MONTHS_CHARGED);
           return (
             <article
               key={plan.id}
@@ -146,9 +211,16 @@ function Subscription() {
             >
               <h3 className="font-display text-lg font-bold">{plan.name}</h3>
               <p className="mt-3 flex items-baseline gap-2">
-                <span className="font-display text-2xl font-bold">{rupees(plan.basePrice)}</span>
-                <span className="text-xs text-muted-foreground">per month</span>
+                <span className="font-display text-2xl font-bold">{rupees(effectiveBase)}</span>
+                <span className="text-xs text-muted-foreground">
+                  {cadence === "annual" ? "per year" : "per month"}
+                </span>
               </p>
+              {cadence === "annual" ? (
+                <p className="mt-0.5 text-xs font-medium text-accent">
+                  Save {rupees(annualSavings)} a year — 2 months free
+                </p>
+              ) : null}
               <p className="mt-1 text-xs text-muted-foreground">
                 + {rupees(gst)} GST (18%) = <span className="font-medium">{rupees(total)}</span> to
                 pay
@@ -183,7 +255,8 @@ function Subscription() {
       <div className="surface-panel mt-8 rounded p-6 text-sm text-muted-foreground">
         <h3 className="font-display text-base font-bold text-foreground">After you pay</h3>
         <p className="mt-2 leading-relaxed">
-          Payment isn't linked to your account automatically yet — after paying on Razorpay, email{" "}
+          Payment isn't linked to your account automatically yet — after paying on Razorpay, mention
+          whether you paid monthly or annually, and email{" "}
           <a
             href={`mailto:${BILLING_EMAIL}`}
             className="font-medium text-accent underline-offset-4 hover:underline"
