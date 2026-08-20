@@ -14,7 +14,7 @@ import heroImage from "@/assets/hero-advocate.jpg";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Wakilio — Practice Management for Indian Advocates" },
+      { title: "LexDiary — Practice Management for Indian Advocates" },
       {
         name: "description",
         content:
@@ -22,7 +22,7 @@ export const Route = createFileRoute("/")({
       },
       {
         property: "og:title",
-        content: "Wakilio — Practice Management for Indian Advocates",
+        content: "LexDiary — Practice Management for Indian Advocates",
       },
       {
         property: "og:description",
@@ -87,7 +87,7 @@ function Landing() {
                 A disciplined practice, run from a single workspace.
               </h1>
               <p className="mt-6 max-w-xl text-base leading-relaxed text-primary-foreground/80">
-                Wakilio brings matters, your hearing diary, documents, clients and billing together
+                LexDiary brings matters, your hearing diary, documents, clients and billing together
                 in one platform, purpose-built for how litigation is practised in Indian courts —
                 accessible from your phone, wherever the day takes you.
               </p>

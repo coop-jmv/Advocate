@@ -1,6 +1,6 @@
 {
-  "name": "Wakilio",
-  "short_name": "Wakilio",
+  "name": "LexDiary",
+  "short_name": "LexDiary",
   "description": "Practice management for Indian advocates — matters, court diary, documents, dictation and AI drafting.",
   "start_url": "/app",
   "scope": "/",

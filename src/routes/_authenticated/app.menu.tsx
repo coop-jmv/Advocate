@@ -5,7 +5,7 @@ import { groupedDestinations } from "@/lib/navigation";
 export const Route = createFileRoute("/_authenticated/app/menu")({
   head: () => ({
     meta: [
-      { title: "Menu — Wakilio" },
+      { title: "Menu — LexDiary" },
       { name: "description", content: "Every part of your chamber, one tap away." },
     ],
   }),

@@ -1,4 +1,4 @@
-package com.wakilio.app;
+package com.lexdiary.app;
 
 import com.getcapacitor.BridgeActivity;
 

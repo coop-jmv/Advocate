@@ -41,3 +41,7 @@ supabase/snippets/
 *.njsproj
 *.sln
 *.sw?
+
+# Android Studio pins a machine-specific daemon JDK here (vendor + version).
+# Committing it would force that exact JDK on CI and every other machine.
+android/gradle/gradle-daemon-jvm.properties

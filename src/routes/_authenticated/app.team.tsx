@@ -20,7 +20,7 @@ import {
 export const Route = createFileRoute("/_authenticated/app/team")({
   head: () => ({
     meta: [
-      { title: "Team — Wakilio" },
+      { title: "Team — LexDiary" },
       { name: "description", content: "Manage who has access to your chamber's account." },
     ],
   }),

@@ -10,12 +10,12 @@ import { listInvoices, listTimeEntries } from "@/lib/billing.functions";
 export const Route = createFileRoute("/_authenticated/app/")({
   head: () => ({
     meta: [
-      { title: "Dashboard — Wakilio" },
+      { title: "Dashboard — LexDiary" },
       {
         name: "description",
         content: "Today's hearings, billable hours and workload for your chamber, at a glance.",
       },
-      { property: "og:title", content: "Dashboard — Wakilio" },
+      { property: "og:title", content: "Dashboard — LexDiary" },
       {
         property: "og:description",
         content: "Today's hearings and billable hours for your chamber, at a glance.",

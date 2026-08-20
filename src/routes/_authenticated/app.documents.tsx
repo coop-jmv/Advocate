@@ -8,13 +8,13 @@ import { documents } from "@/lib/mock-data";
 export const Route = createFileRoute("/_authenticated/app/documents")({
   head: () => ({
     meta: [
-      { title: "Documents — Wakilio" },
+      { title: "Documents — LexDiary" },
       {
         name: "description",
         content:
           "Matter-linked document vault with camera scanning, English and Hindi OCR, full-text search and redaction before sharing.",
       },
-      { property: "og:title", content: "Documents — Wakilio" },
+      { property: "og:title", content: "Documents — LexDiary" },
       {
         property: "og:description",
         content: "Document vault with Indic OCR, full-text search and redaction before sharing.",

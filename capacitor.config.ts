@@ -7,12 +7,18 @@ import type { CapacitorConfig } from "@capacitor/cli";
 // Cloudflare Worker directly over HTTPS. webDir is still required by the
 // config schema; it's unused at runtime since server.url takes priority,
 // but `cap sync` needs it to exist.
+//
+// server.url is the custom domain, not the workers.dev address, and that is
+// deliberate: this value is compiled into the APK, so changing it later means
+// a new build and a fresh Play Store submission. The custom domain is stable
+// and ours; the workers.dev hostname is tied to the Worker's name and would
+// break the shipped app if the Worker were ever renamed again.
 const config: CapacitorConfig = {
-  appId: "com.wakilio.app",
-  appName: "Wakilio",
+  appId: "com.lexdiary.app",
+  appName: "LexDiary",
   webDir: "dist/client",
   server: {
-    url: "https://wakilio.dhanapalan-advocate.workers.dev",
+    url: "https://lexdiary.online",
     androidScheme: "https",
     cleartext: false,
   },

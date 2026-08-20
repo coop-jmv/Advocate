@@ -11,13 +11,13 @@ import { listMatters } from "@/lib/matters.functions";
 export const Route = createFileRoute("/_authenticated/app/insights")({
   head: () => ({
     meta: [
-      { title: "Diary & risk insights — Wakilio" },
+      { title: "Diary & risk insights — LexDiary" },
       {
         name: "description",
         content:
           "AI briefing on hearing readiness and today's priorities, generated from your chamber's real matters and diary.",
       },
-      { property: "og:title", content: "Diary & risk insights — Wakilio" },
+      { property: "og:title", content: "Diary & risk insights — LexDiary" },
       {
         property: "og:description",
         content: "Daily AI briefing generated from your chamber's real matters and diary.",

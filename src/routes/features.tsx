@@ -4,13 +4,13 @@ import { SiteHeader, SiteFooter } from "@/components/site/SiteChrome";
 export const Route = createFileRoute("/features")({
   head: () => ({
     meta: [
-      { title: "Features — Wakilio" },
+      { title: "Features — LexDiary" },
       {
         name: "description",
         content:
           "Module-by-module detail: case & matter management, hearing diary, Indic OCR document vault, client portal, GST billing and audit logs.",
       },
-      { property: "og:title", content: "Features — Wakilio" },
+      { property: "og:title", content: "Features — LexDiary" },
       {
         property: "og:description",
         content:
@@ -110,7 +110,7 @@ function Features() {
       <SiteHeader />
       <main className="mx-auto max-w-5xl px-5 py-16">
         <p className="text-eyebrow text-accent">Functional scope</p>
-        <h1 className="mt-4 text-4xl font-bold">What Wakilio does</h1>
+        <h1 className="mt-4 text-4xl font-bold">What LexDiary does</h1>
         <p className="mt-4 max-w-2xl text-muted-foreground">
           The modules below follow the requirement set for the first two release phases. Full
           e-filing submission, large-firm litigation analytics and full accounting sit outside this

@@ -13,13 +13,13 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/_authenticated/app/assistant")({
   head: () => ({
     meta: [
-      { title: "AI case assistant — Wakilio" },
+      { title: "AI case assistant — LexDiary" },
       {
         name: "description",
         content:
           "Ask an AI legal associate about your matters, procedure, limitation and next steps, with every conversation saved to your chamber account.",
       },
-      { property: "og:title", content: "AI case assistant — Wakilio" },
+      { property: "og:title", content: "AI case assistant — LexDiary" },
       {
         property: "og:description",
         content:
