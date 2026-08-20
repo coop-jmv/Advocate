@@ -1,5 +1,17 @@
 apply plugin: 'com.android.application'
 
+// Release signing credentials live in android/keystore.properties, which is
+// gitignored — the keystore file and its passwords must never enter the repo.
+// Absence is handled deliberately rather than fatally: debug builds, CI, and a
+// fresh clone all need to work without it, so a missing file leaves the
+// release build unsigned instead of failing the whole Gradle configuration.
+def keystorePropertiesFile = rootProject.file("keystore.properties")
+def keystoreProperties = new Properties()
+def hasReleaseSigning = keystorePropertiesFile.exists()
+if (hasReleaseSigning) {
+    keystorePropertiesFile.withInputStream { keystoreProperties.load(it) }
+}
+
 android {
     namespace = "com.lexdiary.app"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -16,10 +28,30 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        release {
+            if (hasReleaseSigning) {
+                // rootProject.file, not file(): this block is evaluated inside
+                // android/app/'s build.gradle, so a bare file() would resolve
+                // relative to android/app/ while keystore.properties itself lives
+                // in android/ — a relative storeFile value would silently point
+                // at the wrong directory. rootProject.file keeps both paths
+                // resolving from the same place. An absolute path still works and
+                // can point the keystore outside the repo entirely.
+                storeFile rootProject.file(keystoreProperties['storeFile'])
+                storePassword keystoreProperties['storePassword']
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+            }
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            if (hasReleaseSigning) {
+                signingConfig signingConfigs.release
+            }
         }
     }
 }
