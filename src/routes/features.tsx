@@ -26,7 +26,7 @@ const modules = [
     id: "FR-1",
     name: "Authentication & onboarding",
     points: [
-      "Register with mobile number or email, verified by OTP",
+      "Register with email and mobile number (OTP verification on the roadmap)",
       "Optional Bar Council enrolment number for advocate verification",
       "Roles for Advocate, Junior, Clerk, Client and Firm Admin",
       "Step-up multi-factor authentication on sensitive actions",

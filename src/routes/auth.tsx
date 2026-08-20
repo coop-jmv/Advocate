@@ -34,6 +34,19 @@ function landingRoute(): "/app" | "/app/menu" {
   return window.matchMedia("(max-width: 767px)").matches ? "/app/menu" : "/app";
 }
 
+// Indian mobiles are the norm here, so a bare 10-digit number is accepted and
+// assumed +91 — that is what people actually type. An explicit +<country code>
+// is passed through untouched so an advocate practising on an overseas number
+// is not locked out. Returns null when the input cannot be made into a
+// plausible E.164 number, which is what the DB CHECK constraint expects.
+function toE164(raw: string): string | null {
+  const trimmed = raw.replace(/[\s()-]/g, "");
+  if (/^[6-9]\d{9}$/.test(trimmed)) return `+91${trimmed}`;
+  if (/^0[6-9]\d{9}$/.test(trimmed)) return `+91${trimmed.slice(1)}`;
+  if (/^\+[1-9]\d{7,14}$/.test(trimmed)) return trimmed;
+  return null;
+}
+
 function AuthPage() {
   const navigate = useNavigate();
   // ?mode=signup lets the pricing and landing CTAs open registration directly
@@ -48,6 +61,7 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [firmName, setFirmName] = useState("");
+  const [phone, setPhone] = useState("");
   const [agreedToPrivacy, setAgreedToPrivacy] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -69,6 +83,12 @@ function AuthPage() {
       setError("Please confirm you have read the privacy notice before creating an account.");
       return;
     }
+    if (mode === "signup" && !toE164(phone)) {
+      setError(
+        "Enter a valid mobile number — 10 digits for an Indian number, or +<country code> for an overseas one.",
+      );
+      return;
+    }
     setBusy(true);
     setError(null);
     setNotice(null);
@@ -79,7 +99,7 @@ function AuthPage() {
           password,
           options: {
             emailRedirectTo: `${window.location.origin}/app`,
-            data: { full_name: fullName, firm_name: firmName },
+            data: { full_name: fullName, firm_name: firmName, phone: toE164(phone) },
           },
         });
         if (signUpError) throw signUpError;
@@ -186,6 +206,23 @@ function AuthPage() {
                     className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
                     placeholder="Nair & Associates"
                   />
+                </label>
+                <label className="block text-sm">
+                  <span className="text-eyebrow">Mobile number</span>
+                  <input
+                    type="tel"
+                    inputMode="tel"
+                    autoComplete="tel"
+                    value={phone}
+                    onChange={(event) => setPhone(event.target.value)}
+                    required
+                    className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
+                    placeholder="98200 41122"
+                  />
+                  <span className="mt-1 block text-xs text-muted-foreground">
+                    For hearing reminders and account recovery. Indian numbers can be entered as 10
+                    digits; use +&lt;country code&gt; otherwise.
+                  </span>
                 </label>
               </>
             ) : null}

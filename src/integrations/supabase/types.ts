@@ -633,6 +633,7 @@ export type Database = {
           firm_name: string | null;
           full_name: string | null;
           id: string;
+          phone: string | null;
           tenant_id: string | null;
           tenant_role: string;
           updated_at: string;
@@ -643,6 +644,7 @@ export type Database = {
           firm_name?: string | null;
           full_name?: string | null;
           id: string;
+          phone?: string | null;
           tenant_id?: string | null;
           tenant_role?: string;
           updated_at?: string;
@@ -653,6 +655,7 @@ export type Database = {
           firm_name?: string | null;
           full_name?: string | null;
           id?: string;
+          phone?: string | null;
           tenant_id?: string | null;
           tenant_role?: string;
           updated_at?: string;

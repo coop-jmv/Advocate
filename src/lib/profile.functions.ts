@@ -12,7 +12,7 @@ export const getMyProfile = createServerFn({ method: "GET" })
     const [{ data: profile, error: profileError }, { data: userRes }] = await Promise.all([
       context.supabase
         .from("profiles")
-        .select("full_name, firm_name, enrolment_no, tenant_role, created_at")
+        .select("full_name, firm_name, enrolment_no, phone, tenant_role, created_at")
         .eq("id", context.userId)
         .single(),
       context.supabase.auth.getUser(),
@@ -29,6 +29,17 @@ export const updateMyProfile = createServerFn({ method: "POST" })
         fullName: z.string().trim().min(1).max(120),
         firmName: z.string().trim().max(160).optional(),
         enrolmentNo: z.string().trim().max(60).optional(),
+        // Matches the DB CHECK on profiles.phone. Empty is allowed here so an
+        // existing profile can clear the field; signup requires it separately.
+        phone: z
+          .string()
+          .trim()
+          .regex(
+            /^\+[1-9][0-9]{7,14}$/,
+            "Enter the number in +<country code> form, e.g. +919820041122.",
+          )
+          .optional()
+          .or(z.literal("")),
       })
       .parse(data),
   )
@@ -39,6 +50,7 @@ export const updateMyProfile = createServerFn({ method: "POST" })
         full_name: data.fullName,
         firm_name: data.firmName || null,
         enrolment_no: data.enrolmentNo || null,
+        phone: data.phone || null,
       })
       .eq("id", context.userId);
     if (error) throw new Error(error.message);
