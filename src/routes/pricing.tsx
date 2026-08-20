@@ -9,60 +9,65 @@ export const Route = createFileRoute("/pricing")({
       {
         name: "description",
         content:
-          "Subscription plans for solo advocates, chambers and small law firms, billed per user per month in Indian rupees with GST invoices.",
+          "Solo plans from ₹499 a month and Chamber plans from ₹999 a month for two users, with extra seats at ₹499. Billed in Indian rupees with GST invoices.",
       },
       { property: "og:title", content: "Pricing — Wakilio" },
       {
         property: "og:description",
         content:
-          "Plans for solo advocates, chambers and small firms — per user, per month, in rupees.",
+          "Solo from ₹499/month, Solo Pro at ₹799 with OCR and WhatsApp, Chamber from ₹999 for two users.",
       },
     ],
   }),
   component: Pricing,
 });
 
+// Prices here mirror plan_price_inr() in the database — the licence layer is
+// what actually enforces the limits, this page just describes them.
 const plans = [
   {
-    name: "Diary",
-    price: "₹399",
-    cadence: "per advocate / month",
-    summary: "For solo practitioners who mainly need the court diary in hand.",
+    name: "Solo Basic",
+    price: "₹499",
+    cadence: "per month",
+    summary: "For a solo advocate who wants the whole practice in one place.",
     features: [
-      "Up to 50 active matters",
-      "CNR case-status lookup",
+      "One advocate",
+      "Up to 50 matters and 50 clients",
       "Court diary with hearing reminders",
-      "2 GB document storage",
-      "English and Hindi interface",
+      "Time tracking and GST invoicing",
+      "AI drafting assistant — 40 requests a day",
+      "1 GB document storage",
     ],
   },
   {
-    name: "Chamber",
-    price: "₹899",
-    cadence: "per user / month",
-    summary: "For a chamber with juniors and a clerk — the full matter file, OCR and billing.",
+    name: "Solo Pro",
+    price: "₹799",
+    cadence: "per month",
+    summary: "The same practice, with document intake and client messaging automated.",
     features: [
-      "Unlimited matters and clients",
-      "Indic OCR and in-document search",
-      "Roles for juniors and clerks",
-      "Time tracking and GST invoicing",
-      "WhatsApp and SMS reminders",
-      "50 GB document storage",
+      "Everything in Solo Basic",
+      "Indic OCR intake with review and approval",
+      "WhatsApp reminders and client updates",
+      "Up to 200 matters and 200 clients",
+      "AI drafting assistant — 150 requests a day",
+      "5 GB document storage",
     ],
     featured: true,
   },
   {
-    name: "Firm",
-    price: "₹1,699",
-    cadence: "per user / month",
-    summary: "For small-to-medium firms that need the client portal and audit controls.",
+    name: "Chamber",
+    price: "₹999",
+    cadence: "per month, 2 users included",
+    summary: "For a chamber with juniors and a clerk. Extra seats at ₹499 per user, per month.",
     features: [
-      "Everything in Chamber",
-      "Client portal and secure messaging",
-      "Conflict-of-interest checks",
-      "Audit log export and DPDP tooling",
-      "Firm-level isolated data storage",
-      "Priority support with 4-hour RTO",
+      "Everything in Solo Pro",
+      "Two users included, add seats at ₹499 each",
+      "Roles for owners, admins, juniors and clerks",
+      "Invite teammates and manage seats yourself",
+      "Chamber-wide audit log",
+      "Unlimited matters and clients",
+      "AI drafting assistant — 400 requests a day",
+      "25 GB document storage",
     ],
   },
 ];
@@ -73,10 +78,11 @@ function Pricing() {
       <SiteHeader />
       <main className="mx-auto max-w-6xl px-5 py-16">
         <p className="text-eyebrow text-accent">Subscriptions</p>
-        <h1 className="mt-4 text-4xl font-bold">Priced per seat, billed in rupees</h1>
+        <h1 className="mt-4 text-4xl font-bold">Priced for how Indian advocates actually work</h1>
         <p className="mt-4 max-w-2xl text-muted-foreground">
-          Every plan includes GST-compliant invoicing, Indian data residency and daily backups.
-          Annual billing carries two months free.
+          Two plans for a solo practice, and a Chamber plan that starts at two users and grows a
+          seat at a time. Every plan includes GST-compliant invoicing, Indian data residency and
+          daily backups. Annual billing carries two months free.
         </p>
 
         <div className="mt-14 grid gap-6 lg:grid-cols-3">
@@ -117,9 +123,19 @@ function Pricing() {
           ))}
         </div>
 
-        <p className="mt-10 text-sm text-muted-foreground">
-          Client portal users are never charged a seat. Storage beyond the plan limit is billed at
-          ₹40 per 10 GB per month.
+        <div className="surface-panel mt-12 rounded p-7">
+          <h2 className="font-display text-lg font-bold">How Chamber seats are counted</h2>
+          <p className="mt-3 max-w-3xl text-sm leading-relaxed text-muted-foreground">
+            A Chamber subscription starts at ₹999 a month and covers two users. Each additional
+            teammate is ₹499 a month, added or removed from the Team screen by an owner or admin —
+            a chamber of four works out to ₹1,997 a month. Every seat is a full login with its own
+            role; pending invites hold a seat until they are accepted or revoked.
+          </p>
+        </div>
+
+        <p className="mt-8 text-sm text-muted-foreground">
+          A 14-day trial is available on request and includes OCR and WhatsApp so both can be
+          evaluated properly. Client portal users are never charged a seat.
         </p>
       </main>
       <SiteFooter />

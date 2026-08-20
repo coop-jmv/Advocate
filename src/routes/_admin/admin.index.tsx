@@ -201,9 +201,9 @@ function AdminTenants() {
                       className="rounded border border-input bg-background px-2 py-1 text-xs"
                     >
                       <option value="trial">trial</option>
-                      <option value="starter">starter</option>
-                      <option value="pro">pro</option>
-                      <option value="enterprise">enterprise</option>
+                      <option value="solo_basic">solo_basic</option>
+                      <option value="solo_pro">solo_pro</option>
+                      <option value="chamber">chamber</option>
                     </select>
                   ) : (
                     <span className="text-xs text-muted-foreground">no license</span>

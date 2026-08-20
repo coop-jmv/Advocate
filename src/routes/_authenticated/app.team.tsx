@@ -1,17 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Mail, MessageCircle, Plus, Users, X } from "lucide-react";
+import { Loader2, Mail, MessageCircle, Minus, Plus, Users, X } from "lucide-react";
 import { AppShell } from "@/components/app/AppShell";
 import { DataTable, Tag, type Tone } from "@/components/app/primitives";
 import {
   createInvite,
-  getUsageSummary,
+  getEntitlements,
+  getMyMembership,
   listInvites,
   listTeamMembers,
+  removeMember,
   revokeInvite,
+  setMemberRole,
+  setSeatCount,
 } from "@/lib/team.functions";
-import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/app/team")({
   head: () => ({
@@ -33,12 +36,22 @@ type Invite = {
   expires_at: string;
   token?: string;
 };
-type Usage = {
+type Entitlements = {
   plan: string;
-  used_storage_mb: number;
-  storage_limit_mb: number | null;
+  status: string;
+  seats: number;
+  seats_included: number;
   seats_used: number;
-  seats_limit: number;
+  extra_seats: number;
+  extra_seat_price_inr: number | null;
+  base_price_inr: number;
+  monthly_total_inr: number;
+  ocr_enabled: boolean;
+  whatsapp_enabled: boolean;
+  team_enabled: boolean;
+  matters_limit: number | null;
+  clients_limit: number | null;
+  storage_limit_mb: number | null;
 };
 
 const inviteStatusTone: Record<string, Tone> = {
@@ -48,32 +61,58 @@ const inviteStatusTone: Record<string, Tone> = {
   expired: "danger",
 };
 
+const planLabel: Record<string, string> = {
+  trial: "Trial",
+  solo_basic: "Solo Basic",
+  solo_pro: "Solo Pro",
+  chamber: "Chamber",
+};
+
+const rupees = (n: number) => `₹${n.toLocaleString("en-IN")}`;
+
 function Team() {
   const loadMembers = useServerFn(listTeamMembers);
   const loadInvites = useServerFn(listInvites);
   const addInvite = useServerFn(createInvite);
   const cancelInvite = useServerFn(revokeInvite);
-  const loadUsage = useServerFn(getUsageSummary);
+  const loadEntitlements = useServerFn(getEntitlements);
+  const loadMe = useServerFn(getMyMembership);
+  const changeRole = useServerFn(setMemberRole);
+  const dropMember = useServerFn(removeMember);
+  const changeSeats = useServerFn(setSeatCount);
 
   const [members, setMembers] = useState<Member[]>([]);
   const [invites, setInvites] = useState<Invite[]>([]);
-  const [usage, setUsage] = useState<Usage | null>(null);
-  const [whatsappEnabled, setWhatsappEnabled] = useState(false);
+  const [ent, setEnt] = useState<Entitlements | null>(null);
+  const [me, setMe] = useState<{ id: string; tenant_role: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<"admin" | "member">("member");
   const [inviting, setInviting] = useState(false);
+  const [busyMember, setBusyMember] = useState<string | null>(null);
+  const [seatBusy, setSeatBusy] = useState(false);
   const [lastInviteLink, setLastInviteLink] = useState<string | null>(null);
+
+  const isAdmin = me?.tenant_role === "owner" || me?.tenant_role === "admin";
+  const teamEnabled = ent?.team_enabled ?? false;
+  const seatsFree = ent ? ent.seats - ent.seats_used : 0;
 
   async function reload() {
     setLoading(true);
     setError(null);
     try {
-      const [m, i, u] = await Promise.all([loadMembers(), loadInvites(), loadUsage()]);
+      const [m, i, e, mine] = await Promise.all([
+        loadMembers(),
+        loadInvites(),
+        loadEntitlements(),
+        loadMe(),
+      ]);
       setMembers(m as Member[]);
       setInvites(i as Invite[]);
-      setUsage(u as Usage | null);
+      setEnt(e as Entitlements | null);
+      setMe(mine as { id: string; tenant_role: string } | null);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Failed to load team data.");
     } finally {
@@ -83,14 +122,6 @@ function Team() {
 
   useEffect(() => {
     void reload();
-    void supabase
-      .from("licenses")
-      .select("integrations")
-      .maybeSingle()
-      .then(({ data }) => {
-        const integrations = data?.integrations as { whatsapp_enabled?: boolean } | undefined;
-        setWhatsappEnabled(integrations?.whatsapp_enabled ?? false);
-      });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -99,13 +130,14 @@ function Team() {
     if (!inviteEmail.trim()) return;
     setInviting(true);
     setError(null);
+    setNotice(null);
     setLastInviteLink(null);
     try {
-      const invite = (await addInvite({ data: { email: inviteEmail.trim(), role: inviteRole } })) as Invite;
+      const invite = (await addInvite({
+        data: { email: inviteEmail.trim(), role: inviteRole },
+      })) as Invite;
       setInviteEmail("");
-      if (invite.token) {
-        setLastInviteLink(`${window.location.origin}/invite/${invite.token}`);
-      }
+      if (invite.token) setLastInviteLink(`${window.location.origin}/invite/${invite.token}`);
       await reload();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Failed to send invite.");
@@ -124,11 +156,74 @@ function Team() {
     }
   }
 
+  async function handleRoleChange(userId: string, role: "owner" | "admin" | "member") {
+    setError(null);
+    setNotice(null);
+    setBusyMember(userId);
+    try {
+      await changeRole({ data: { userId, role } });
+      await reload();
+      setNotice("Role updated.");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Failed to change role.");
+    } finally {
+      setBusyMember(null);
+    }
+  }
+
+  async function handleRemove(member: Member) {
+    const name = member.full_name ?? "this member";
+    if (
+      !window.confirm(
+        `Remove ${name} from the chamber? Their login is revoked and the seat is freed. This cannot be undone.`,
+      )
+    )
+      return;
+    setError(null);
+    setNotice(null);
+    setBusyMember(member.id);
+    try {
+      await dropMember({ data: { userId: member.id } });
+      await reload();
+      setNotice("Member removed and seat freed.");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Failed to remove member.");
+    } finally {
+      setBusyMember(null);
+    }
+  }
+
+  async function handleSeatChange(delta: number) {
+    if (!ent) return;
+    setError(null);
+    setNotice(null);
+    setSeatBusy(true);
+    try {
+      const next = ent.seats + delta;
+      await changeSeats({ data: { seats: next } });
+      await reload();
+      setNotice(
+        delta > 0
+          ? `Seat added. Your chamber now has ${next} seats.`
+          : `Seat removed. Your chamber now has ${next} seats.`,
+      );
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Failed to change the seat count.");
+    } finally {
+      setSeatBusy(false);
+    }
+  }
+
   return (
     <AppShell title="Team" subtitle="Manage who has access to your chamber's account">
       {error ? (
         <p className="mb-4 rounded border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {error}
+        </p>
+      ) : null}
+      {notice ? (
+        <p className="mb-4 rounded border border-accent/30 bg-accent/10 px-3 py-2 text-sm">
+          {notice}
         </p>
       ) : null}
 
@@ -141,135 +236,297 @@ function Team() {
           {loading ? (
             <p className="text-sm text-muted-foreground">Loading…</p>
           ) : (
-            <DataTable headers={["Name", "Role", "Joined"]}>
-              {members.map((member) => (
-                <tr key={member.id} className="hover:bg-secondary/40">
-                  <td className="px-4 py-3 font-medium">{member.full_name ?? "—"}</td>
-                  <td className="px-4 py-3">
-                    <Tag tone={member.tenant_role === "member" ? "neutral" : "accent"}>
-                      {member.tenant_role}
-                    </Tag>
-                  </td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">
-                    {new Date(member.created_at).toLocaleDateString("en-IN")}
-                  </td>
-                </tr>
-              ))}
+            <DataTable headers={["Name", "Role", "Joined", ""]}>
+              {members.map((member) => {
+                const isSelf = member.id === me?.id;
+                return (
+                  <tr key={member.id} className="hover:bg-secondary/40">
+                    <td className="px-4 py-3 font-medium">
+                      {member.full_name ?? "—"}
+                      {isSelf ? (
+                        <span className="ml-2 text-xs text-muted-foreground">(you)</span>
+                      ) : null}
+                    </td>
+                    <td className="px-4 py-3">
+                      {isAdmin && !isSelf ? (
+                        <select
+                          value={member.tenant_role}
+                          disabled={busyMember === member.id}
+                          onChange={(event) =>
+                            void handleRoleChange(
+                              member.id,
+                              event.target.value as "owner" | "admin" | "member",
+                            )
+                          }
+                          className="rounded border border-input bg-background px-2 py-1 text-xs disabled:opacity-60"
+                        >
+                          <option value="member">member</option>
+                          <option value="admin">admin</option>
+                          <option value="owner">owner</option>
+                        </select>
+                      ) : (
+                        <Tag tone={member.tenant_role === "member" ? "neutral" : "accent"}>
+                          {member.tenant_role}
+                        </Tag>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-xs text-muted-foreground">
+                      {new Date(member.created_at).toLocaleDateString("en-IN")}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      {isAdmin && !isSelf && member.tenant_role !== "owner" ? (
+                        <button
+                          type="button"
+                          disabled={busyMember === member.id}
+                          onClick={() => void handleRemove(member)}
+                          className="inline-flex items-center gap-1 text-xs font-medium text-destructive hover:underline disabled:opacity-60"
+                        >
+                          <X className="size-3.5" />
+                          Remove
+                        </button>
+                      ) : null}
+                    </td>
+                  </tr>
+                );
+              })}
             </DataTable>
           )}
 
-          <form
-            onSubmit={handleInvite}
-            className="surface-panel mt-6 mb-4 flex flex-wrap items-end gap-3 rounded p-4"
-          >
-            <label className="flex-1 text-sm">
-              <span className="text-eyebrow">Invite by email</span>
-              <input
-                type="email"
-                value={inviteEmail}
-                onChange={(event) => setInviteEmail(event.target.value)}
-                placeholder="junior@example.com"
-                className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
-              />
-            </label>
-            <label className="text-sm">
-              <span className="text-eyebrow">Role</span>
-              <select
-                value={inviteRole}
-                onChange={(event) => setInviteRole(event.target.value as "admin" | "member")}
-                className="mt-1.5 rounded border border-input bg-background px-3 py-2 text-sm"
-              >
-                <option value="member">Member</option>
-                <option value="admin">Admin</option>
-              </select>
-            </label>
-            <button
-              type="submit"
-              disabled={inviting || !inviteEmail.trim()}
-              className="flex items-center gap-2 rounded bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-ink disabled:opacity-60"
-            >
-              {inviting ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
-              Send invite
-            </button>
-          </form>
-
-          {lastInviteLink ? (
-            <p className="mb-4 rounded border border-accent/30 bg-accent/10 px-3 py-2 text-sm">
-              Invite created. There's no email delivery set up yet, so share this link directly:{" "}
-              <span className="font-mono text-xs break-all">{lastInviteLink}</span>
-            </p>
+          {!loading && !teamEnabled ? (
+            <div className="surface-panel mt-6 rounded p-5">
+              <h3 className="font-display text-sm font-bold">Add a teammate</h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Your {planLabel[ent?.plan ?? "trial"] ?? ent?.plan} plan covers a single advocate.
+                The Chamber plan starts at {rupees(999)} a month for two users, with extra seats at{" "}
+                {rupees(499)} each — ask the platform admin to move your chamber onto it and this
+                screen will let you invite and manage teammates here.
+              </p>
+            </div>
           ) : null}
 
-          <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-bold">
-            <Mail className="size-4" />
-            Pending &amp; past invites
-          </h2>
-          {loading ? (
-            <p className="text-sm text-muted-foreground">Loading…</p>
-          ) : invites.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No invites sent yet.</p>
-          ) : (
-            <DataTable headers={["Email", "Role", "Status", "Sent", ""]}>
-              {invites.map((invite) => (
-                <tr key={invite.id} className="hover:bg-secondary/40">
-                  <td className="px-4 py-3">{invite.email}</td>
-                  <td className="px-4 py-3">
-                    <Tag tone="neutral">{invite.role}</Tag>
-                  </td>
-                  <td className="px-4 py-3">
-                    <Tag tone={inviteStatusTone[invite.status] ?? "neutral"}>{invite.status}</Tag>
-                  </td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">
-                    {new Date(invite.created_at).toLocaleDateString("en-IN")}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    {invite.status === "pending" ? (
-                      <button
-                        type="button"
-                        onClick={() => void handleRevoke(invite.id)}
-                        className="flex items-center gap-1 text-xs font-medium text-destructive hover:underline"
-                      >
-                        <X className="size-3.5" />
-                        Revoke
-                      </button>
-                    ) : null}
-                  </td>
-                </tr>
-              ))}
-            </DataTable>
-          )}
+          {teamEnabled ? (
+            <>
+              <form
+                onSubmit={handleInvite}
+                className="surface-panel mt-6 mb-4 flex flex-wrap items-end gap-3 rounded p-4"
+              >
+                <label className="flex-1 text-sm">
+                  <span className="text-eyebrow">Invite by email</span>
+                  <input
+                    type="email"
+                    value={inviteEmail}
+                    onChange={(event) => setInviteEmail(event.target.value)}
+                    placeholder="junior@example.com"
+                    className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
+                  />
+                </label>
+                <label className="text-sm">
+                  <span className="text-eyebrow">Role</span>
+                  <select
+                    value={inviteRole}
+                    onChange={(event) => setInviteRole(event.target.value as "admin" | "member")}
+                    className="mt-1.5 rounded border border-input bg-background px-3 py-2 text-sm"
+                  >
+                    <option value="member">Member</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </label>
+                <button
+                  type="submit"
+                  disabled={inviting || !inviteEmail.trim()}
+                  className="flex items-center gap-2 rounded bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-ink disabled:opacity-60"
+                >
+                  {inviting ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <Plus className="size-4" />
+                  )}
+                  Send invite
+                </button>
+                {ent ? (
+                  <p className="w-full text-xs text-muted-foreground">
+                    {seatsFree > 0
+                      ? `${seatsFree} of ${ent.seats} seats free. A pending invite holds a seat until it is accepted or revoked.`
+                      : `All ${ent.seats} seats are in use — add a seat at ${rupees(ent.extra_seat_price_inr ?? 499)} a month to invite another teammate.`}
+                  </p>
+                ) : null}
+              </form>
+
+              {lastInviteLink ? (
+                <p className="mb-4 rounded border border-accent/30 bg-accent/10 px-3 py-2 text-sm">
+                  Invite created. There's no email delivery set up yet, so share this link directly:{" "}
+                  <span className="font-mono text-xs break-all">{lastInviteLink}</span>
+                </p>
+              ) : null}
+
+              <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-bold">
+                <Mail className="size-4" />
+                Pending &amp; past invites
+              </h2>
+              {loading ? (
+                <p className="text-sm text-muted-foreground">Loading…</p>
+              ) : invites.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No invites sent yet.</p>
+              ) : (
+                <DataTable headers={["Email", "Role", "Status", "Sent", ""]}>
+                  {invites.map((invite) => (
+                    <tr key={invite.id} className="hover:bg-secondary/40">
+                      <td className="px-4 py-3">{invite.email}</td>
+                      <td className="px-4 py-3">
+                        <Tag tone="neutral">{invite.role}</Tag>
+                      </td>
+                      <td className="px-4 py-3">
+                        <Tag tone={inviteStatusTone[invite.status] ?? "neutral"}>
+                          {invite.status}
+                        </Tag>
+                      </td>
+                      <td className="px-4 py-3 text-xs text-muted-foreground">
+                        {new Date(invite.created_at).toLocaleDateString("en-IN")}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        {invite.status === "pending" ? (
+                          <button
+                            type="button"
+                            onClick={() => void handleRevoke(invite.id)}
+                            className="flex items-center gap-1 text-xs font-medium text-destructive hover:underline"
+                          >
+                            <X className="size-3.5" />
+                            Revoke
+                          </button>
+                        ) : null}
+                      </td>
+                    </tr>
+                  ))}
+                </DataTable>
+              )}
+            </>
+          ) : null}
         </div>
 
         <aside className="space-y-4">
           <section className="surface-panel rounded p-5">
-            <h2 className="font-display text-sm font-bold">Plan &amp; usage</h2>
-            {usage ? (
-              <dl className="mt-3 space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <dt className="text-muted-foreground">Plan</dt>
-                  <dd className="font-medium capitalize">{usage.plan}</dd>
-                </div>
-                <div className="flex justify-between">
-                  <dt className="text-muted-foreground">Seats</dt>
-                  <dd className="font-medium">
-                    {usage.seats_used} / {usage.seats_limit}
-                  </dd>
-                </div>
-                <div className="flex justify-between">
-                  <dt className="text-muted-foreground">Storage (estimate)</dt>
-                  <dd className="font-medium">
-                    {usage.used_storage_mb} MB
-                    {usage.storage_limit_mb !== null ? ` / ${usage.storage_limit_mb} MB` : " / unlimited"}
-                  </dd>
-                </div>
-              </dl>
+            <h2 className="font-display text-sm font-bold">Plan &amp; billing</h2>
+            {ent ? (
+              <>
+                <dl className="mt-3 space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <dt className="text-muted-foreground">Plan</dt>
+                    <dd className="font-medium">{planLabel[ent.plan] ?? ent.plan}</dd>
+                  </div>
+                  <div className="flex justify-between">
+                    <dt className="text-muted-foreground">Status</dt>
+                    <dd className="font-medium">{ent.status}</dd>
+                  </div>
+                  <div className="flex justify-between">
+                    <dt className="text-muted-foreground">Seats</dt>
+                    <dd className="font-medium">
+                      {ent.seats_used} / {ent.seats}
+                    </dd>
+                  </div>
+                  <div className="flex justify-between">
+                    <dt className="text-muted-foreground">Base</dt>
+                    <dd className="font-medium">
+                      {rupees(ent.base_price_inr)}
+                      <span className="text-xs text-muted-foreground">
+                        {" "}
+                        / {ent.seats_included} {ent.seats_included === 1 ? "user" : "users"}
+                      </span>
+                    </dd>
+                  </div>
+                  {ent.extra_seats > 0 ? (
+                    <div className="flex justify-between">
+                      <dt className="text-muted-foreground">
+                        Extra seats ({ent.extra_seats} × {rupees(ent.extra_seat_price_inr ?? 0)})
+                      </dt>
+                      <dd className="font-medium">
+                        {rupees(ent.extra_seats * (ent.extra_seat_price_inr ?? 0))}
+                      </dd>
+                    </div>
+                  ) : null}
+                  <div className="flex justify-between border-t border-border pt-2">
+                    <dt className="font-medium">Monthly total</dt>
+                    <dd className="font-display font-bold">{rupees(ent.monthly_total_inr)}</dd>
+                  </div>
+                </dl>
+
+                {teamEnabled && isAdmin ? (
+                  <div className="mt-4 border-t border-border pt-4">
+                    <p className="text-eyebrow">Seats</p>
+                    <div className="mt-2 flex items-center gap-2">
+                      <button
+                        type="button"
+                        disabled={seatBusy || ent.seats <= Math.max(ent.seats_included, ent.seats_used)}
+                        onClick={() => void handleSeatChange(-1)}
+                        className="flex size-8 items-center justify-center rounded border border-input hover:bg-secondary disabled:opacity-40"
+                        aria-label="Remove a seat"
+                      >
+                        <Minus className="size-4" />
+                      </button>
+                      <span className="min-w-10 text-center font-display text-lg font-bold tabular-nums">
+                        {ent.seats}
+                      </span>
+                      <button
+                        type="button"
+                        disabled={seatBusy}
+                        onClick={() => void handleSeatChange(1)}
+                        className="flex size-8 items-center justify-center rounded border border-input hover:bg-secondary disabled:opacity-40"
+                        aria-label="Add a seat"
+                      >
+                        <Plus className="size-4" />
+                      </button>
+                      {seatBusy ? (
+                        <Loader2 className="size-4 animate-spin text-muted-foreground" />
+                      ) : null}
+                    </div>
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      Each seat beyond the {ent.seats_included} included costs{" "}
+                      {rupees(ent.extra_seat_price_inr ?? 499)} a month. Seats in use cannot be
+                      removed — remove the member or revoke the invite first.
+                    </p>
+                  </div>
+                ) : null}
+              </>
             ) : (
               <p className="mt-3 text-sm text-muted-foreground">Loading…</p>
             )}
-            <p className="mt-3 text-xs text-muted-foreground">
-              Storage is an estimate based on stored text (documents and drafts) — this platform
-              does not store uploaded files.
-            </p>
+          </section>
+
+          <section className="surface-panel rounded p-5">
+            <h2 className="font-display text-sm font-bold">Included in your plan</h2>
+            {ent ? (
+              <ul className="mt-3 space-y-2 text-sm">
+                <li className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Indic OCR</span>
+                  <Tag tone={ent.ocr_enabled ? "success" : "neutral"}>
+                    {ent.ocr_enabled ? "Included" : "Not on this plan"}
+                  </Tag>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span className="text-muted-foreground">WhatsApp</span>
+                  <Tag tone={ent.whatsapp_enabled ? "success" : "neutral"}>
+                    {ent.whatsapp_enabled ? "Enabled" : "Not enabled"}
+                  </Tag>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Team &amp; roles</span>
+                  <Tag tone={ent.team_enabled ? "success" : "neutral"}>
+                    {ent.team_enabled ? "Included" : "Chamber plan only"}
+                  </Tag>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Matters</span>
+                  <span className="font-medium">{ent.matters_limit ?? "Unlimited"}</span>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Storage</span>
+                  <span className="font-medium">
+                    {ent.storage_limit_mb === null ? "Unlimited" : `${ent.storage_limit_mb} MB`}
+                  </span>
+                </li>
+              </ul>
+            ) : (
+              <p className="mt-3 text-sm text-muted-foreground">Loading…</p>
+            )}
           </section>
 
           <section className="surface-panel rounded p-5">
@@ -277,17 +534,12 @@ function Team() {
               <MessageCircle className="size-4" />
               WhatsApp integration
             </h2>
-            <p className="mt-2 text-sm">
-              {whatsappEnabled ? (
-                <Tag tone="success">Enabled by your admin</Tag>
-              ) : (
-                <Tag tone="neutral">Not enabled</Tag>
-              )}
-            </p>
             <p className="mt-2 text-xs text-muted-foreground">
-              {whatsappEnabled
+              {ent?.whatsapp_enabled
                 ? "This is a licensing entitlement only — no WhatsApp Business API provider is connected yet, so no messages can be sent."
-                : "Contact the platform admin to enable WhatsApp for your chamber's plan."}
+                : ent?.ocr_enabled === false
+                  ? "WhatsApp is part of the Solo Pro and Chamber plans."
+                  : "Your plan includes WhatsApp — ask the platform admin to switch it on for your chamber."}
             </p>
           </section>
         </aside>

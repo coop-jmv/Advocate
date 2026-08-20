@@ -64,3 +64,62 @@ export const getUsageSummary = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
     return data?.[0] ?? null;
   });
+
+// Effective entitlements for the caller's chamber: plan, seat maths (including
+// what the extra seats cost) and the feature flags the UI gates on. Reads
+// my_entitlements() so the app and the database agree on one answer.
+export const getEntitlements = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase.rpc("my_entitlements");
+    if (error) throw new Error(error.message);
+    return data?.[0] ?? null;
+  });
+
+// Who the caller is within the chamber, so the UI can avoid offering actions
+// against themselves. Authorisation itself is enforced in the database.
+export const getMyMembership = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase
+      .from("profiles")
+      .select("id, tenant_role")
+      .eq("id", context.userId)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    return data;
+  });
+
+export const setMemberRole = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({ userId: z.string().uuid(), role: z.enum(["owner", "admin", "member"]) })
+      .parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase.rpc("set_member_role", {
+      p_user_id: data.userId,
+      p_role: data.role,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const removeMember = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({ userId: z.string().uuid() }).parse(data))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase.rpc("remove_member", { p_user_id: data.userId });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const setSeatCount = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({ seats: z.number().int().min(1).max(200) }).parse(data))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase.rpc("set_seat_count", { p_seats: data.seats });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
