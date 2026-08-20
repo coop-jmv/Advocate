@@ -166,11 +166,11 @@ function Landing() {
                 {[
                   {
                     head: "DPDP Act, 2023 aligned",
-                    body: "Consent records, self-service access and erasure requests, and a breach-notification workflow with statutory timelines.",
+                    body: "Consent recorded and withdrawable, self-service data access, and account deletion that erases your chamber's records for good.",
                   },
                   {
                     head: "Firm-level isolation",
-                    body: "Each firm's data is isolated at the schema level, so per-firm export and deletion is clean and auditable.",
+                    body: "Every query is scoped to your chamber at the database level, enforced independently of the app — so one firm's data is never reachable from another's login.",
                   },
                   {
                     head: "Audit trail on every record",

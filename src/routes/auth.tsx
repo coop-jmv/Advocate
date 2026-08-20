@@ -48,6 +48,7 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [firmName, setFirmName] = useState("");
+  const [agreedToPrivacy, setAgreedToPrivacy] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -64,6 +65,10 @@ function AuthPage() {
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
+    if (mode === "signup" && !agreedToPrivacy) {
+      setError("Please confirm you have read the privacy notice before creating an account.");
+      return;
+    }
     setBusy(true);
     setError(null);
     setNotice(null);
@@ -206,6 +211,30 @@ function AuthPage() {
               />
             </label>
 
+            {mode === "signup" ? (
+              <label className="flex items-start gap-2.5 text-xs text-muted-foreground">
+                <input
+                  type="checkbox"
+                  checked={agreedToPrivacy}
+                  onChange={(event) => setAgreedToPrivacy(event.target.checked)}
+                  required
+                  className="mt-0.5 size-3.5 shrink-0"
+                />
+                <span>
+                  I have read and agree to the{" "}
+                  <a
+                    href="/privacy"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-foreground underline"
+                  >
+                    privacy notice
+                  </a>
+                  , including how my account data is used and my rights under the DPDP Act.
+                </span>
+              </label>
+            ) : null}
+
             {error ? (
               <p className="rounded border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
                 {error}
@@ -219,7 +248,7 @@ function AuthPage() {
 
             <button
               type="submit"
-              disabled={busy}
+              disabled={busy || (mode === "signup" && !agreedToPrivacy)}
               className="flex w-full items-center justify-center gap-2 rounded bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-ink disabled:opacity-60"
             >
               {busy ? <Loader2 className="size-4 animate-spin" /> : null}

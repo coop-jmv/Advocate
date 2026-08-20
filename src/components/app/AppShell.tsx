@@ -95,16 +95,21 @@ export function AppShell({
             Offline diary synced 12 min ago
           </div>
           <div className="flex items-center gap-3 lg:mt-4">
-            <span
-              className="flex size-9 shrink-0 items-center justify-center rounded-full bg-sidebar-accent font-display text-sm font-bold text-sidebar-accent-foreground"
+            <Link
+              to="/app/profile"
               title={displayFirm ? `${displayName} — ${displayFirm}` : displayName}
+              className="flex min-w-0 flex-1 items-center gap-3 rounded transition-colors hover:bg-sidebar-accent/60 md:justify-center lg:justify-start lg:p-1"
             >
-              {initials}
-            </span>
-            <div className="hidden min-w-0 text-xs lg:block">
-              <p className="truncate font-semibold text-sidebar-accent-foreground">{displayName}</p>
-              <p className="truncate text-sidebar-foreground/65">{displayFirm}</p>
-            </div>
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-sidebar-accent font-display text-sm font-bold text-sidebar-accent-foreground">
+                {initials}
+              </span>
+              <div className="hidden min-w-0 text-xs lg:block">
+                <p className="truncate font-semibold text-sidebar-accent-foreground">
+                  {displayName}
+                </p>
+                <p className="truncate text-sidebar-foreground/65">{displayFirm}</p>
+              </div>
+            </Link>
             <button
               type="button"
               onClick={() => void handleSignOut()}

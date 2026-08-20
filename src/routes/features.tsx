@@ -98,8 +98,8 @@ const modules = [
     points: [
       "Self-service access, correction and erasure for data principals",
       "Consent capture and withdrawal logging",
-      "Breach-notification workflow to data principals and the Data Protection Board",
-      "Per-firm data export and deletion",
+      "Documented breach-notification commitment to data principals and the Data Protection Board",
+      "Per-chamber data export and account deletion",
     ],
   },
 ];
