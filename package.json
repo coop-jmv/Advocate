@@ -12,6 +12,7 @@
     "format": "prettier --write .",
     "deploy": "bun run build && wrangler deploy",
     "deploy:dry-run": "bun run build && wrangler deploy --dry-run",
+    "vercel-build": "vite build && node scripts/patch-vercel-manifest.mjs",
     "cap:sync": "bun run build && cap sync",
     "cap:android": "bun run cap:sync && cap open android",
     "cap:ios": "bun run cap:sync && cap open ios"
