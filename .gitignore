@@ -45,3 +45,10 @@ supabase/snippets/
 # Android Studio pins a machine-specific daemon JDK here (vendor + version).
 # Committing it would force that exact JDK on CI and every other machine.
 android/gradle/gradle-daemon-jvm.properties
+
+# Android release signing — never commit the keystore or its passwords.
+# Losing the keystore means losing the ability to update the app on Play,
+# so keep a backup somewhere safe outside this repo.
+android/keystore.properties
+*.jks
+*.keystore
