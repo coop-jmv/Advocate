@@ -84,7 +84,7 @@ export const APP_DESTINATIONS = [
     to: "/app/documents",
     label: "Documents",
     icon: FolderOpen,
-    group: "Casework",
+    group: "Drafting",
     blurb: "Scan, OCR and review",
   },
   {
