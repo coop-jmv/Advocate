@@ -75,7 +75,9 @@ function buildContext(matters: Matter[], hearings: Hearing[]) {
     ...hearings
       .filter((h) => h.hearing_date > today)
       .slice(0, 20)
-      .map((h) => `- ${h.hearing_date} ${h.hearing_time ?? ""} · ${h.matter_title} · ${h.court ?? ""}`),
+      .map(
+        (h) => `- ${h.hearing_date} ${h.hearing_time ?? ""} · ${h.matter_title} · ${h.court ?? ""}`,
+      ),
     "",
     "Active matters:",
     ...matters.map(
@@ -138,7 +140,7 @@ function Insights() {
         </button>
       }
     >
-      <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
+      <div className="grid gap-6 lg:grid-cols-[1fr_300px] [&>*]:min-w-0">
         <section className="surface-panel rounded p-6">
           <div className="flex items-center gap-2">
             <Sparkles className="size-4 text-primary" />
@@ -188,7 +190,9 @@ function Insights() {
           <section className="surface-panel rounded p-5">
             <h2 className="font-display text-sm font-bold">Chamber snapshot</h2>
             <p className="mt-3 text-sm text-muted-foreground">
-              {dataLoaded ? `${matters.length} matters · ${hearings.length} hearings on record` : "Loading…"}
+              {dataLoaded
+                ? `${matters.length} matters · ${hearings.length} hearings on record`
+                : "Loading…"}
             </p>
           </section>
         </aside>

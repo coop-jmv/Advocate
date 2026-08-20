@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Loader2, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { confirmPermanentRemoval } from "@/lib/confirm";
 import { DataTable, Tag, type Tone } from "@/components/app/primitives";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -120,7 +121,13 @@ function AdminTenants() {
   }
 
   async function handleDelete(tenantId: string) {
-    if (!window.confirm("Delete this tenant and its license? This cannot be undone.")) return;
+    if (
+      !confirmPermanentRemoval(
+        "this tenant",
+        "Its licence, matters, clients and every other record are deleted with it.",
+      )
+    )
+      return;
     setError(null);
     const { error: deleteError } = await supabase.from("tenants").delete().eq("id", tenantId);
     if (deleteError) {

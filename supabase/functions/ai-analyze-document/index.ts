@@ -1,6 +1,11 @@
 import { handleOptions, jsonResponse, errorResponse } from "../_shared/cors.ts";
 import { authedClient, requireUserId } from "../_shared/auth.ts";
-import { chatComplete, enforceUsageQuota, extractJson, LEGAL_SYSTEM_PROMPT } from "../_shared/ai.ts";
+import {
+  chatComplete,
+  enforceUsageQuota,
+  extractJson,
+  LEGAL_SYSTEM_PROMPT,
+} from "../_shared/ai.ts";
 
 Deno.serve(async (req) => {
   const preflight = handleOptions(req);

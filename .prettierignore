@@ -6,3 +6,6 @@ pnpm-lock.yaml
 package-lock.json
 bun.lock
 routeTree.gen.ts
+# Native shells are managed by Xcode / Gradle - eslint already ignores them.
+ios
+android

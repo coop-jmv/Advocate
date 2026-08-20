@@ -87,9 +87,9 @@ function Landing() {
                 A disciplined practice, run from a single workspace.
               </h1>
               <p className="mt-6 max-w-xl text-base leading-relaxed text-primary-foreground/80">
-                Wakilio brings matters, cause lists, documents, clients and billing
-                together in one platform, purpose-built for how litigation is practised in Indian
-                courts — accessible from your phone, wherever the day takes you.
+                Wakilio brings matters, cause lists, documents, clients and billing together in one
+                platform, purpose-built for how litigation is practised in Indian courts —
+                accessible from your phone, wherever the day takes you.
               </p>
               <div className="mt-9 flex flex-wrap gap-4">
                 <Link
@@ -134,8 +134,8 @@ function Landing() {
             <p className="text-eyebrow text-accent">What it covers</p>
             <h2 className="mt-4 text-3xl font-bold">Every part of a matter, in one file</h2>
             <p className="mt-4 text-muted-foreground">
-              Six modules designed around the working day of a solo advocate or a small firm —
-              not a generic CRM adapted for legal use.
+              Six modules designed around the working day of a solo advocate or a small firm — not a
+              generic CRM adapted for legal use.
             </p>
           </div>
 
@@ -193,8 +193,8 @@ function Landing() {
             <div>
               <h2 className="text-2xl font-bold">See the workspace with sample matters</h2>
               <p className="mt-2 text-sm text-muted-foreground">
-                Explore the dashboard, diary, case file, documents and billing screens with
-                sample data — no setup required.
+                Explore the dashboard, diary, case file, documents and billing screens with sample
+                data — no setup required.
               </p>
             </div>
             <Link

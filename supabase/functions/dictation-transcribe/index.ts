@@ -41,6 +41,10 @@ Deno.serve(async (req) => {
     const result = await transcribeAudio(bytes, body.language);
     return jsonResponse(req, result);
   } catch (cause) {
-    return errorResponse(req, cause instanceof Error ? cause.message : "Transcription failed.", 502);
+    return errorResponse(
+      req,
+      cause instanceof Error ? cause.message : "Transcription failed.",
+      502,
+    );
   }
 });

@@ -158,14 +158,24 @@ function Dashboard() {
         .filter((e) => e.entry_date === iso)
         .reduce((sum, e) => sum + e.hours, 0);
       const hearingCount = hearings.filter((h) => h.hearing_date === iso).length;
-      return { day: d.toLocaleDateString("en-IN", { weekday: "short" }), iso, billed, hearingCount };
+      return {
+        day: d.toLocaleDateString("en-IN", { weekday: "short" }),
+        iso,
+        billed,
+        hearingCount,
+      };
     });
   }, [weekStart, timeEntries, hearings]);
   const maxLoad = Math.max(1, ...weekDays.map((d) => d.billed));
 
   return (
     <AppShell
-      title={new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+      title={new Date().toLocaleDateString("en-IN", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      })}
       subtitle={
         loading
           ? "Loading…"
@@ -178,7 +188,7 @@ function Dashboard() {
         </p>
       ) : null}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 [&>*]:min-w-0">
         <StatCard
           label="Active matters"
           value={loading ? "—" : String(activeMatters.length)}
@@ -201,7 +211,7 @@ function Dashboard() {
         />
       </div>
 
-      <div className="mt-6 grid gap-6 xl:grid-cols-[1.4fr_1fr]">
+      <div className="mt-6 grid gap-6 xl:grid-cols-[1.4fr_1fr] [&>*]:min-w-0">
         <section>
           <div className="mb-3 flex items-center justify-between">
             <h2 className="font-display text-lg font-bold">Today's diary</h2>

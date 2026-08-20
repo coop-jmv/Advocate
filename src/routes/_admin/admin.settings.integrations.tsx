@@ -27,7 +27,10 @@ async function fetchTenantIntegrations(): Promise<TenantIntegrations[]> {
     (licenses ?? []).map((l) => [l.tenant_id, l.integrations as { whatsapp_enabled?: boolean }]),
   );
 
-  return (tenants ?? []).map((t) => ({ ...t, integrations: integrationsByTenant.get(t.id) ?? null }));
+  return (tenants ?? []).map((t) => ({
+    ...t,
+    integrations: integrationsByTenant.get(t.id) ?? null,
+  }));
 }
 
 function AdminIntegrations() {

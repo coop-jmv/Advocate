@@ -9,7 +9,7 @@ export const Route = createFileRoute("/pricing")({
       {
         name: "description",
         content:
-          "Solo plans from ₹499 a month and Chamber plans from ₹999 a month for two users, with extra seats at ₹499. Billed in Indian rupees with GST invoices.",
+          "Start with a 15-day free trial — no card required. Solo plans from ₹499 a month, Chamber from ₹999 for two users with extra seats at ₹499.",
       },
       { property: "og:title", content: "Pricing — Wakilio" },
       {
@@ -80,7 +80,11 @@ function Pricing() {
         <p className="text-eyebrow text-accent">Subscriptions</p>
         <h1 className="mt-4 text-4xl font-bold">Priced for how Indian advocates actually work</h1>
         <p className="mt-4 max-w-2xl text-muted-foreground">
-          Two plans for a solo practice, and a Chamber plan that starts at two users and grows a
+          Every plan starts with a{" "}
+          <strong className="font-semibold text-foreground">
+            15-day free trial — no card required
+          </strong>
+          . Two plans for a solo practice, and a Chamber plan that starts at two users and grows a
           seat at a time. Every plan includes GST-compliant invoicing, Indian data residency and
           daily backups. Annual billing carries two months free.
         </p>
@@ -127,15 +131,25 @@ function Pricing() {
           <h2 className="font-display text-lg font-bold">How Chamber seats are counted</h2>
           <p className="mt-3 max-w-3xl text-sm leading-relaxed text-muted-foreground">
             A Chamber subscription starts at ₹999 a month and covers two users. Each additional
-            teammate is ₹499 a month, added or removed from the Team screen by an owner or admin —
-            a chamber of four works out to ₹1,997 a month. Every seat is a full login with its own
+            teammate is ₹499 a month, added or removed from the Team screen by an owner or admin — a
+            chamber of four works out to ₹1,997 a month. Every seat is a full login with its own
             role; pending invites hold a seat until they are accepted or revoked.
           </p>
         </div>
 
+        <div className="surface-panel mt-6 rounded p-7">
+          <h2 className="font-display text-lg font-bold">The 15-day trial</h2>
+          <p className="mt-3 max-w-3xl text-sm leading-relaxed text-muted-foreground">
+            Sign up and the trial starts immediately — no card, no payment details, nothing to
+            cancel. It includes Indic OCR and WhatsApp so both can be evaluated properly, and runs
+            for 15 days. When it ends your chamber stays readable and exportable; you simply cannot
+            add new records until you pick a plan, so nothing you entered during the trial is ever
+            lost.
+          </p>
+        </div>
+
         <p className="mt-8 text-sm text-muted-foreground">
-          A 14-day trial is available on request and includes OCR and WhatsApp so both can be
-          evaluated properly. Client portal users are never charged a seat.
+          Client portal users are never charged a seat.
         </p>
       </main>
       <SiteFooter />

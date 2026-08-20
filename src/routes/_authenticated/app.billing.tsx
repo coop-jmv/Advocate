@@ -105,6 +105,8 @@ function Billing() {
 
   useEffect(() => {
     void reload();
+    // reload is re-created every render; listing it here would re-fetch in a loop.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function handleAddEntry(event: React.FormEvent) {
@@ -134,7 +136,8 @@ function Billing() {
   async function handleAddInvoice(event: React.FormEvent) {
     event.preventDefault();
     const amount = Number(invoiceForm.amount);
-    if (!invoiceForm.invoiceNumber.trim() || !invoiceForm.clientName.trim() || !(amount >= 0)) return;
+    if (!invoiceForm.invoiceNumber.trim() || !invoiceForm.clientName.trim() || !(amount >= 0))
+      return;
     setInvoiceSaving(true);
     setError(null);
     try {
@@ -167,7 +170,9 @@ function Billing() {
   async function handleStatusChange(id: string, status: Invoice["status"]) {
     setError(null);
     try {
-      await setInvoiceStatus({ data: { id, status: status as "draft" | "sent" | "paid" | "overdue" } });
+      await setInvoiceStatus({
+        data: { id, status: status as "draft" | "sent" | "paid" | "overdue" },
+      });
       await reload();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Failed to update invoice.");
@@ -176,8 +181,12 @@ function Billing() {
 
   const stats = useMemo(() => {
     const billed = invoices.reduce((sum, inv) => sum + inv.amount, 0);
-    const collected = invoices.filter((inv) => inv.status === "paid").reduce((sum, inv) => sum + inv.amount, 0);
-    const overdue = invoices.filter((inv) => inv.status === "overdue").reduce((sum, inv) => sum + inv.amount, 0);
+    const collected = invoices
+      .filter((inv) => inv.status === "paid")
+      .reduce((sum, inv) => sum + inv.amount, 0);
+    const overdue = invoices
+      .filter((inv) => inv.status === "overdue")
+      .reduce((sum, inv) => sum + inv.amount, 0);
     const unbilledValue = timeEntries
       .filter((e) => !e.billed)
       .reduce((sum, e) => sum + e.hours * e.rate, 0);
@@ -186,9 +195,16 @@ function Billing() {
   }, [invoices, timeEntries]);
 
   return (
-    <AppShell title="Time & billing" subtitle={loading ? "Loading…" : "Manually tracked — no payment gateway wired up yet"}>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Total invoiced" value={rupees(stats.billed)} note={`${invoices.length} invoices`} />
+    <AppShell
+      title="Time & billing"
+      subtitle={loading ? "Loading…" : "Manually tracked — no payment gateway wired up yet"}
+    >
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 [&>*]:min-w-0">
+        <StatCard
+          label="Total invoiced"
+          value={rupees(stats.billed)}
+          note={`${invoices.length} invoices`}
+        />
         <StatCard
           label="Work in progress"
           value={rupees(stats.unbilledValue)}
@@ -213,7 +229,9 @@ function Billing() {
           <span className="text-eyebrow">Invoice #</span>
           <input
             value={invoiceForm.invoiceNumber}
-            onChange={(event) => setInvoiceForm((f) => ({ ...f, invoiceNumber: event.target.value }))}
+            onChange={(event) =>
+              setInvoiceForm((f) => ({ ...f, invoiceNumber: event.target.value }))
+            }
             placeholder="INV-2026-001"
             className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
           />
@@ -266,10 +284,16 @@ function Billing() {
         <div className="sm:col-span-2 lg:col-span-6">
           <button
             type="submit"
-            disabled={invoiceSaving || !invoiceForm.invoiceNumber.trim() || !invoiceForm.clientName.trim()}
+            disabled={
+              invoiceSaving || !invoiceForm.invoiceNumber.trim() || !invoiceForm.clientName.trim()
+            }
             className="flex items-center gap-2 rounded bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-ink disabled:opacity-60"
           >
-            {invoiceSaving ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
+            {invoiceSaving ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Plus className="size-4" />
+            )}
             Add invoice
           </button>
         </div>
@@ -356,10 +380,19 @@ function Billing() {
         <div className="sm:col-span-2 lg:col-span-5">
           <button
             type="submit"
-            disabled={entrySaving || !entryForm.matterTitle.trim() || !entryForm.task.trim() || !entryForm.hours}
+            disabled={
+              entrySaving ||
+              !entryForm.matterTitle.trim() ||
+              !entryForm.task.trim() ||
+              !entryForm.hours
+            }
             className="flex items-center gap-2 rounded bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-ink disabled:opacity-60"
           >
-            {entrySaving ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
+            {entrySaving ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Plus className="size-4" />
+            )}
             Log time
           </button>
         </div>
@@ -368,7 +401,9 @@ function Billing() {
       {loading ? (
         <p className="text-sm text-muted-foreground">Loading time entries…</p>
       ) : timeEntries.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No time entries yet — log your first one above.</p>
+        <p className="text-sm text-muted-foreground">
+          No time entries yet — log your first one above.
+        </p>
       ) : (
         <DataTable headers={["Date", "Matter", "Task", "Hours", "Rate", "Value"]}>
           {timeEntries.map((entry) => (
@@ -378,7 +413,9 @@ function Billing() {
               <td className="px-4 py-3">{entry.task}</td>
               <td className="px-4 py-3 tabular-nums">{entry.hours}</td>
               <td className="px-4 py-3 text-muted-foreground">{rupees(entry.rate)}</td>
-              <td className="px-4 py-3 font-medium tabular-nums">{rupees(entry.hours * entry.rate)}</td>
+              <td className="px-4 py-3 font-medium tabular-nums">
+                {rupees(entry.hours * entry.rate)}
+              </td>
             </tr>
           ))}
         </DataTable>

@@ -15,9 +15,7 @@ export function SiteHeader() {
           <span className="flex size-8 items-center justify-center rounded bg-primary text-primary-foreground">
             <Scale className="size-4" />
           </span>
-          <span className="font-display text-base font-bold tracking-tight">
-            Wakilio
-          </span>
+          <span className="font-display text-base font-bold tracking-tight">Wakilio</span>
         </Link>
 
         <nav className="hidden items-center gap-7 md:flex">

@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
 import { Bot, Loader2, Plus, Send, Trash2, User } from "lucide-react";
 import { AppShell } from "@/components/app/AppShell";
+import { confirmPermanentRemoval } from "@/lib/confirm";
 import { Markdown } from "@/components/app/Markdown";
 import { deleteConversation, listConversations, listMessages } from "@/lib/ai.functions";
 import { askAssistant } from "@/lib/edge-functions";
@@ -63,7 +64,11 @@ function Assistant() {
       .then(setThreads)
       .catch(() => setThreads([]));
     void loadMatters()
-      .then((rows) => setMatters((rows as { id: string; title: string }[]).map((m) => ({ id: m.id, title: m.title }))))
+      .then((rows) =>
+        setMatters(
+          (rows as { id: string; title: string }[]).map((m) => ({ id: m.id, title: m.title })),
+        ),
+      )
       .catch(() => setMatters([]));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -110,7 +115,11 @@ function Assistant() {
     }
   }
 
-  async function handleDelete(id: string) {
+  async function handleDelete(id: string, title: string) {
+    if (
+      !confirmPermanentRemoval(`the conversation "${title}"`, "Its messages are deleted with it.")
+    )
+      return;
     await removeThread({ data: { conversationId: id } });
     if (activeId === id) setActiveId(null);
     setThreads(await loadThreads());
@@ -134,7 +143,7 @@ function Assistant() {
         </button>
       }
     >
-      <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
+      <div className="grid gap-6 lg:grid-cols-[260px_1fr] [&>*]:min-w-0">
         <aside className="surface-panel h-fit rounded p-4">
           <p className="text-eyebrow">Conversations</p>
           <div className="mt-3 space-y-1">
@@ -155,7 +164,7 @@ function Assistant() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => void handleDelete(thread.id)}
+                    onClick={() => void handleDelete(thread.id, thread.title ?? "Untitled")}
                     aria-label={`Delete ${thread.title}`}
                     className="rounded p-1.5 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 hover:text-destructive"
                   >

@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Loader2, Mail, MessageCircle, Minus, Plus, Users, X } from "lucide-react";
 import { AppShell } from "@/components/app/AppShell";
 import { DataTable, Tag, type Tone } from "@/components/app/primitives";
+import { confirmDestructive, confirmPermanentRemoval } from "@/lib/confirm";
 import {
   createInvite,
   getEntitlements,
@@ -52,6 +53,10 @@ type Entitlements = {
   matters_limit: number | null;
   clients_limit: number | null;
   storage_limit_mb: number | null;
+  trial_ends_at: string | null;
+  trial_days_left: number | null;
+  trial_expired: boolean;
+  trial_period_days: number;
 };
 
 const inviteStatusTone: Record<string, Tone> = {
@@ -146,7 +151,13 @@ function Team() {
     }
   }
 
-  async function handleRevoke(id: string) {
+  async function handleRevoke(id: string, email: string) {
+    if (
+      !confirmDestructive(
+        `Revoke the invite for ${email}? Their invite link stops working immediately and the seat is freed.`,
+      )
+    )
+      return;
     setError(null);
     try {
       await cancelInvite({ data: { id } });
@@ -174,8 +185,9 @@ function Team() {
   async function handleRemove(member: Member) {
     const name = member.full_name ?? "this member";
     if (
-      !window.confirm(
-        `Remove ${name} from the chamber? Their login is revoked and the seat is freed. This cannot be undone.`,
+      !confirmPermanentRemoval(
+        `${name} from the chamber`,
+        "Their login is revoked and the seat is freed.",
       )
     )
       return;
@@ -195,6 +207,15 @@ function Team() {
 
   async function handleSeatChange(delta: number) {
     if (!ent) return;
+    if (
+      delta < 0 &&
+      !confirmDestructive(
+        `Release a seat? Your chamber drops to ${ent.seats - 1} seats and your monthly bill falls to ₹${(
+          ent.monthly_total_inr - (ent.extra_seat_price_inr ?? 0)
+        ).toLocaleString("en-IN")}.`,
+      )
+    )
+      return;
     setError(null);
     setNotice(null);
     setSeatBusy(true);
@@ -227,7 +248,30 @@ function Team() {
         </p>
       ) : null}
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+      {ent && ent.plan === "trial" ? (
+        <p
+          className={
+            ent.trial_expired
+              ? "mb-4 rounded border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+              : "mb-4 rounded border border-accent/30 bg-accent/10 px-3 py-2 text-sm"
+          }
+        >
+          {ent.trial_expired ? (
+            <>
+              Your {ent.trial_period_days}-day free trial has ended. Everything you entered is still
+              readable and exportable — choose a plan to start adding to it again.
+            </>
+          ) : (
+            <>
+              Free trial — {ent.trial_days_left} {ent.trial_days_left === 1 ? "day" : "days"} left
+              of {ent.trial_period_days}. No card on file; nothing is charged unless you choose a
+              plan.
+            </>
+          )}
+        </p>
+      ) : null}
+
+      <div className="grid gap-6 lg:grid-cols-[1fr_320px] [&>*]:min-w-0">
         <div>
           <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-bold">
             <Users className="size-4" />
@@ -387,7 +431,7 @@ function Team() {
                         {invite.status === "pending" ? (
                           <button
                             type="button"
-                            onClick={() => void handleRevoke(invite.id)}
+                            onClick={() => void handleRevoke(invite.id, invite.email)}
                             className="flex items-center gap-1 text-xs font-medium text-destructive hover:underline"
                           >
                             <X className="size-3.5" />
@@ -417,6 +461,14 @@ function Team() {
                     <dt className="text-muted-foreground">Status</dt>
                     <dd className="font-medium">{ent.status}</dd>
                   </div>
+                  {ent.plan === "trial" && ent.trial_ends_at ? (
+                    <div className="flex justify-between">
+                      <dt className="text-muted-foreground">Trial ends</dt>
+                      <dd className="font-medium">
+                        {new Date(ent.trial_ends_at).toLocaleDateString("en-IN")}
+                      </dd>
+                    </div>
+                  ) : null}
                   <div className="flex justify-between">
                     <dt className="text-muted-foreground">Seats</dt>
                     <dd className="font-medium">
@@ -455,7 +507,9 @@ function Team() {
                     <div className="mt-2 flex items-center gap-2">
                       <button
                         type="button"
-                        disabled={seatBusy || ent.seats <= Math.max(ent.seats_included, ent.seats_used)}
+                        disabled={
+                          seatBusy || ent.seats <= Math.max(ent.seats_included, ent.seats_used)
+                        }
                         onClick={() => void handleSeatChange(-1)}
                         className="flex size-8 items-center justify-center rounded border border-input hover:bg-secondary disabled:opacity-40"
                         aria-label="Remove a seat"

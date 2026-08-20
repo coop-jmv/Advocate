@@ -25,15 +25,13 @@ function InvitePage() {
   const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
-    void supabase
-      .rpc("get_invite_info", { p_token: token })
-      .then(({ data, error: rpcError }) => {
-        if (rpcError || !data || data.length === 0) {
-          setLoadError("This invite link isn't valid.");
-          return;
-        }
-        setInfo(data[0] as InviteInfo);
-      });
+    void supabase.rpc("get_invite_info", { p_token: token }).then(({ data, error: rpcError }) => {
+      if (rpcError || !data || data.length === 0) {
+        setLoadError("This invite link isn't valid.");
+        return;
+      }
+      setInfo(data[0] as InviteInfo);
+    });
   }, [token]);
 
   async function handleSubmit(event: React.FormEvent) {
@@ -59,7 +57,9 @@ function InvitePage() {
         void navigate({ to: "/app" });
         return;
       }
-      setNotice("Check your inbox to confirm the email address, then sign in — you'll land in your chamber's account.");
+      setNotice(
+        "Check your inbox to confirm the email address, then sign in — you'll land in your chamber's account.",
+      );
     } catch (cause) {
       setError(
         cause instanceof Error
@@ -158,7 +158,10 @@ function InvitePage() {
 
               <p className="mt-5 text-center text-sm text-muted-foreground">
                 Already have an account?{" "}
-                <Link to="/auth" className="font-semibold text-primary underline-offset-4 hover:underline">
+                <Link
+                  to="/auth"
+                  className="font-semibold text-primary underline-offset-4 hover:underline"
+                >
                   Sign in
                 </Link>
               </p>

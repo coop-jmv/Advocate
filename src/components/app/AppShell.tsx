@@ -1,4 +1,5 @@
 import { Link, Outlet, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import {
   LayoutDashboard,
   Briefcase,
@@ -48,6 +49,37 @@ export function AppShell({
   children: React.ReactNode;
 }) {
   const navigate = useNavigate();
+  const [profile, setProfile] = useState<{ full_name: string | null; firm_name: string | null }>({
+    full_name: null,
+    firm_name: null,
+  });
+
+  // The sidebar used to show a hardcoded sample advocate; show whoever is
+  // actually signed in.
+  useEffect(() => {
+    let cancelled = false;
+    void supabase
+      .from("profiles")
+      .select("full_name, firm_name")
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!cancelled && data) setProfile(data);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const displayName = profile.full_name ?? "Your chamber";
+  const displayFirm = profile.firm_name ?? "";
+  const initials =
+    (profile.full_name ?? "")
+      .replace(/^(Adv\.|Mr\.|Ms\.|Mrs\.)\s*/i, "")
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase() ?? "")
+      .join("") || "—";
 
   async function handleSignOut() {
     await logAuthEvent({ event: "logout" });
@@ -70,14 +102,14 @@ export function AppShell({
           </span>
         </Link>
 
-        <nav className="flex gap-1 overflow-x-auto p-3 md:w-full md:flex-col md:items-center md:overflow-visible lg:items-stretch">
+        <nav className="flex flex-wrap gap-1 p-3 md:w-full md:flex-col md:flex-nowrap md:items-center lg:items-stretch">
           {navItems.map((item) => (
             <Link
               key={item.to}
               to={item.to}
               activeOptions={{ exact: "exact" in item ? item.exact : false }}
               title={item.label}
-              className="flex shrink-0 items-center gap-2.5 rounded px-3 py-2 text-sm text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground md:w-11 md:justify-center md:px-0 lg:w-full lg:justify-start lg:px-3"
+              className="flex shrink-0 items-center gap-2 rounded px-2.5 py-1.5 text-xs text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground sm:gap-2.5 sm:px-3 sm:py-2 sm:text-sm md:w-11 md:justify-center md:px-0 lg:w-full lg:justify-start lg:px-3"
               activeProps={{
                 className: "bg-sidebar-accent text-sidebar-accent-foreground font-medium",
               }}
@@ -96,13 +128,13 @@ export function AppShell({
           <div className="flex items-center gap-3 lg:mt-4">
             <span
               className="flex size-9 shrink-0 items-center justify-center rounded-full bg-sidebar-accent font-display text-sm font-bold text-sidebar-accent-foreground"
-              title="Adv. Priya Nair — Nair & Associates"
+              title={displayFirm ? `${displayName} — ${displayFirm}` : displayName}
             >
-              PN
+              {initials}
             </span>
-            <div className="hidden text-xs lg:block">
-              <p className="font-semibold text-sidebar-accent-foreground">Adv. Priya Nair</p>
-              <p className="text-sidebar-foreground/65">Nair &amp; Associates</p>
+            <div className="hidden min-w-0 text-xs lg:block">
+              <p className="truncate font-semibold text-sidebar-accent-foreground">{displayName}</p>
+              <p className="truncate text-sidebar-foreground/65">{displayFirm}</p>
             </div>
             <button
               type="button"
@@ -137,6 +169,15 @@ export function AppShell({
             >
               <Bell className="size-4" />
               <span className="absolute top-1.5 right-1.5 size-1.5 rounded-full bg-destructive" />
+            </button>
+            <button
+              type="button"
+              onClick={() => void handleSignOut()}
+              title="Sign out"
+              aria-label="Sign out"
+              className="rounded border border-input p-2 transition-colors hover:bg-secondary md:hidden"
+            >
+              <LogOut className="size-4" />
             </button>
             {action}
           </div>

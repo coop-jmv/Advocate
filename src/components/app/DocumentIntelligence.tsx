@@ -76,7 +76,11 @@ export function DocumentIntelligence() {
       .then((rows) => setItems(rows as Analysis[]))
       .catch(() => setItems([]));
     void loadMatters()
-      .then((rows) => setMatters((rows as { id: string; title: string }[]).map((m) => ({ id: m.id, title: m.title }))))
+      .then((rows) =>
+        setMatters(
+          (rows as { id: string; title: string }[]).map((m) => ({ id: m.id, title: m.title })),
+        ),
+      )
       .catch(() => setMatters([]));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -102,9 +106,14 @@ export function DocumentIntelligence() {
     setError(null);
     try {
       const imageBase64 = await fileToBase64(file);
-      const { text: scanned } = await ocrExtract({ imageBase64, mimeType: file.type || "image/jpeg" });
+      const { text: scanned } = await ocrExtract({
+        imageBase64,
+        mimeType: file.type || "image/jpeg",
+      });
       if (!scanned) {
-        setError("No legible text found in that photo — try again with better lighting or framing.");
+        setError(
+          "No legible text found in that photo — try again with better lighting or framing.",
+        );
         return;
       }
       setText((prev) => (prev ? `${prev}\n\n${scanned}` : scanned));
@@ -151,7 +160,7 @@ export function DocumentIntelligence() {
         your account.
       </p>
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-[280px_1fr]">
+      <div className="mt-4 grid gap-4 lg:grid-cols-[280px_1fr] [&>*]:min-w-0">
         <div className="space-y-3">
           <label className="block text-sm">
             <span className="text-eyebrow">Document name</span>

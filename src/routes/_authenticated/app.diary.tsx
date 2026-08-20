@@ -78,6 +78,8 @@ function Diary() {
 
   useEffect(() => {
     void reload();
+    // reload is re-created every render; listing it here would re-fetch in a loop.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function handleCreate(event: React.FormEvent) {
@@ -95,7 +97,13 @@ function Diary() {
           purpose: form.purpose.trim() || undefined,
         },
       });
-      setForm({ matterTitle: "", court: "", hearingDate: todayIso(), hearingTime: "", purpose: "" });
+      setForm({
+        matterTitle: "",
+        court: "",
+        hearingDate: todayIso(),
+        hearingTime: "",
+        purpose: "",
+      });
       await reload();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Failed to add hearing.");
@@ -107,7 +115,12 @@ function Diary() {
   async function markStatus(id: string, status: Hearing["status"]) {
     setError(null);
     try {
-      await setStatus({ data: { id, status: status as "confirmed" | "cause_list_awaited" | "adjourned" | "completed" } });
+      await setStatus({
+        data: {
+          id,
+          status: status as "confirmed" | "cause_list_awaited" | "adjourned" | "completed",
+        },
+      });
       await reload();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Failed to update hearing.");
@@ -249,7 +262,8 @@ function Diary() {
                         <div>
                           <p className="text-sm font-medium">{hearing.matter_title}</p>
                           <p className="mt-0.5 text-xs text-muted-foreground">
-                            {hearing.hearing_time ?? "No time set"} · {hearing.court ?? "Court not set"}
+                            {hearing.hearing_time ?? "No time set"} ·{" "}
+                            {hearing.court ?? "Court not set"}
                             {hearing.purpose ? ` · ${hearing.purpose}` : ""}
                           </p>
                           {isClash ? (

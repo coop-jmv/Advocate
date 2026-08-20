@@ -73,6 +73,8 @@ function Cases() {
 
   useEffect(() => {
     void reload();
+    // reload is re-created every render; listing it here would re-fetch in a loop.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function handleCreate(event: React.FormEvent) {
@@ -91,7 +93,14 @@ function Cases() {
           filedDate: form.filedDate || undefined,
         },
       });
-      setForm({ title: "", clientName: "", caseNumber: "", court: "", opposingParty: "", filedDate: "" });
+      setForm({
+        title: "",
+        clientName: "",
+        caseNumber: "",
+        court: "",
+        opposingParty: "",
+        filedDate: "",
+      });
       await reload();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Failed to create matter.");

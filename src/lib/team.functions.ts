@@ -38,7 +38,11 @@ export const createInvite = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: saved, error } = await context.supabase
       .from("tenant_invites")
-      .insert({ email: data.email.toLowerCase().trim(), role: data.role, invited_by: context.userId })
+      .insert({
+        email: data.email.toLowerCase().trim(),
+        role: data.role,
+        invited_by: context.userId,
+      })
       .select("id, email, role, status, token, created_at, expires_at")
       .single();
     if (error) throw new Error(error.message);
@@ -93,9 +97,7 @@ export const getMyMembership = createServerFn({ method: "GET" })
 export const setMemberRole = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>
-    z
-      .object({ userId: z.string().uuid(), role: z.enum(["owner", "admin", "member"]) })
-      .parse(data),
+    z.object({ userId: z.string().uuid(), role: z.enum(["owner", "admin", "member"]) }).parse(data),
   )
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase.rpc("set_member_role", {
@@ -117,7 +119,9 @@ export const removeMember = createServerFn({ method: "POST" })
 
 export const setSeatCount = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: unknown) => z.object({ seats: z.number().int().min(1).max(200) }).parse(data))
+  .inputValidator((data: unknown) =>
+    z.object({ seats: z.number().int().min(1).max(200) }).parse(data),
+  )
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase.rpc("set_seat_count", { p_seats: data.seats });
     if (error) throw new Error(error.message);

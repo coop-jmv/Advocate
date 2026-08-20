@@ -51,6 +51,8 @@ function Clients() {
 
   useEffect(() => {
     void reload();
+    // reload is re-created every render; listing it here would re-fetch in a loop.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function handleCreate(event: React.FormEvent) {
