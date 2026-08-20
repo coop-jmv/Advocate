@@ -792,6 +792,26 @@ export type Database = {
         }
         Returns: undefined
       }
+      my_entitlements: {
+        Args: never
+        Returns: {
+          base_price_inr: number
+          clients_limit: number
+          extra_seat_price_inr: number
+          extra_seats: number
+          matters_limit: number
+          monthly_total_inr: number
+          ocr_enabled: boolean
+          plan: string
+          seats: number
+          seats_included: number
+          seats_used: number
+          status: string
+          storage_limit_mb: number
+          team_enabled: boolean
+          whatsapp_enabled: boolean
+        }[]
+      }
       my_usage_summary: {
         Args: never
         Returns: {
@@ -802,10 +822,24 @@ export type Database = {
           used_storage_mb: number
         }[]
       }
+      plan_feature: {
+        Args: { p_feature: string; p_plan: string }
+        Returns: boolean
+      }
       plan_limit: {
         Args: { p_plan: string; p_resource: string }
         Returns: number
       }
+      plan_price_inr: {
+        Args: { p_component?: string; p_plan: string }
+        Returns: number
+      }
+      remove_member: { Args: { p_user_id: string }; Returns: undefined }
+      set_member_role: {
+        Args: { p_role: string; p_user_id: string }
+        Returns: undefined
+      }
+      set_seat_count: { Args: { p_seats: number }; Returns: undefined }
       tenant_storage_estimate_mb: {
         Args: { p_tenant_id: string }
         Returns: number

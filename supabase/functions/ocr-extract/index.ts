@@ -18,6 +18,13 @@ Deno.serve(async (req) => {
   const userId = await requireUserId(auth.supabase);
   if (!userId) return errorResponse(req, "Unauthorized", 401);
 
+  // OCR is a Solo Pro / Chamber feature. Gate it here, not only in the UI:
+  // this endpoint is directly callable with any valid user token.
+  const { error: featureError } = await auth.supabase.rpc("assert_feature", { p_feature: "ocr" });
+  if (featureError) {
+    return errorResponse(req, featureError.message || "Your plan does not include OCR.", 403);
+  }
+
   try {
     await enforceUsageQuota(auth.supabase);
   } catch (cause) {
