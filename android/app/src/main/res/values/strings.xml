@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Advocate Companion</string>
-    <string name="title_activity_main">Advocate Companion</string>
-    <string name="package_name">com.advocatecompanion.app</string>
-    <string name="custom_url_scheme">com.advocatecompanion.app</string>
+    <string name="app_name">Wakilio</string>
+    <string name="title_activity_main">Wakilio</string>
+    <string name="package_name">com.wakilio.app</string>
+    <string name="custom_url_scheme">com.wakilio.app</string>
 </resources>
