@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Scale, Loader2 } from "lucide-react";
+import { Check, Scale, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { logAuthEvent } from "@/lib/edge-functions";
 
@@ -36,7 +36,14 @@ function landingRoute(): "/app" | "/app/menu" {
 
 function AuthPage() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  // ?mode=signup lets the pricing and landing CTAs open registration directly
+  // rather than dropping people on the sign-in form.
+  const [mode, setMode] = useState<"signin" | "signup">(() => {
+    if (typeof window === "undefined") return "signin";
+    return new URLSearchParams(window.location.search).get("mode") === "signup"
+      ? "signup"
+      : "signin";
+  });
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
@@ -115,11 +122,29 @@ function AuthPage() {
 
         <div className="surface-panel rounded p-6">
           <h1 className="font-display text-xl font-bold">
-            {mode === "signin" ? "Sign in to your chamber" : "Create your chamber account"}
+            {mode === "signin" ? "Sign in to your chamber" : "Start your 15-day free trial"}
           </h1>
           <p className="mt-1.5 text-sm text-muted-foreground">
-            Your matters, diary, documents and AI drafts stay private to your login.
+            {mode === "signin"
+              ? "Your matters, diary, documents and AI drafts stay private to your login."
+              : "Every feature included — OCR, WhatsApp, drafting and a 3-seat chamber. No card required."}
           </p>
+
+          {mode === "signup" ? (
+            <ul className="mt-4 space-y-1.5 rounded border border-accent/30 bg-accent/10 p-3 text-sm">
+              {[
+                "All features unlocked for 15 days",
+                "No card, no payment details, nothing to cancel",
+                "Invite up to 2 teammates and try roles and seats",
+                "When it ends your data stays readable and exportable",
+              ].map((line) => (
+                <li key={line} className="flex gap-2">
+                  <Check className="mt-0.5 size-3.5 shrink-0 text-accent" />
+                  <span>{line}</span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
 
           <button
             type="button"

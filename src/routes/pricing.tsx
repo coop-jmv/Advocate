@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Check } from "lucide-react";
+import { ArrowRight, Check } from "lucide-react";
 import { SiteHeader, SiteFooter } from "@/components/site/SiteChrome";
 
 export const Route = createFileRoute("/pricing")({
@@ -114,14 +114,21 @@ function Pricing() {
                 ))}
               </ul>
               <Link
-                to="/contact"
+                to="/auth"
+                search={{ mode: "signup" }}
                 className={
                   plan.featured
                     ? "mt-8 block rounded bg-primary px-4 py-2.5 text-center text-sm font-semibold text-primary-foreground transition-colors hover:bg-ink"
                     : "mt-8 block rounded border border-input px-4 py-2.5 text-center text-sm font-semibold transition-colors hover:bg-secondary"
                 }
               >
-                Request access
+                Start free trial
+              </Link>
+              <Link
+                to="/contact"
+                className="mt-2 block text-center text-xs text-muted-foreground underline-offset-4 hover:underline"
+              >
+                or talk to us first
               </Link>
             </article>
           ))}
@@ -146,6 +153,14 @@ function Pricing() {
             add new records until you pick a plan, so nothing you entered during the trial is ever
             lost.
           </p>
+          <Link
+            to="/auth"
+            search={{ mode: "signup" }}
+            className="mt-5 inline-flex items-center gap-2 rounded bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-ink"
+          >
+            Start your 15-day free trial
+            <ArrowRight className="size-4" />
+          </Link>
         </div>
 
         <p className="mt-8 text-sm text-muted-foreground">

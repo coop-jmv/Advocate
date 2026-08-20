@@ -93,10 +93,11 @@ function Landing() {
               </p>
               <div className="mt-9 flex flex-wrap gap-4">
                 <Link
-                  to="/app"
+                  to="/auth"
+                  search={{ mode: "signup" }}
                   className="inline-flex items-center gap-2 rounded border border-primary-foreground/25 bg-background px-5 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
                 >
-                  Explore the workspace
+                  Start 15-day free trial
                   <ArrowRight className="size-4" />
                 </Link>
                 <Link
@@ -106,6 +107,10 @@ function Landing() {
                   See all features
                 </Link>
               </div>
+
+              <p className="mt-4 text-xs text-primary-foreground/70">
+                All features included. No card required.
+              </p>
 
               <dl className="mt-14 grid gap-6 border-t border-primary-foreground/15 pt-8 sm:grid-cols-3">
                 {stats.map((stat) => (
