@@ -77,6 +77,7 @@ export function CourtMorningBrief() {
 
   const [date, setDate] = useState<string | null>(null);
   const [advocateName, setAdvocateName] = useState<string | null>(null);
+  const [aiEnabled, setAiEnabled] = useState(true);
   const [items, setItems] = useState<BriefItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -94,6 +95,7 @@ export function CourtMorningBrief() {
         if (cancelled) return;
         setDate(result.date);
         setAdvocateName(result.advocateName);
+        setAiEnabled(result.aiEnabled);
         setItems(result.items as BriefItem[]);
         if (result.items.length === 1) setExpandedId(result.items[0]!.hearingId);
       })
@@ -182,7 +184,7 @@ export function CourtMorningBrief() {
               : ""}
           </p>
         </div>
-        {items.length > 0 ? (
+        {items.length > 0 && aiEnabled ? (
           <button
             type="button"
             onClick={() => void handleGenerateSummaries()}
@@ -196,6 +198,10 @@ export function CourtMorningBrief() {
             )}
             {aiAttempted && !aiBusy ? "Regenerate AI prep notes" : "Generate AI prep notes"}
           </button>
+        ) : items.length > 0 ? (
+          <p className="text-xs text-muted-foreground">
+            AI prep notes are turned off for this chamber by your workspace administrator.
+          </p>
         ) : null}
       </div>
 

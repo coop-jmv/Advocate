@@ -9,10 +9,11 @@ export const Route = createFileRoute("/_admin/admin/settings/integrations")({
   component: AdminIntegrations,
 });
 
+type Integrations = { whatsapp_enabled?: boolean; ai_morning_brief_enabled?: boolean };
 type TenantIntegrations = {
   id: string;
   name: string;
-  integrations: { whatsapp_enabled?: boolean } | null;
+  integrations: Integrations | null;
 };
 
 async function fetchTenantIntegrations(): Promise<TenantIntegrations[]> {
@@ -24,7 +25,7 @@ async function fetchTenantIntegrations(): Promise<TenantIntegrations[]> {
 
   const { data: licenses } = await supabase.from("licenses").select("tenant_id, integrations");
   const integrationsByTenant = new Map(
-    (licenses ?? []).map((l) => [l.tenant_id, l.integrations as { whatsapp_enabled?: boolean }]),
+    (licenses ?? []).map((l) => [l.tenant_id, l.integrations as Integrations]),
   );
 
   return (tenants ?? []).map((t) => ({
@@ -54,11 +55,16 @@ function AdminIntegrations() {
     void reload();
   }, []);
 
-  async function toggleWhatsapp(tenantId: string, enabled: boolean) {
+  // integrations is one JSONB column holding several toggles — an update
+  // must merge onto the row's current value, not replace it wholesale, or
+  // flipping one toggle would silently reset every other one on that
+  // tenant back to its default.
+  async function setIntegration(tenantId: string, key: keyof Integrations, value: boolean) {
     setError(null);
+    const current = rows.find((r) => r.id === tenantId)?.integrations ?? {};
     const { error: updateError } = await supabase
       .from("licenses")
-      .update({ integrations: { whatsapp_enabled: enabled } })
+      .update({ integrations: { ...current, [key]: value } })
       .eq("tenant_id", tenantId);
     if (updateError) {
       setError(updateError.message);
@@ -74,10 +80,16 @@ function AdminIntegrations() {
         <h1 className="font-display text-xl font-bold">Integrations</h1>
       </div>
       <p className="mt-1 text-sm text-muted-foreground">
-        Per-tenant integration entitlements. Toggling WhatsApp on here gates the WhatsApp section in
-        that chamber's app — it does not connect a real WhatsApp Business API provider. No message
-        can actually be sent until a provider (Meta Cloud API, Twilio, Gupshup, etc.) and its
-        credentials are wired in separately.
+        Per-tenant integration and AI-feature entitlements. Toggling WhatsApp on here gates the
+        WhatsApp section in that chamber's app — it does not connect a real WhatsApp Business API
+        provider. No message can actually be sent until a provider (Meta Cloud API, Twilio, Gupshup,
+        etc.) and its credentials are wired in separately.
+      </p>
+      <p className="mt-2 text-sm text-muted-foreground">
+        AI Morning Brief governs whether that chamber's dashboard can call the AI prep-notes layer
+        at all — checked here first, and enforced again server-side in the edge function itself, so
+        turning it off here actually stops the AI call, not just the button. The deterministic
+        Morning Brief (hearings, conflicts, documents) keeps working either way.
       </p>
 
       {error ? (
@@ -92,7 +104,7 @@ function AdminIntegrations() {
         ) : rows.length === 0 ? (
           <p className="text-sm text-muted-foreground">No tenants yet.</p>
         ) : (
-          <DataTable headers={["Tenant", "WhatsApp API"]}>
+          <DataTable headers={["Tenant", "WhatsApp API", "AI Morning Brief"]}>
             {rows.map((row) => (
               <tr key={row.id} className="hover:bg-secondary/40">
                 <td className="px-4 py-3 font-medium">{row.name}</td>
@@ -101,10 +113,29 @@ function AdminIntegrations() {
                     <input
                       type="checkbox"
                       checked={row.integrations?.whatsapp_enabled ?? false}
-                      onChange={(event) => void toggleWhatsapp(row.id, event.target.checked)}
+                      onChange={(event) =>
+                        void setIntegration(row.id, "whatsapp_enabled", event.target.checked)
+                      }
                       className="size-4 rounded border-input"
                     />
                     {row.integrations?.whatsapp_enabled ? "Enabled" : "Disabled"}
+                  </label>
+                </td>
+                <td className="px-4 py-3">
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={row.integrations?.ai_morning_brief_enabled ?? true}
+                      onChange={(event) =>
+                        void setIntegration(
+                          row.id,
+                          "ai_morning_brief_enabled",
+                          event.target.checked,
+                        )
+                      }
+                      className="size-4 rounded border-input"
+                    />
+                    {(row.integrations?.ai_morning_brief_enabled ?? true) ? "Enabled" : "Disabled"}
                   </label>
                 </td>
               </tr>
