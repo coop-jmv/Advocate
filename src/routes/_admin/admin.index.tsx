@@ -1,9 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { Loader2, Plus } from "lucide-react";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { confirmPermanentRemoval } from "@/lib/confirm";
 import { DataTable, Tag, type Tone } from "@/components/app/primitives";
+import { sendSubscriptionInvoice } from "@/lib/subscription-invoice";
 import type { Database } from "@/integrations/supabase/types";
 
 export const Route = createFileRoute("/_admin/admin/")({
@@ -40,6 +43,7 @@ async function fetchTenants(): Promise<TenantWithLicense[]> {
 }
 
 function AdminTenants() {
+  const sendInvoice = useServerFn(sendSubscriptionInvoice);
   const [tenants, setTenants] = useState<TenantWithLicense[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -107,7 +111,7 @@ function AdminTenants() {
     await reload();
   }
 
-  async function handlePlanChange(licenseId: string, plan: License["plan"]) {
+  async function handlePlanChange(licenseId: string, tenantId: string, plan: License["plan"]) {
     setError(null);
     const { error: updateError } = await supabase
       .from("licenses")
@@ -118,6 +122,21 @@ function AdminTenants() {
       return;
     }
     await reload();
+
+    // Only a move onto an actual paid plan is a chargeable event — reverting
+    // to trial isn't a payment and shouldn't generate an invoice for one.
+    if (plan !== "trial") {
+      try {
+        const result = await sendInvoice({ data: { tenantId } });
+        toast.success(`Invoice ${result.invoiceNumber} emailed to the chamber owner`);
+      } catch (cause) {
+        setError(
+          cause instanceof Error
+            ? `Plan updated, but the invoice email failed: ${cause.message}`
+            : "Plan updated, but the invoice email failed.",
+        );
+      }
+    }
   }
 
   async function handleDelete(tenantId: string) {
@@ -203,7 +222,11 @@ function AdminTenants() {
                     <select
                       value={tenant.license.plan}
                       onChange={(event) =>
-                        handlePlanChange(tenant.license!.id, event.target.value as License["plan"])
+                        handlePlanChange(
+                          tenant.license!.id,
+                          tenant.id,
+                          event.target.value as License["plan"],
+                        )
                       }
                       className="rounded border border-input bg-background px-2 py-1 text-xs"
                     >
