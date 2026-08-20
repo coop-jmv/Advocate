@@ -38,27 +38,27 @@ const capabilities = [
   {
     icon: Scale,
     title: "Case & matter management",
-    body: "Track every matter by case number, court and stage, with party details, opposing counsel and case notes in one file. e-Courts (CNR) linking is on the roadmap.",
+    body: "Replaces the paper case diary or spreadsheet. Case number, court, stage, party details and notes stay in one file, current the moment anything changes.",
   },
   {
     icon: CalendarClock,
     title: "Court diary with cause lists",
-    body: "Day, week and month views with listing-conflict detection, so a double-booked hearing is caught before it happens.",
+    body: "Replaces cross-checking a cause list by hand. Day, week and month views flag a listing conflict before it happens, not after.",
   },
   {
     icon: FileSearch,
     title: "Documents with Indic OCR",
-    body: "Scan with your phone camera, run OCR in English and Hindi, search inside PDFs, and redact privileged content before you share or export.",
+    body: "Replaces re-reading a whole file to find one clause. Camera scan, OCR in English and Hindi, then search across everything stored.",
   },
   {
     icon: Users,
     title: "Clients and secure portal",
-    body: "Client profiles, intake forms and a permission-controlled portal where clients see status and approved documents — and message you securely.",
+    body: "Replaces the status-update phone call. Clients see their case status and approved documents themselves, and message you securely when it matters.",
   },
   {
     icon: ReceiptIndianRupee,
     title: "Time tracking and GST billing",
-    body: "Timer or manual entries against matters, expense logging, and GST-compliant invoices with UPI and Razorpay collection.",
+    body: "Replaces reconstructing hours at month-end. Time logged as you work, GST invoices generated automatically, UPI and Razorpay collection built in.",
   },
   {
     icon: WifiOff,
@@ -136,11 +136,18 @@ function Landing() {
 
         <section className="mx-auto max-w-6xl px-5 py-20">
           <div className="max-w-2xl">
-            <p className="text-eyebrow text-accent">What it covers</p>
-            <h2 className="mt-4 text-3xl font-bold">Every part of a matter, in one file</h2>
+            <p className="text-eyebrow text-accent">What it replaces</p>
+            <h2 className="mt-4 text-3xl font-bold">The manual work, taken off your plate</h2>
             <p className="mt-4 text-muted-foreground">
               Six modules designed around the working day of a solo advocate or a small firm — not a
-              generic CRM adapted for legal use.
+              generic CRM adapted for legal use.{" "}
+              <Link
+                to="/features"
+                className="font-medium text-accent underline-offset-4 hover:underline"
+              >
+                See what each one replaces
+              </Link>
+              .
             </p>
           </div>
 
