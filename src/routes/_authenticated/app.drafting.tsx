@@ -74,8 +74,18 @@ function Drafting() {
   const [matters, setMatters] = useState<MatterOption[]>([]);
   const [active, setActive] = useState<Draft | null>(null);
   const [docType, setDocType] = useState<string>(DOC_TYPES[0]);
-  const [matterRef, setMatterRef] = useState("");
-  const [instructions, setInstructions] = useState("");
+  // Arriving from "Draft from this" on a reviewed document (Documents page)
+  // pre-fills the matter and a starting instruction, same ?query pattern
+  // /auth?mode=signup already uses — no validateSearch on this route, so
+  // this reads the raw URL rather than a typed search schema.
+  const [matterRef, setMatterRef] = useState(() => {
+    if (typeof window === "undefined") return "";
+    return new URLSearchParams(window.location.search).get("matterRef") ?? "";
+  });
+  const [instructions, setInstructions] = useState(() => {
+    if (typeof window === "undefined") return "";
+    return new URLSearchParams(window.location.search).get("instructions") ?? "";
+  });
   const [busy, setBusy] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);

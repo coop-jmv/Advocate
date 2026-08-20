@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Brain, Camera, Check, Loader2, Upload, X } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { Brain, Camera, Check, Loader2, PenLine, Upload, X } from "lucide-react";
 import { Tag, type Tone } from "@/components/app/primitives";
 import { listDocumentAnalyses, updateDocumentAnalysisStatus } from "@/lib/ai.functions";
 import { analyzeDocument, ocrExtract } from "@/lib/edge-functions";
@@ -256,26 +257,39 @@ export function DocumentIntelligence() {
                     {item.matter_ref.split(" — ")[0]}
                   </span>
                 ) : null}
-                {item.status === "pending_review" ? (
-                  <div className="ml-auto flex gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => void reviewItem(item.id, "approved")}
-                      className="flex items-center gap-1 rounded border border-success/40 px-2 py-1 text-xs font-medium text-success transition-colors hover:bg-success/10"
-                    >
-                      <Check className="size-3.5" />
-                      Approve
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => void reviewItem(item.id, "rejected")}
-                      className="flex items-center gap-1 rounded border border-destructive/40 px-2 py-1 text-xs font-medium text-destructive transition-colors hover:bg-destructive/10"
-                    >
-                      <X className="size-3.5" />
-                      Reject
-                    </button>
-                  </div>
-                ) : null}
+                <div className="ml-auto flex gap-1.5">
+                  <Link
+                    to="/app/drafting"
+                    search={{
+                      matterRef: item.matter_ref ?? undefined,
+                      instructions: `Draft based on "${item.name}"${item.summary ? `: ${item.summary}` : ""}`,
+                    }}
+                    className="flex items-center gap-1 rounded border border-input px-2 py-1 text-xs font-medium transition-colors hover:bg-secondary"
+                  >
+                    <PenLine className="size-3.5" />
+                    Draft from this
+                  </Link>
+                  {item.status === "pending_review" ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => void reviewItem(item.id, "approved")}
+                        className="flex items-center gap-1 rounded border border-success/40 px-2 py-1 text-xs font-medium text-success transition-colors hover:bg-success/10"
+                      >
+                        <Check className="size-3.5" />
+                        Approve
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void reviewItem(item.id, "rejected")}
+                        className="flex items-center gap-1 rounded border border-destructive/40 px-2 py-1 text-xs font-medium text-destructive transition-colors hover:bg-destructive/10"
+                      >
+                        <X className="size-3.5" />
+                        Reject
+                      </button>
+                    </>
+                  ) : null}
+                </div>
               </div>
               {item.summary ? <p className="mt-2 text-sm leading-relaxed">{item.summary}</p> : null}
 
