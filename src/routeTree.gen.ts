@@ -35,6 +35,7 @@ import { Route as AuthenticatedAppDraftingRouteImport } from './routes/_authenti
 import { Route as AuthenticatedAppInsightsRouteImport } from './routes/_authenticated/app.insights'
 import { Route as AuthenticatedAppMenuRouteImport } from './routes/_authenticated/app.menu'
 import { Route as AuthenticatedAppProfileRouteImport } from './routes/_authenticated/app.profile'
+import { Route as AuthenticatedAppSubscriptionRouteImport } from './routes/_authenticated/app.subscription'
 import { Route as AuthenticatedAppTeamRouteImport } from './routes/_authenticated/app.team'
 import { Route as AdminAdminSettingsIntegrationsRouteImport } from './routes/_admin/admin.settings.integrations'
 
@@ -172,6 +173,12 @@ const AuthenticatedAppProfileRoute = AuthenticatedAppProfileRouteImport.update({
   path: '/profile',
   getParentRoute: () => AuthenticatedAppRoute,
 } as any)
+const AuthenticatedAppSubscriptionRoute =
+  AuthenticatedAppSubscriptionRouteImport.update({
+    id: '/subscription',
+    path: '/subscription',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
 const AuthenticatedAppTeamRoute = AuthenticatedAppTeamRouteImport.update({
   id: '/team',
   path: '/team',
@@ -207,6 +214,7 @@ export interface FileRoutesByFullPath {
   '/app/insights': typeof AuthenticatedAppInsightsRoute
   '/app/menu': typeof AuthenticatedAppMenuRoute
   '/app/profile': typeof AuthenticatedAppProfileRoute
+  '/app/subscription': typeof AuthenticatedAppSubscriptionRoute
   '/app/team': typeof AuthenticatedAppTeamRoute
   '/admin/': typeof AdminAdminIndexRoute
   '/app/': typeof AuthenticatedAppIndexRoute
@@ -233,6 +241,7 @@ export interface FileRoutesByTo {
   '/app/insights': typeof AuthenticatedAppInsightsRoute
   '/app/menu': typeof AuthenticatedAppMenuRoute
   '/app/profile': typeof AuthenticatedAppProfileRoute
+  '/app/subscription': typeof AuthenticatedAppSubscriptionRoute
   '/app/team': typeof AuthenticatedAppTeamRoute
   '/admin': typeof AdminAdminIndexRoute
   '/app': typeof AuthenticatedAppIndexRoute
@@ -264,6 +273,7 @@ export interface FileRoutesById {
   '/_authenticated/app/insights': typeof AuthenticatedAppInsightsRoute
   '/_authenticated/app/menu': typeof AuthenticatedAppMenuRoute
   '/_authenticated/app/profile': typeof AuthenticatedAppProfileRoute
+  '/_authenticated/app/subscription': typeof AuthenticatedAppSubscriptionRoute
   '/_authenticated/app/team': typeof AuthenticatedAppTeamRoute
   '/_admin/admin/': typeof AdminAdminIndexRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
@@ -294,6 +304,7 @@ export interface FileRouteTypes {
     | '/app/insights'
     | '/app/menu'
     | '/app/profile'
+    | '/app/subscription'
     | '/app/team'
     | '/admin/'
     | '/app/'
@@ -320,6 +331,7 @@ export interface FileRouteTypes {
     | '/app/insights'
     | '/app/menu'
     | '/app/profile'
+    | '/app/subscription'
     | '/app/team'
     | '/admin'
     | '/app'
@@ -350,6 +362,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/insights'
     | '/_authenticated/app/menu'
     | '/_authenticated/app/profile'
+    | '/_authenticated/app/subscription'
     | '/_authenticated/app/team'
     | '/_admin/admin/'
     | '/_authenticated/app/'
@@ -553,6 +566,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppProfileRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/app/subscription': {
+      id: '/_authenticated/app/subscription'
+      path: '/subscription'
+      fullPath: '/app/subscription'
+      preLoaderRoute: typeof AuthenticatedAppSubscriptionRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
     '/_authenticated/app/team': {
       id: '/_authenticated/app/team'
       path: '/team'
@@ -609,6 +629,7 @@ interface AuthenticatedAppRouteChildren {
   AuthenticatedAppInsightsRoute: typeof AuthenticatedAppInsightsRoute
   AuthenticatedAppMenuRoute: typeof AuthenticatedAppMenuRoute
   AuthenticatedAppProfileRoute: typeof AuthenticatedAppProfileRoute
+  AuthenticatedAppSubscriptionRoute: typeof AuthenticatedAppSubscriptionRoute
   AuthenticatedAppTeamRoute: typeof AuthenticatedAppTeamRoute
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
 }
@@ -626,6 +647,7 @@ const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppInsightsRoute: AuthenticatedAppInsightsRoute,
   AuthenticatedAppMenuRoute: AuthenticatedAppMenuRoute,
   AuthenticatedAppProfileRoute: AuthenticatedAppProfileRoute,
+  AuthenticatedAppSubscriptionRoute: AuthenticatedAppSubscriptionRoute,
   AuthenticatedAppTeamRoute: AuthenticatedAppTeamRoute,
   AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
 }

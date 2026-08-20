@@ -2,6 +2,7 @@ import {
   Bot,
   Briefcase,
   CalendarDays,
+  CreditCard,
   FolderOpen,
   LayoutDashboard,
   type LucideIcon,
@@ -127,6 +128,13 @@ export const APP_DESTINATIONS = [
     icon: ShieldCheck,
     group: "Chamber",
     blurb: "Who did what, and when",
+  },
+  {
+    to: "/app/subscription",
+    label: "Subscription",
+    icon: CreditCard,
+    group: "Chamber",
+    blurb: "Your plan, trial status and upgrades",
   },
   {
     to: "/app/profile",
