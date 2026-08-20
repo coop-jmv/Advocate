@@ -51,7 +51,7 @@ function AuthPage() {
   const navigate = useNavigate();
   // ?mode=signup lets the pricing and landing CTAs open registration directly
   // rather than dropping people on the sign-in form.
-  const [mode, setMode] = useState<"signin" | "signup">(() => {
+  const [mode, setMode] = useState<"signin" | "signup" | "forgot">(() => {
     if (typeof window === "undefined") return "signin";
     return new URLSearchParams(window.location.search).get("mode") === "signup"
       ? "signup"
@@ -93,6 +93,14 @@ function AuthPage() {
     setError(null);
     setNotice(null);
     try {
+      if (mode === "forgot") {
+        const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/reset-password`,
+        });
+        if (resetError) throw resetError;
+        setNotice("If that email has an account, a reset link is on its way. Check your inbox.");
+        return;
+      }
       if (mode === "signup") {
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email,
@@ -147,12 +155,18 @@ function AuthPage() {
 
         <div className="surface-panel rounded p-6">
           <h1 className="font-display text-xl font-bold">
-            {mode === "signin" ? "Sign in to your chamber" : "Start your 15-day free trial"}
+            {mode === "signin"
+              ? "Sign in to your chamber"
+              : mode === "signup"
+                ? "Start your 15-day free trial"
+                : "Reset your password"}
           </h1>
           <p className="mt-1.5 text-sm text-muted-foreground">
             {mode === "signin"
               ? "Your matters, diary, documents and AI drafts stay private to your login."
-              : "Every feature included — OCR, WhatsApp, drafting and a 3-seat chamber. No card required."}
+              : mode === "signup"
+                ? "Every feature included — OCR, WhatsApp, drafting and a 3-seat chamber. No card required."
+                : "Enter the email on your account and we'll send you a link to set a new password."}
           </p>
 
           {mode === "signup" ? (
@@ -171,19 +185,25 @@ function AuthPage() {
             </ul>
           ) : null}
 
-          <button
-            type="button"
-            onClick={handleGoogle}
-            className="mt-5 flex w-full items-center justify-center gap-2 rounded border border-input px-4 py-2.5 text-sm font-semibold transition-colors hover:bg-secondary"
-          >
-            Continue with Google
-          </button>
+          {mode !== "forgot" ? (
+            <>
+              <button
+                type="button"
+                onClick={handleGoogle}
+                className="mt-5 flex w-full items-center justify-center gap-2 rounded border border-input px-4 py-2.5 text-sm font-semibold transition-colors hover:bg-secondary"
+              >
+                Continue with Google
+              </button>
 
-          <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground">
-            <span className="h-px flex-1 bg-border" />
-            or use email
-            <span className="h-px flex-1 bg-border" />
-          </div>
+              <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground">
+                <span className="h-px flex-1 bg-border" />
+                or use email
+                <span className="h-px flex-1 bg-border" />
+              </div>
+            </>
+          ) : (
+            <div className="mt-5" />
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {mode === "signup" ? (
@@ -236,17 +256,35 @@ function AuthPage() {
                 className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
               />
             </label>
-            <label className="block text-sm">
-              <span className="text-eyebrow">Password</span>
-              <input
-                type="password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                required
-                minLength={6}
-                className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
-              />
-            </label>
+            {mode !== "forgot" ? (
+              <label className="block text-sm">
+                <span className="text-eyebrow">Password</span>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  required
+                  minLength={6}
+                  className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
+                />
+              </label>
+            ) : null}
+
+            {mode === "signin" ? (
+              <p className="-mt-2 text-right text-xs">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setError(null);
+                    setNotice(null);
+                    setMode("forgot");
+                  }}
+                  className="font-semibold text-primary underline-offset-4 hover:underline"
+                >
+                  Forgot password?
+                </button>
+              </p>
+            ) : null}
 
             {mode === "signup" ? (
               <label className="flex items-start gap-2.5 text-xs text-muted-foreground">
@@ -289,19 +327,39 @@ function AuthPage() {
               className="flex w-full items-center justify-center gap-2 rounded bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-ink disabled:opacity-60"
             >
               {busy ? <Loader2 className="size-4 animate-spin" /> : null}
-              {mode === "signin" ? "Sign in" : "Create account"}
+              {mode === "signin"
+                ? "Sign in"
+                : mode === "signup"
+                  ? "Create account"
+                  : "Send reset link"}
             </button>
           </form>
 
           <p className="mt-5 text-center text-sm text-muted-foreground">
-            {mode === "signin" ? "New to LexDiary?" : "Already have an account?"}{" "}
-            <button
-              type="button"
-              onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
-              className="font-semibold text-primary underline-offset-4 hover:underline"
-            >
-              {mode === "signin" ? "Create an account" : "Sign in"}
-            </button>
+            {mode === "forgot" ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setError(null);
+                  setNotice(null);
+                  setMode("signin");
+                }}
+                className="font-semibold text-primary underline-offset-4 hover:underline"
+              >
+                Back to sign in
+              </button>
+            ) : (
+              <>
+                {mode === "signin" ? "New to LexDiary?" : "Already have an account?"}{" "}
+                <button
+                  type="button"
+                  onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
+                  className="font-semibold text-primary underline-offset-4 hover:underline"
+                >
+                  {mode === "signin" ? "Create an account" : "Sign in"}
+                </button>
+              </>
+            )}
           </p>
         </div>
       </div>
