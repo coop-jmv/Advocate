@@ -1,6 +1,6 @@
 import { Link, Outlet, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { LayoutGrid, Scale, Search, Bell, WifiOff, LogOut } from "lucide-react";
+import { LayoutGrid, Scale, Search, Bell, LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { logAuthEvent } from "@/lib/edge-functions";
 import { APP_DESTINATIONS } from "@/lib/navigation";
@@ -90,11 +90,7 @@ export function AppShell({
         </nav>
 
         <div className="mt-auto hidden border-t border-sidebar-border p-3 md:flex md:w-full md:flex-col md:items-center lg:p-5">
-          <div className="hidden items-center gap-2 text-xs text-sidebar-foreground/70 lg:flex">
-            <WifiOff className="size-3.5" />
-            Offline diary synced 12 min ago
-          </div>
-          <div className="flex items-center gap-3 lg:mt-4">
+          <div className="flex items-center gap-3">
             <Link
               to="/app/profile"
               title={displayFirm ? `${displayName} — ${displayFirm}` : displayName}

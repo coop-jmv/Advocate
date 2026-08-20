@@ -18,7 +18,7 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "The practice management platform built for Indian advocates. CNR-linked case tracking, an automated cause-list diary, an Indic OCR document vault, a client portal and GST-compliant billing — in one secure workspace.",
+          "The practice management platform built for Indian advocates. Case and matter tracking, a hearing diary with listing-conflict detection, an Indic OCR document vault, a client portal and GST-compliant billing — in one secure workspace.",
       },
       {
         property: "og:title",
@@ -27,7 +27,7 @@ export const Route = createFileRoute("/")({
       {
         property: "og:description",
         content:
-          "Case tracking, cause-list diary, document vault, client portal and GST billing — the complete practice management platform for Indian legal professionals.",
+          "Case tracking, hearing diary, document vault, client portal and GST billing — the complete practice management platform for Indian legal professionals.",
       },
     ],
   }),
@@ -38,12 +38,12 @@ const capabilities = [
   {
     icon: Scale,
     title: "Case & matter management",
-    body: "Link a matter by CNR and pull case status, party details, orders and hearing history from e-Courts data. Conflict checks run before a new matter is opened.",
+    body: "Track every matter by case number, court and stage, with party details, opposing counsel and case notes in one file. e-Courts (CNR) linking is on the roadmap.",
   },
   {
     icon: CalendarClock,
     title: "Court diary with cause lists",
-    body: "Day, week and month views with conflict detection. Reminders for hearings and limitation periods reach you on push, SMS or WhatsApp.",
+    body: "Day, week and month views with listing-conflict detection, so a double-booked hearing is caught before it happens.",
   },
   {
     icon: FileSearch,
@@ -63,7 +63,7 @@ const capabilities = [
   {
     icon: WifiOff,
     title: "Built for court corridors",
-    body: "Offline-first diary and case notes on Android, syncing when you get signal. Every action is quick enough to finish before your item is called.",
+    body: "A fast-loading app shell built for patchy court-corridor signal, with data actions quick enough to finish before your item is called. Full offline data sync is on the roadmap.",
   },
 ];
 
@@ -87,8 +87,8 @@ function Landing() {
                 A disciplined practice, run from a single workspace.
               </h1>
               <p className="mt-6 max-w-xl text-base leading-relaxed text-primary-foreground/80">
-                Wakilio brings matters, cause lists, documents, clients and billing together in one
-                platform, purpose-built for how litigation is practised in Indian courts —
+                Wakilio brings matters, your hearing diary, documents, clients and billing together
+                in one platform, purpose-built for how litigation is practised in Indian courts —
                 accessible from your phone, wherever the day takes you.
               </p>
               <div className="mt-9 flex flex-wrap gap-4">
