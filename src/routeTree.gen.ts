@@ -22,6 +22,7 @@ import { Route as AdminAdminRouteImport } from './routes/_admin/admin'
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as AdminAdminIndexRouteImport } from './routes/_admin/admin.index'
+import { Route as AdminAdminAuditLogRouteImport } from './routes/_admin/admin.audit-log'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
 import { Route as AuthenticatedAppAssistantRouteImport } from './routes/_authenticated/app.assistant'
 import { Route as AuthenticatedAppAuditLogRouteImport } from './routes/_authenticated/app.audit-log'
@@ -100,6 +101,11 @@ const InviteTokenRoute = InviteTokenRouteImport.update({
 const AdminAdminIndexRoute = AdminAdminIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AdminAdminRoute,
+} as any)
+const AdminAdminAuditLogRoute = AdminAdminAuditLogRouteImport.update({
+  id: '/audit-log',
+  path: '/audit-log',
   getParentRoute: () => AdminAdminRoute,
 } as any)
 const AuthenticatedAppIndexRoute = AuthenticatedAppIndexRouteImport.update({
@@ -202,6 +208,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminAdminRouteWithChildren
   '/app': typeof AuthenticatedAppRouteWithChildren
   '/invite/$token': typeof InviteTokenRoute
+  '/admin/audit-log': typeof AdminAdminAuditLogRoute
   '/app/assistant': typeof AuthenticatedAppAssistantRoute
   '/app/audit-log': typeof AuthenticatedAppAuditLogRoute
   '/app/billing': typeof AuthenticatedAppBillingRoute
@@ -229,6 +236,7 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/invite/$token': typeof InviteTokenRoute
+  '/admin/audit-log': typeof AdminAdminAuditLogRoute
   '/app/assistant': typeof AuthenticatedAppAssistantRoute
   '/app/audit-log': typeof AuthenticatedAppAuditLogRoute
   '/app/billing': typeof AuthenticatedAppBillingRoute
@@ -261,6 +269,7 @@ export interface FileRoutesById {
   '/_admin/admin': typeof AdminAdminRouteWithChildren
   '/_authenticated/app': typeof AuthenticatedAppRouteWithChildren
   '/invite/$token': typeof InviteTokenRoute
+  '/_admin/admin/audit-log': typeof AdminAdminAuditLogRoute
   '/_authenticated/app/assistant': typeof AuthenticatedAppAssistantRoute
   '/_authenticated/app/audit-log': typeof AuthenticatedAppAuditLogRoute
   '/_authenticated/app/billing': typeof AuthenticatedAppBillingRoute
@@ -292,6 +301,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/app'
     | '/invite/$token'
+    | '/admin/audit-log'
     | '/app/assistant'
     | '/app/audit-log'
     | '/app/billing'
@@ -319,6 +329,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/reset-password'
     | '/invite/$token'
+    | '/admin/audit-log'
     | '/app/assistant'
     | '/app/audit-log'
     | '/app/billing'
@@ -350,6 +361,7 @@ export interface FileRouteTypes {
     | '/_admin/admin'
     | '/_authenticated/app'
     | '/invite/$token'
+    | '/_admin/admin/audit-log'
     | '/_authenticated/app/assistant'
     | '/_authenticated/app/audit-log'
     | '/_authenticated/app/billing'
@@ -475,6 +487,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAdminIndexRouteImport
       parentRoute: typeof AdminAdminRoute
     }
+    '/_admin/admin/audit-log': {
+      id: '/_admin/admin/audit-log'
+      path: '/audit-log'
+      fullPath: '/admin/audit-log'
+      preLoaderRoute: typeof AdminAdminAuditLogRouteImport
+      parentRoute: typeof AdminAdminRoute
+    }
     '/_authenticated/app/': {
       id: '/_authenticated/app/'
       path: '/'
@@ -591,11 +610,13 @@ declare module '@tanstack/react-router' {
 }
 
 interface AdminAdminRouteChildren {
+  AdminAdminAuditLogRoute: typeof AdminAdminAuditLogRoute
   AdminAdminIndexRoute: typeof AdminAdminIndexRoute
   AdminAdminSettingsIntegrationsRoute: typeof AdminAdminSettingsIntegrationsRoute
 }
 
 const AdminAdminRouteChildren: AdminAdminRouteChildren = {
+  AdminAdminAuditLogRoute: AdminAdminAuditLogRoute,
   AdminAdminIndexRoute: AdminAdminIndexRoute,
   AdminAdminSettingsIntegrationsRoute: AdminAdminSettingsIntegrationsRoute,
 }
