@@ -12,7 +12,6 @@
     "format": "prettier --write .",
     "deploy": "bun run build && wrangler deploy",
     "deploy:dry-run": "bun run build && wrangler deploy --dry-run",
-    "vercel-build": "vite build && node scripts/patch-vercel-manifest.mjs",
     "cap:sync": "bun run build && cap sync",
     "cap:android": "bun run cap:sync && cap open android",
     "cap:ios": "bun run cap:sync && cap open ios"
@@ -94,7 +93,6 @@
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.56.1",
     "vite": "^8.1.5",
-    "vite-plugin-vercel": "^11.1.1",
     "wrangler": "^4.118.0"
   }
 }
