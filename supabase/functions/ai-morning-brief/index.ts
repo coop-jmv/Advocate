@@ -65,10 +65,26 @@ Deno.serve(async (req) => {
   // /admin/settings/integrations independent of the deterministic Brief
   // itself. Calling this function directly (bypassing the UI's own check in
   // CourtMorningBrief.tsx) still gets refused.
-  const { data: license } = await auth.supabase
-    .from("licenses")
-    .select("integrations")
+  //
+  // tenant_id must be resolved explicitly from the caller's own profile
+  // first: the "Platform admins manage licenses" RLS policy has no tenant
+  // filter, so a bare licenses query run by a platform-admin caller sees
+  // every tenant's row and .maybeSingle() errors on the multiple matches —
+  // silently, since only `data` is read here, which resolves this check to
+  // fail-open (undefined license -> `{}` -> flag defaults enabled) exactly
+  // for the accounts most likely to be testing the disable toggle.
+  const { data: profile } = await auth.supabase
+    .from("profiles")
+    .select("tenant_id")
+    .eq("id", userId)
     .maybeSingle();
+  const { data: license } = profile?.tenant_id
+    ? await auth.supabase
+        .from("licenses")
+        .select("integrations")
+        .eq("tenant_id", profile.tenant_id)
+        .maybeSingle()
+    : { data: null };
   const integrations = (license?.integrations ?? {}) as { ai_morning_brief_enabled?: boolean };
   if (integrations.ai_morning_brief_enabled === false) {
     return errorResponse(
