@@ -24,7 +24,10 @@ async function getServerEntry(): Promise<ServerEntry> {
 
 // h3 swallows in-handler throws into a normal 500 Response with body
 // {"unhandled":true,"message":"HTTPError"} — try/catch alone never fires for those.
-async function normalizeCatastrophicSsrResponse(response: Response): Promise<Response> {
+async function normalizeCatastrophicSsrResponse(
+  response: Response,
+  request: Request,
+): Promise<Response> {
   if (response.status < 500) return response;
   const contentType = response.headers.get("content-type") ?? "";
   if (!contentType.includes("application/json")) return response;
@@ -33,10 +36,7 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
   if (!isH3SwallowedErrorBody(body)) return response;
 
   console.error(consumeLastCapturedError() ?? new Error(`h3 swallowed SSR error: ${body}`));
-  return new Response(renderErrorPage(), {
-    status: 500,
-    headers: { "content-type": "text/html; charset=utf-8" },
-  });
+  return catastrophicResponse(request);
 }
 
 function isH3SwallowedErrorBody(body: string): boolean {
@@ -46,6 +46,29 @@ function isH3SwallowedErrorBody(body: string): boolean {
   } catch {
     return false;
   }
+}
+
+function isServerFnRequest(request: Request): boolean {
+  return new URL(request.url).pathname.startsWith("/_serverFn/");
+}
+
+// A page navigation that hits this gets the decorative HTML error page. A
+// server function call (TanStack's client reads the response body straight
+// into its thrown Error's .message) must never get that page — every screen
+// that calls a server function displays cause.message directly, so an HTML
+// document ends up dumped verbatim into the UI as if it were an error
+// string. Server function callers get a short, plain-text message instead.
+function catastrophicResponse(request: Request): Response {
+  if (isServerFnRequest(request)) {
+    return new Response("Something went wrong loading that data. Please try again.", {
+      status: 500,
+      headers: { "content-type": "text/plain; charset=utf-8" },
+    });
+  }
+  return new Response(renderErrorPage(), {
+    status: 500,
+    headers: { "content-type": "text/html; charset=utf-8" },
+  });
 }
 
 // Baseline hardening headers on every response. CSP is scoped to what this
@@ -90,14 +113,9 @@ export async function handleRequest(request: Request): Promise<Response> {
   try {
     const handler = await getServerEntry();
     const response = await handler.fetch(request, undefined, undefined);
-    return withSecurityHeaders(await normalizeCatastrophicSsrResponse(response));
+    return withSecurityHeaders(await normalizeCatastrophicSsrResponse(response, request));
   } catch (error) {
     console.error(error);
-    return withSecurityHeaders(
-      new Response(renderErrorPage(), {
-        status: 500,
-        headers: { "content-type": "text/html; charset=utf-8" },
-      }),
-    );
+    return withSecurityHeaders(catastrophicResponse(request));
   }
 }
