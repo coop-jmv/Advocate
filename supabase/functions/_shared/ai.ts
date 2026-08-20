@@ -101,7 +101,8 @@ export async function extractTextFromImage(
 
   if (!response.ok) {
     const detail = await response.text().catch(() => "");
-    if (response.status === 429) throw new Error("OCR is rate limited right now — try again shortly.");
+    if (response.status === 429)
+      throw new Error("OCR is rate limited right now — try again shortly.");
     if (response.status === 402) throw new Error("AI credits are exhausted for this workspace.");
     throw new Error(`OCR request failed [${response.status}]: ${detail.slice(0, 200)}`);
   }

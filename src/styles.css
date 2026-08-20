@@ -62,7 +62,8 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  --shadow-panel: 0 1px 2px oklch(0.18 0.06 262 / 0.06), 0 8px 24px -12px oklch(0.18 0.06 262 / 0.18);
+  --shadow-panel:
+    0 1px 2px oklch(0.18 0.06 262 / 0.06), 0 8px 24px -12px oklch(0.18 0.06 262 / 0.18);
   --shadow-lift: 0 18px 48px -20px oklch(0.18 0.06 262 / 0.35);
 }
 
@@ -183,19 +184,11 @@
 }
 
 @utility bg-brief {
-  background-image: linear-gradient(
-    180deg,
-    var(--color-primary) 0%,
-    oklch(0.3 0.07 262) 100%
-  );
+  background-image: linear-gradient(180deg, var(--color-primary) 0%, oklch(0.3 0.07 262) 100%);
 }
 
 @utility rule-line {
-  background-image: linear-gradient(
-    90deg,
-    var(--color-accent) 0%,
-    transparent 100%
-  );
+  background-image: linear-gradient(90deg, var(--color-accent) 0%, transparent 100%);
   height: 2px;
 }
 

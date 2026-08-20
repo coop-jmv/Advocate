@@ -31,6 +31,7 @@ import { Route as AuthenticatedAppDictationRouteImport } from './routes/_authent
 import { Route as AuthenticatedAppDocumentsRouteImport } from './routes/_authenticated/app.documents'
 import { Route as AuthenticatedAppDraftingRouteImport } from './routes/_authenticated/app.drafting'
 import { Route as AuthenticatedAppInsightsRouteImport } from './routes/_authenticated/app.insights'
+import { Route as AuthenticatedAppMenuRouteImport } from './routes/_authenticated/app.menu'
 import { Route as AuthenticatedAppTeamRouteImport } from './routes/_authenticated/app.team'
 import { Route as AdminAdminSettingsIntegrationsRouteImport } from './routes/_admin/admin.settings.integrations'
 
@@ -148,6 +149,11 @@ const AuthenticatedAppInsightsRoute =
     path: '/insights',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
+const AuthenticatedAppMenuRoute = AuthenticatedAppMenuRouteImport.update({
+  id: '/menu',
+  path: '/menu',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
 const AuthenticatedAppTeamRoute = AuthenticatedAppTeamRouteImport.update({
   id: '/team',
   path: '/team',
@@ -179,6 +185,7 @@ export interface FileRoutesByFullPath {
   '/app/documents': typeof AuthenticatedAppDocumentsRoute
   '/app/drafting': typeof AuthenticatedAppDraftingRoute
   '/app/insights': typeof AuthenticatedAppInsightsRoute
+  '/app/menu': typeof AuthenticatedAppMenuRoute
   '/app/team': typeof AuthenticatedAppTeamRoute
   '/admin/': typeof AdminAdminIndexRoute
   '/app/': typeof AuthenticatedAppIndexRoute
@@ -201,6 +208,7 @@ export interface FileRoutesByTo {
   '/app/documents': typeof AuthenticatedAppDocumentsRoute
   '/app/drafting': typeof AuthenticatedAppDraftingRoute
   '/app/insights': typeof AuthenticatedAppInsightsRoute
+  '/app/menu': typeof AuthenticatedAppMenuRoute
   '/app/team': typeof AuthenticatedAppTeamRoute
   '/admin': typeof AdminAdminIndexRoute
   '/app': typeof AuthenticatedAppIndexRoute
@@ -228,6 +236,7 @@ export interface FileRoutesById {
   '/_authenticated/app/documents': typeof AuthenticatedAppDocumentsRoute
   '/_authenticated/app/drafting': typeof AuthenticatedAppDraftingRoute
   '/_authenticated/app/insights': typeof AuthenticatedAppInsightsRoute
+  '/_authenticated/app/menu': typeof AuthenticatedAppMenuRoute
   '/_authenticated/app/team': typeof AuthenticatedAppTeamRoute
   '/_admin/admin/': typeof AdminAdminIndexRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
@@ -254,6 +263,7 @@ export interface FileRouteTypes {
     | '/app/documents'
     | '/app/drafting'
     | '/app/insights'
+    | '/app/menu'
     | '/app/team'
     | '/admin/'
     | '/app/'
@@ -276,6 +286,7 @@ export interface FileRouteTypes {
     | '/app/documents'
     | '/app/drafting'
     | '/app/insights'
+    | '/app/menu'
     | '/app/team'
     | '/admin'
     | '/app'
@@ -302,6 +313,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/documents'
     | '/_authenticated/app/drafting'
     | '/_authenticated/app/insights'
+    | '/_authenticated/app/menu'
     | '/_authenticated/app/team'
     | '/_admin/admin/'
     | '/_authenticated/app/'
@@ -475,6 +487,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppInsightsRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/app/menu': {
+      id: '/_authenticated/app/menu'
+      path: '/menu'
+      fullPath: '/app/menu'
+      preLoaderRoute: typeof AuthenticatedAppMenuRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
     '/_authenticated/app/team': {
       id: '/_authenticated/app/team'
       path: '/team'
@@ -529,6 +548,7 @@ interface AuthenticatedAppRouteChildren {
   AuthenticatedAppDocumentsRoute: typeof AuthenticatedAppDocumentsRoute
   AuthenticatedAppDraftingRoute: typeof AuthenticatedAppDraftingRoute
   AuthenticatedAppInsightsRoute: typeof AuthenticatedAppInsightsRoute
+  AuthenticatedAppMenuRoute: typeof AuthenticatedAppMenuRoute
   AuthenticatedAppTeamRoute: typeof AuthenticatedAppTeamRoute
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
 }
@@ -544,6 +564,7 @@ const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppDocumentsRoute: AuthenticatedAppDocumentsRoute,
   AuthenticatedAppDraftingRoute: AuthenticatedAppDraftingRoute,
   AuthenticatedAppInsightsRoute: AuthenticatedAppInsightsRoute,
+  AuthenticatedAppMenuRoute: AuthenticatedAppMenuRoute,
   AuthenticatedAppTeamRoute: AuthenticatedAppTeamRoute,
   AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
 }

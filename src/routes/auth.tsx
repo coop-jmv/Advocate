@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Scale, Loader2 } from "lucide-react";
+import { Check, Scale, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { logAuthEvent } from "@/lib/edge-functions";
 
@@ -26,9 +26,24 @@ export const Route = createFileRoute("/auth")({
   component: AuthPage,
 });
 
+// On a phone the sidebar collapses to a Menu button, so signing in lands on
+// the launcher (every section as a tile) rather than straight into the
+// dashboard. Wider screens keep the sidebar and go to the dashboard as before.
+function landingRoute(): "/app" | "/app/menu" {
+  if (typeof window === "undefined") return "/app";
+  return window.matchMedia("(max-width: 767px)").matches ? "/app/menu" : "/app";
+}
+
 function AuthPage() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  // ?mode=signup lets the pricing and landing CTAs open registration directly
+  // rather than dropping people on the sign-in form.
+  const [mode, setMode] = useState<"signin" | "signup">(() => {
+    if (typeof window === "undefined") return "signin";
+    return new URLSearchParams(window.location.search).get("mode") === "signup"
+      ? "signup"
+      : "signin";
+  });
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
@@ -40,7 +55,7 @@ function AuthPage() {
   useEffect(() => {
     let active = true;
     void supabase.auth.getSession().then(({ data }) => {
-      if (active && data.session) void navigate({ to: "/app" });
+      if (active && data.session) void navigate({ to: landingRoute() });
     });
     return () => {
       active = false;
@@ -66,7 +81,7 @@ function AuthPage() {
         void logAuthEvent({ event: "signup", email, userId: signUpData.user?.id });
         const { data } = await supabase.auth.getSession();
         if (data.session) {
-          void navigate({ to: "/app" });
+          void navigate({ to: landingRoute() });
           return;
         }
         setNotice("Check your inbox to confirm the email address, then sign in.");
@@ -74,7 +89,7 @@ function AuthPage() {
       }
       const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
       if (signInError) throw signInError;
-      void navigate({ to: "/app" });
+      void navigate({ to: landingRoute() });
     } catch (cause) {
       if (mode === "signin") void logAuthEvent({ event: "login_failed", email });
       setError(cause instanceof Error ? cause.message : "Could not complete that request.");
@@ -107,11 +122,29 @@ function AuthPage() {
 
         <div className="surface-panel rounded p-6">
           <h1 className="font-display text-xl font-bold">
-            {mode === "signin" ? "Sign in to your chamber" : "Create your chamber account"}
+            {mode === "signin" ? "Sign in to your chamber" : "Start your 15-day free trial"}
           </h1>
           <p className="mt-1.5 text-sm text-muted-foreground">
-            Your matters, diary, documents and AI drafts stay private to your login.
+            {mode === "signin"
+              ? "Your matters, diary, documents and AI drafts stay private to your login."
+              : "Every feature included — OCR, WhatsApp, drafting and a 3-seat chamber. No card required."}
           </p>
+
+          {mode === "signup" ? (
+            <ul className="mt-4 space-y-1.5 rounded border border-accent/30 bg-accent/10 p-3 text-sm">
+              {[
+                "All features unlocked for 15 days",
+                "No card, no payment details, nothing to cancel",
+                "Invite up to 2 teammates and try roles and seats",
+                "When it ends your data stays readable and exportable",
+              ].map((line) => (
+                <li key={line} className="flex gap-2">
+                  <Check className="mt-0.5 size-3.5 shrink-0 text-accent" />
+                  <span>{line}</span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
 
           <button
             type="button"

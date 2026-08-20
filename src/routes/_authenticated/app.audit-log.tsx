@@ -11,7 +11,8 @@ export const Route = createFileRoute("/_authenticated/app/audit-log")({
       { title: "Audit log — Wakilio" },
       {
         name: "description",
-        content: "Security-relevant activity for your chamber: logins, and every create, update and delete.",
+        content:
+          "Security-relevant activity for your chamber: logins, and every create, update and delete.",
       },
     ],
   }),
@@ -50,7 +51,9 @@ function AuditLog() {
   useEffect(() => {
     void loadLog()
       .then((rows) => setEntries(rows as Entry[]))
-      .catch((cause) => setError(cause instanceof Error ? cause.message : "Failed to load audit log."))
+      .catch((cause) =>
+        setError(cause instanceof Error ? cause.message : "Failed to load audit log."),
+      )
       .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

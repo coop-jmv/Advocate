@@ -23,7 +23,8 @@ Deno.serve(async (req) => {
   } catch {
     return errorResponse(req, "Invalid JSON body");
   }
-  if (!body.transcript || !body.style) return errorResponse(req, "transcript and style are required");
+  if (!body.transcript || !body.style)
+    return errorResponse(req, "transcript and style are required");
 
   try {
     const text = await chatComplete([

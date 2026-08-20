@@ -116,7 +116,11 @@ function Dictation() {
 
   useEffect(() => {
     void loadMatters()
-      .then((rows) => setMatters((rows as { id: string; title: string }[]).map((m) => ({ id: m.id, title: m.title }))))
+      .then((rows) =>
+        setMatters(
+          (rows as { id: string; title: string }[]).map((m) => ({ id: m.id, title: m.title })),
+        ),
+      )
       .catch(() => setMatters([]));
     void refreshRecentDictations();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -276,7 +280,7 @@ function Dictation() {
         </p>
       ) : null}
 
-      <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
+      <div className="grid gap-6 lg:grid-cols-[320px_1fr] [&>*]:min-w-0">
         <section className="surface-panel rounded p-5">
           <h2 className="font-display text-base font-bold">1 · Listen</h2>
           <p className="mt-1.5 text-sm text-muted-foreground">
@@ -429,7 +433,11 @@ function Dictation() {
                   disabled={!draft.trim() || saving}
                   className="flex items-center gap-2 rounded border border-input px-4 py-2 text-sm font-semibold transition-colors hover:bg-secondary disabled:opacity-50"
                 >
-                  {saving ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
+                  {saving ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <Save className="size-4" />
+                  )}
                   {saved ? "Saved" : "Save"}
                 </button>
                 <button

@@ -17,8 +17,7 @@ export const Route = createFileRoute("/contact")({
       { property: "og:title", content: "Request access — Wakilio" },
       {
         property: "og:description",
-        content:
-          "Tell us about your practice and we will arrange onboarding for Wakilio.",
+        content: "Tell us about your practice and we will arrange onboarding for Wakilio.",
       },
     ],
   }),

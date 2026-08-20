@@ -85,7 +85,11 @@ function Drafting() {
       .then((rows) => setDrafts(rows as Draft[]))
       .catch(() => setDrafts([]));
     void loadMatters()
-      .then((rows) => setMatters((rows as { id: string; title: string }[]).map((m) => ({ id: m.id, title: m.title }))))
+      .then((rows) =>
+        setMatters(
+          (rows as { id: string; title: string }[]).map((m) => ({ id: m.id, title: m.title })),
+        ),
+      )
       .catch(() => setMatters([]));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -143,7 +147,7 @@ function Drafting() {
         </p>
       ) : null}
 
-      <div className="grid gap-6 lg:grid-cols-[340px_1fr]">
+      <div className="grid gap-6 lg:grid-cols-[340px_1fr] [&>*]:min-w-0">
         <section className="surface-panel h-fit rounded p-5">
           <h2 className="font-display text-base font-bold">Draft brief</h2>
           <div className="mt-4 space-y-4">
