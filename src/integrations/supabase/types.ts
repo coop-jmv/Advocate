@@ -510,6 +510,7 @@ export type Database = {
       };
       licenses: {
         Row: {
+          billing_cadence: string;
           created_at: string;
           current_period_end: string | null;
           id: string;
@@ -522,6 +523,7 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
+          billing_cadence?: string;
           created_at?: string;
           current_period_end?: string | null;
           id?: string;
@@ -534,6 +536,7 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
+          billing_cadence?: string;
           created_at?: string;
           current_period_end?: string | null;
           id?: string;
@@ -840,7 +843,9 @@ export type Database = {
         Args: never;
         Returns: {
           base_price_inr: number;
+          billing_cadence: string;
           clients_limit: number;
+          current_period_end: string;
           extra_seat_price_inr: number;
           extra_seats: number;
           matters_limit: number;
@@ -852,6 +857,8 @@ export type Database = {
           seats_used: number;
           status: string;
           storage_limit_mb: number;
+          subscription_expired: boolean;
+          subscription_grace_days_left: number;
           team_enabled: boolean;
           trial_days_left: number;
           trial_ends_at: string;
@@ -898,6 +905,8 @@ export type Database = {
         Returns: undefined;
       };
       set_seat_count: { Args: { p_seats: number }; Returns: undefined };
+      subscription_expired: { Args: { p_tenant_id: string }; Returns: boolean };
+      subscription_grace_days: { Args: never; Returns: number };
       tenant_storage_estimate_mb: {
         Args: { p_tenant_id: string };
         Returns: number;

@@ -1,13 +1,38 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Plus } from "lucide-react";
+import { Loader2, Plus, ReceiptIndianRupee } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { confirmPermanentRemoval } from "@/lib/confirm";
 import { DataTable, Tag, type Tone } from "@/components/app/primitives";
-import { sendSubscriptionInvoice } from "@/lib/subscription-invoice";
+import { activateSubscription } from "@/lib/subscription-invoice";
 import type { Database } from "@/integrations/supabase/types";
+
+const SUBSCRIPTION_GRACE_DAYS = 3;
+const PAYABLE_PLANS = ["solo_basic", "solo_pro", "chamber"] as const;
+type PayablePlan = (typeof PAYABLE_PLANS)[number];
+
+function subscriptionState(
+  license: License,
+): "trial" | "cancelled" | "active" | "grace" | "lapsed" {
+  if (license.plan === "trial") return "trial";
+  if (license.status === "cancelled") return "cancelled";
+  if (!license.current_period_end) return "active";
+  const graceEnd = new Date(license.current_period_end);
+  graceEnd.setDate(graceEnd.getDate() + SUBSCRIPTION_GRACE_DAYS);
+  const now = new Date();
+  if (new Date(license.current_period_end) > now) return "active";
+  return graceEnd > now ? "grace" : "lapsed";
+}
+
+const subscriptionStateTone: Record<ReturnType<typeof subscriptionState>, Tone> = {
+  trial: "accent",
+  cancelled: "danger",
+  active: "success",
+  grace: "warning",
+  lapsed: "danger",
+};
 
 export const Route = createFileRoute("/_admin/admin/")({
   head: () => ({ meta: [{ title: "Tenants — Platform admin" }] }),
@@ -43,7 +68,7 @@ async function fetchTenants(): Promise<TenantWithLicense[]> {
 }
 
 function AdminTenants() {
-  const sendInvoice = useServerFn(sendSubscriptionInvoice);
+  const activate = useServerFn(activateSubscription);
   const [tenants, setTenants] = useState<TenantWithLicense[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -111,31 +136,39 @@ function AdminTenants() {
     await reload();
   }
 
-  async function handlePlanChange(licenseId: string, tenantId: string, plan: License["plan"]) {
+  // Reverting a chamber to trial (a correction, not a payment) skips billing
+  // entirely — this only ever runs for an actual paid-plan pick.
+  async function handleRevertToTrial(licenseId: string) {
     setError(null);
     const { error: updateError } = await supabase
       .from("licenses")
-      .update({ plan })
+      .update({ plan: "trial" })
       .eq("id", licenseId);
     if (updateError) {
       setError(updateError.message);
       return;
     }
     await reload();
+  }
 
-    // Only a move onto an actual paid plan is a chargeable event — reverting
-    // to trial isn't a payment and shouldn't generate an invoice for one.
-    if (plan !== "trial") {
-      try {
-        const result = await sendInvoice({ data: { tenantId } });
-        toast.success(`Invoice ${result.invoiceNumber} emailed to the chamber owner`);
-      } catch (cause) {
-        setError(
-          cause instanceof Error
-            ? `Plan updated, but the invoice email failed: ${cause.message}`
-            : "Plan updated, but the invoice email failed.",
-        );
-      }
+  // The one action that both charges and unlocks a chamber: confirming a
+  // payment already received (via the Razorpay link + emailed reference)
+  // extends the billing period and emails the invoice in the same step, so
+  // the two can't drift — see activateSubscription's own comment.
+  async function handleActivate(
+    tenantId: string,
+    plan: PayablePlan,
+    cadence: "monthly" | "annual",
+  ) {
+    setError(null);
+    try {
+      const result = await activate({ data: { tenantId, plan, cadence } });
+      toast.success(
+        `Invoice ${result.invoiceNumber} emailed — active through ${new Date(result.periodEnd).toLocaleDateString("en-IN")}`,
+      );
+      await reload();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Failed to activate the subscription.");
     }
   }
 
@@ -199,7 +232,7 @@ function AdminTenants() {
         ) : tenants.length === 0 ? (
           <p className="text-sm text-muted-foreground">No tenants yet.</p>
         ) : (
-          <DataTable headers={["Tenant", "Slug", "Status", "Plan", "Seats", "License status", ""]}>
+          <DataTable headers={["Tenant", "Slug", "Status", "Plan", "Billing", "Subscription", ""]}>
             {tenants.map((tenant) => (
               <tr key={tenant.id} className="hover:bg-secondary/40">
                 <td className="px-4 py-3 font-medium">{tenant.name}</td>
@@ -219,32 +252,43 @@ function AdminTenants() {
                 </td>
                 <td className="px-4 py-3">
                   {tenant.license ? (
-                    <select
-                      value={tenant.license.plan}
-                      onChange={(event) =>
-                        handlePlanChange(
-                          tenant.license!.id,
-                          tenant.id,
-                          event.target.value as License["plan"],
-                        )
-                      }
-                      className="rounded border border-input bg-background px-2 py-1 text-xs"
-                    >
-                      <option value="trial">trial</option>
-                      <option value="solo_basic">solo_basic</option>
-                      <option value="solo_pro">solo_pro</option>
-                      <option value="chamber">chamber</option>
-                    </select>
+                    <div className="flex items-center gap-2">
+                      <Tag tone="neutral">{tenant.license.plan}</Tag>
+                      {tenant.license.plan !== "trial" ? (
+                        <button
+                          type="button"
+                          onClick={() => handleRevertToTrial(tenant.license!.id)}
+                          className="text-xs text-muted-foreground underline-offset-4 hover:underline"
+                        >
+                          revert to trial
+                        </button>
+                      ) : null}
+                    </div>
                   ) : (
                     <span className="text-xs text-muted-foreground">no license</span>
                   )}
                 </td>
-                <td className="px-4 py-3 tabular-nums">{tenant.license?.seats ?? "—"}</td>
                 <td className="px-4 py-3">
                   {tenant.license ? (
-                    <Tag tone={statusTone[tenant.license.status] ?? "neutral"}>
-                      {tenant.license.status}
-                    </Tag>
+                    <BillingActivation
+                      currentPlan={tenant.license.plan}
+                      onActivate={(plan, cadence) => handleActivate(tenant.id, plan, cadence)}
+                    />
+                  ) : null}
+                </td>
+                <td className="px-4 py-3">
+                  {tenant.license ? (
+                    <div className="space-y-1">
+                      <Tag tone={subscriptionStateTone[subscriptionState(tenant.license)]}>
+                        {subscriptionState(tenant.license)}
+                      </Tag>
+                      {tenant.license.current_period_end ? (
+                        <p className="text-xs text-muted-foreground">
+                          {tenant.license.billing_cadence} · through{" "}
+                          {new Date(tenant.license.current_period_end).toLocaleDateString("en-IN")}
+                        </p>
+                      ) : null}
+                    </div>
                   ) : (
                     "—"
                   )}
@@ -263,6 +307,67 @@ function AdminTenants() {
           </DataTable>
         )}
       </div>
+    </div>
+  );
+}
+
+// Pending plan/cadence choice for one tenant row, applied only when
+// "Activate" is pressed — a stray dropdown click should never fire a billing
+// event and an invoice email on its own.
+function BillingActivation({
+  currentPlan,
+  onActivate,
+}: {
+  currentPlan: string;
+  onActivate: (plan: PayablePlan, cadence: "monthly" | "annual") => Promise<void>;
+}) {
+  const [plan, setPlan] = useState<PayablePlan>(
+    PAYABLE_PLANS.includes(currentPlan as PayablePlan)
+      ? (currentPlan as PayablePlan)
+      : "solo_basic",
+  );
+  const [cadence, setCadence] = useState<"monthly" | "annual">("monthly");
+  const [busy, setBusy] = useState(false);
+
+  return (
+    <div className="flex items-center gap-1.5">
+      <select
+        value={plan}
+        onChange={(event) => setPlan(event.target.value as PayablePlan)}
+        className="rounded border border-input bg-background px-2 py-1 text-xs"
+      >
+        <option value="solo_basic">solo_basic</option>
+        <option value="solo_pro">solo_pro</option>
+        <option value="chamber">chamber</option>
+      </select>
+      <select
+        value={cadence}
+        onChange={(event) => setCadence(event.target.value as "monthly" | "annual")}
+        className="rounded border border-input bg-background px-2 py-1 text-xs"
+      >
+        <option value="monthly">monthly</option>
+        <option value="annual">annual (2 free)</option>
+      </select>
+      <button
+        type="button"
+        disabled={busy}
+        onClick={async () => {
+          setBusy(true);
+          try {
+            await onActivate(plan, cadence);
+          } finally {
+            setBusy(false);
+          }
+        }}
+        className="flex items-center gap-1 rounded bg-primary px-2 py-1 text-xs font-semibold text-primary-foreground hover:bg-ink disabled:opacity-60"
+      >
+        {busy ? (
+          <Loader2 className="size-3 animate-spin" />
+        ) : (
+          <ReceiptIndianRupee className="size-3" />
+        )}
+        {currentPlan === "trial" ? "Activate" : "Renew"}
+      </button>
     </div>
   );
 }
