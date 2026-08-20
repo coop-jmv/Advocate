@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { AppShell } from "@/components/app/AppShell";
+import { CourtMorningBrief } from "@/components/app/CourtMorningBrief";
 import { DataTable, StatCard, Tag, type Tone } from "@/components/app/primitives";
 import { listHearings } from "@/lib/diary.functions";
 import { listMatters } from "@/lib/matters.functions";
@@ -187,6 +188,10 @@ function Dashboard() {
           {error}
         </p>
       ) : null}
+
+      <div className="mb-6">
+        <CourtMorningBrief />
+      </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 [&>*]:min-w-0">
         <StatCard

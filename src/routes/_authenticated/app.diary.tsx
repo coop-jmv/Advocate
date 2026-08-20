@@ -5,6 +5,7 @@ import { Loader2, Plus } from "lucide-react";
 import { AppShell } from "@/components/app/AppShell";
 import { Tag, type Tone } from "@/components/app/primitives";
 import { createHearing, listHearings, updateHearingStatus } from "@/lib/diary.functions";
+import { findClashKeys, isClashing } from "@/lib/hearing-conflicts";
 
 export const Route = createFileRoute("/_authenticated/app/diary")({
   head: () => ({
@@ -137,17 +138,7 @@ function Diary() {
     return [...byDate.entries()].sort(([a], [b]) => a.localeCompare(b));
   }, [hearings]);
 
-  // Real conflict detection: two hearings on the same date and the same
-  // clock time.
-  const clashKeys = useMemo(() => {
-    const seen = new Map<string, number>();
-    for (const h of hearings) {
-      if (!h.hearing_time) continue;
-      const key = `${h.hearing_date}|${h.hearing_time}`;
-      seen.set(key, (seen.get(key) ?? 0) + 1);
-    }
-    return new Set([...seen.entries()].filter(([, count]) => count > 1).map(([key]) => key));
-  }, [hearings]);
+  const clashKeys = useMemo(() => findClashKeys(hearings), [hearings]);
 
   const today = todayIso();
   const conflictCount = clashKeys.size;
@@ -246,9 +237,7 @@ function Diary() {
               </div>
               <ul className="mt-4 space-y-3">
                 {items.map((hearing) => {
-                  const isClash = hearing.hearing_time
-                    ? clashKeys.has(`${hearing.hearing_date}|${hearing.hearing_time}`)
-                    : false;
+                  const isClash = isClashing(hearing, clashKeys);
                   return (
                     <li
                       key={hearing.id}

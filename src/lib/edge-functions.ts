@@ -54,6 +54,23 @@ export function generateBriefing(input: { context: string }) {
   return invoke<{ briefing: string }>("ai-generate-briefing", input);
 }
 
+export type MorningBriefSummaryInput = {
+  hearingId: string;
+  matterTitle: string;
+  court: string | null;
+  hearingTime: string | null;
+  purpose: string | null;
+  status: string;
+  previousHearing: { hearingDate: string; status: string; purpose: string | null } | null;
+  documentCount: number;
+  hasConflict: boolean;
+  hasOverdueInvoice: boolean;
+};
+
+export function generateMorningBriefSummaries(input: { items: MorningBriefSummaryInput[] }) {
+  return invoke<{ summaries: { hearingId: string; summary: string }[] }>("ai-morning-brief", input);
+}
+
 export function transcribeDictation(input: { audioBase64: string; language?: string | undefined }) {
   return invoke<{ text: string }>("dictation-transcribe", input);
 }
