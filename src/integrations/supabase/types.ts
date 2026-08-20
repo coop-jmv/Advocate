@@ -293,6 +293,284 @@ export type Database = {
           },
         ];
       };
+      cause_list_changes: {
+        Row: {
+          change_type: string;
+          detected_at: string;
+          field_name: string | null;
+          id: string;
+          new_value: string | null;
+          old_value: string | null;
+          previous_record_id: string | null;
+          record_id: string;
+          tenant_id: string;
+        };
+        Insert: {
+          change_type: string;
+          detected_at?: string;
+          field_name?: string | null;
+          id?: string;
+          new_value?: string | null;
+          old_value?: string | null;
+          previous_record_id?: string | null;
+          record_id: string;
+          tenant_id?: string;
+        };
+        Update: {
+          change_type?: string;
+          detected_at?: string;
+          field_name?: string | null;
+          id?: string;
+          new_value?: string | null;
+          old_value?: string | null;
+          previous_record_id?: string | null;
+          record_id?: string;
+          tenant_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "cause_list_changes_previous_record_id_fkey";
+            columns: ["previous_record_id"];
+            isOneToOne: false;
+            referencedRelation: "cause_list_records";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "cause_list_changes_record_id_fkey";
+            columns: ["record_id"];
+            isOneToOne: false;
+            referencedRelation: "cause_list_records";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "cause_list_changes_tenant_id_fkey";
+            columns: ["tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "tenants";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      cause_list_matches: {
+        Row: {
+          confidence: number;
+          created_at: string;
+          id: string;
+          match_method: string;
+          matter_id: string | null;
+          record_id: string;
+          reviewed_at: string | null;
+          reviewed_by: string | null;
+          status: string;
+          tenant_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          confidence?: number;
+          created_at?: string;
+          id?: string;
+          match_method: string;
+          matter_id?: string | null;
+          record_id: string;
+          reviewed_at?: string | null;
+          reviewed_by?: string | null;
+          status?: string;
+          tenant_id?: string;
+          updated_at?: string;
+        };
+        Update: {
+          confidence?: number;
+          created_at?: string;
+          id?: string;
+          match_method?: string;
+          matter_id?: string | null;
+          record_id?: string;
+          reviewed_at?: string | null;
+          reviewed_by?: string | null;
+          status?: string;
+          tenant_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "cause_list_matches_matter_id_fkey";
+            columns: ["matter_id"];
+            isOneToOne: false;
+            referencedRelation: "matters";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "cause_list_matches_record_id_fkey";
+            columns: ["record_id"];
+            isOneToOne: true;
+            referencedRelation: "cause_list_records";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "cause_list_matches_tenant_id_fkey";
+            columns: ["tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "tenants";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      cause_list_records: {
+        Row: {
+          advocate_names: string | null;
+          bench: string | null;
+          case_number: string | null;
+          cnr: string | null;
+          court: string | null;
+          court_hall: string | null;
+          created_at: string;
+          created_by: string;
+          id: string;
+          list_date: string;
+          list_type: string | null;
+          petitioner: string | null;
+          raw_payload: Json;
+          respondent: string | null;
+          serial_number: string | null;
+          source_id: string;
+          source_reference: string;
+          source_timestamp: string | null;
+          stage: string | null;
+          superseded_by: string | null;
+          tenant_id: string;
+        };
+        Insert: {
+          advocate_names?: string | null;
+          bench?: string | null;
+          case_number?: string | null;
+          cnr?: string | null;
+          court?: string | null;
+          court_hall?: string | null;
+          created_at?: string;
+          created_by: string;
+          id?: string;
+          list_date: string;
+          list_type?: string | null;
+          petitioner?: string | null;
+          raw_payload?: Json;
+          respondent?: string | null;
+          serial_number?: string | null;
+          source_id: string;
+          source_reference: string;
+          source_timestamp?: string | null;
+          stage?: string | null;
+          superseded_by?: string | null;
+          tenant_id?: string;
+        };
+        Update: {
+          advocate_names?: string | null;
+          bench?: string | null;
+          case_number?: string | null;
+          cnr?: string | null;
+          court?: string | null;
+          court_hall?: string | null;
+          created_at?: string;
+          created_by?: string;
+          id?: string;
+          list_date?: string;
+          list_type?: string | null;
+          petitioner?: string | null;
+          raw_payload?: Json;
+          respondent?: string | null;
+          serial_number?: string | null;
+          source_id?: string;
+          source_reference?: string;
+          source_timestamp?: string | null;
+          stage?: string | null;
+          superseded_by?: string | null;
+          tenant_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "cause_list_records_source_id_fkey";
+            columns: ["source_id"];
+            isOneToOne: false;
+            referencedRelation: "cause_list_sources";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "cause_list_records_superseded_by_fkey";
+            columns: ["superseded_by"];
+            isOneToOne: false;
+            referencedRelation: "cause_list_records";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "cause_list_records_tenant_id_fkey";
+            columns: ["tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "tenants";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      cause_list_sources: {
+        Row: {
+          bench: string | null;
+          configuration: Json;
+          court: string;
+          created_at: string;
+          created_by: string;
+          enabled: boolean;
+          error_message: string | null;
+          id: string;
+          last_attempt_at: string | null;
+          last_sync_at: string | null;
+          list_type: string;
+          source_type: string;
+          sync_status: string;
+          tenant_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          bench?: string | null;
+          configuration?: Json;
+          court: string;
+          created_at?: string;
+          created_by: string;
+          enabled?: boolean;
+          error_message?: string | null;
+          id?: string;
+          last_attempt_at?: string | null;
+          last_sync_at?: string | null;
+          list_type?: string;
+          source_type?: string;
+          sync_status?: string;
+          tenant_id?: string;
+          updated_at?: string;
+        };
+        Update: {
+          bench?: string | null;
+          configuration?: Json;
+          court?: string;
+          created_at?: string;
+          created_by?: string;
+          enabled?: boolean;
+          error_message?: string | null;
+          id?: string;
+          last_attempt_at?: string | null;
+          last_sync_at?: string | null;
+          list_type?: string;
+          source_type?: string;
+          sync_status?: string;
+          tenant_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "cause_list_sources_tenant_id_fkey";
+            columns: ["tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "tenants";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       clients: {
         Row: {
           created_at: string;
@@ -377,7 +655,11 @@ export type Database = {
       };
       hearings: {
         Row: {
+          bench: string | null;
+          cause_list_record_id: string | null;
+          cnr: string | null;
           court: string | null;
+          court_hall: string | null;
           created_at: string;
           created_by: string;
           hearing_date: string;
@@ -391,7 +673,11 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
+          bench?: string | null;
+          cause_list_record_id?: string | null;
+          cnr?: string | null;
           court?: string | null;
+          court_hall?: string | null;
           created_at?: string;
           created_by: string;
           hearing_date: string;
@@ -405,7 +691,11 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
+          bench?: string | null;
+          cause_list_record_id?: string | null;
+          cnr?: string | null;
           court?: string | null;
+          court_hall?: string | null;
           created_at?: string;
           created_by?: string;
           hearing_date?: string;
@@ -419,6 +709,13 @@ export type Database = {
           updated_at?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: "hearings_cause_list_record_id_fkey";
+            columns: ["cause_list_record_id"];
+            isOneToOne: false;
+            referencedRelation: "cause_list_records";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "hearings_matter_id_fkey";
             columns: ["matter_id"];
