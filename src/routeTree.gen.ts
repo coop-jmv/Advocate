@@ -28,6 +28,7 @@ import { Route as AuthenticatedAppAssistantRouteImport } from './routes/_authent
 import { Route as AuthenticatedAppAuditLogRouteImport } from './routes/_authenticated/app.audit-log'
 import { Route as AuthenticatedAppBillingRouteImport } from './routes/_authenticated/app.billing'
 import { Route as AuthenticatedAppCasesRouteImport } from './routes/_authenticated/app.cases'
+import { Route as AuthenticatedAppCauseListRouteImport } from './routes/_authenticated/app.cause-list'
 import { Route as AuthenticatedAppClientsRouteImport } from './routes/_authenticated/app.clients'
 import { Route as AuthenticatedAppDiaryRouteImport } from './routes/_authenticated/app.diary'
 import { Route as AuthenticatedAppDictationRouteImport } from './routes/_authenticated/app.dictation'
@@ -135,6 +136,12 @@ const AuthenticatedAppCasesRoute = AuthenticatedAppCasesRouteImport.update({
   path: '/cases',
   getParentRoute: () => AuthenticatedAppRoute,
 } as any)
+const AuthenticatedAppCauseListRoute =
+  AuthenticatedAppCauseListRouteImport.update({
+    id: '/cause-list',
+    path: '/cause-list',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
 const AuthenticatedAppClientsRoute = AuthenticatedAppClientsRouteImport.update({
   id: '/clients',
   path: '/clients',
@@ -213,6 +220,7 @@ export interface FileRoutesByFullPath {
   '/app/audit-log': typeof AuthenticatedAppAuditLogRoute
   '/app/billing': typeof AuthenticatedAppBillingRoute
   '/app/cases': typeof AuthenticatedAppCasesRoute
+  '/app/cause-list': typeof AuthenticatedAppCauseListRoute
   '/app/clients': typeof AuthenticatedAppClientsRoute
   '/app/diary': typeof AuthenticatedAppDiaryRoute
   '/app/dictation': typeof AuthenticatedAppDictationRoute
@@ -241,6 +249,7 @@ export interface FileRoutesByTo {
   '/app/audit-log': typeof AuthenticatedAppAuditLogRoute
   '/app/billing': typeof AuthenticatedAppBillingRoute
   '/app/cases': typeof AuthenticatedAppCasesRoute
+  '/app/cause-list': typeof AuthenticatedAppCauseListRoute
   '/app/clients': typeof AuthenticatedAppClientsRoute
   '/app/diary': typeof AuthenticatedAppDiaryRoute
   '/app/dictation': typeof AuthenticatedAppDictationRoute
@@ -274,6 +283,7 @@ export interface FileRoutesById {
   '/_authenticated/app/audit-log': typeof AuthenticatedAppAuditLogRoute
   '/_authenticated/app/billing': typeof AuthenticatedAppBillingRoute
   '/_authenticated/app/cases': typeof AuthenticatedAppCasesRoute
+  '/_authenticated/app/cause-list': typeof AuthenticatedAppCauseListRoute
   '/_authenticated/app/clients': typeof AuthenticatedAppClientsRoute
   '/_authenticated/app/diary': typeof AuthenticatedAppDiaryRoute
   '/_authenticated/app/dictation': typeof AuthenticatedAppDictationRoute
@@ -306,6 +316,7 @@ export interface FileRouteTypes {
     | '/app/audit-log'
     | '/app/billing'
     | '/app/cases'
+    | '/app/cause-list'
     | '/app/clients'
     | '/app/diary'
     | '/app/dictation'
@@ -334,6 +345,7 @@ export interface FileRouteTypes {
     | '/app/audit-log'
     | '/app/billing'
     | '/app/cases'
+    | '/app/cause-list'
     | '/app/clients'
     | '/app/diary'
     | '/app/dictation'
@@ -366,6 +378,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/audit-log'
     | '/_authenticated/app/billing'
     | '/_authenticated/app/cases'
+    | '/_authenticated/app/cause-list'
     | '/_authenticated/app/clients'
     | '/_authenticated/app/diary'
     | '/_authenticated/app/dictation'
@@ -529,6 +542,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppCasesRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/app/cause-list': {
+      id: '/_authenticated/app/cause-list'
+      path: '/cause-list'
+      fullPath: '/app/cause-list'
+      preLoaderRoute: typeof AuthenticatedAppCauseListRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
     '/_authenticated/app/clients': {
       id: '/_authenticated/app/clients'
       path: '/clients'
@@ -642,6 +662,7 @@ interface AuthenticatedAppRouteChildren {
   AuthenticatedAppAuditLogRoute: typeof AuthenticatedAppAuditLogRoute
   AuthenticatedAppBillingRoute: typeof AuthenticatedAppBillingRoute
   AuthenticatedAppCasesRoute: typeof AuthenticatedAppCasesRoute
+  AuthenticatedAppCauseListRoute: typeof AuthenticatedAppCauseListRoute
   AuthenticatedAppClientsRoute: typeof AuthenticatedAppClientsRoute
   AuthenticatedAppDiaryRoute: typeof AuthenticatedAppDiaryRoute
   AuthenticatedAppDictationRoute: typeof AuthenticatedAppDictationRoute
@@ -660,6 +681,7 @@ const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppAuditLogRoute: AuthenticatedAppAuditLogRoute,
   AuthenticatedAppBillingRoute: AuthenticatedAppBillingRoute,
   AuthenticatedAppCasesRoute: AuthenticatedAppCasesRoute,
+  AuthenticatedAppCauseListRoute: AuthenticatedAppCauseListRoute,
   AuthenticatedAppClientsRoute: AuthenticatedAppClientsRoute,
   AuthenticatedAppDiaryRoute: AuthenticatedAppDiaryRoute,
   AuthenticatedAppDictationRoute: AuthenticatedAppDictationRoute,

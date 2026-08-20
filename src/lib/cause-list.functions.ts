@@ -453,7 +453,7 @@ export const listCauseListEntries = createServerFn({ method: "GET" })
     const { data: records, error: recordsError } = await supabase
       .from("cause_list_records")
       .select(
-        "id, source_id, list_date, court, bench, serial_number, case_number, cnr, petitioner, respondent, advocate_names, stage, court_hall, source_reference, created_at, cause_list_sources(court, bench)",
+        "id, source_id, list_date, court, bench, serial_number, case_number, cnr, petitioner, respondent, advocate_names, stage, court_hall, source_reference, created_at",
       )
       .eq("list_date", data.date)
       .is("superseded_by", null)
@@ -515,6 +515,7 @@ export const listCauseListEntries = createServerFn({ method: "GET" })
       return {
         recordId: r.id,
         sourceId: r.source_id,
+        sourceReference: r.source_reference,
         court: r.court,
         bench: r.bench,
         serialNumber: r.serial_number,
