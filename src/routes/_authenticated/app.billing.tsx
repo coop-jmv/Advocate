@@ -11,6 +11,7 @@ import {
   listTimeEntries,
   updateInvoiceStatus,
 } from "@/lib/billing.functions";
+import { friendlyErrorMessage } from "@/lib/friendly-error";
 
 export const Route = createFileRoute("/_authenticated/app/billing")({
   head: () => ({
@@ -144,7 +145,7 @@ function Billing() {
       setEntryForm({ matterTitle: "", task: "", hours: "", rate: "" });
       await reload();
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Failed to add time entry.");
+      setError(friendlyErrorMessage(cause, "Failed to add time entry."));
     } finally {
       setEntrySaving(false);
     }
@@ -178,7 +179,7 @@ function Billing() {
       });
       await reload();
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Failed to add invoice.");
+      setError(friendlyErrorMessage(cause, "Failed to add invoice."));
     } finally {
       setInvoiceSaving(false);
     }
