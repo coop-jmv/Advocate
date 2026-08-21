@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { AlertTriangle, Download, Loader2, ShieldCheck } from "lucide-react";
 import { AppShell } from "@/components/app/AppShell";
+import { SettingsTabs } from "@/components/app/SettingsTabs";
 import { Tag, type Tone } from "@/components/app/primitives";
 import { confirmDestructive } from "@/lib/confirm";
 import { supabase } from "@/integrations/supabase/client";
@@ -207,6 +208,7 @@ function Profile() {
 
   return (
     <AppShell title="Profile & privacy" subtitle="Your account, consent and data rights">
+      <SettingsTabs />
       {error ? (
         <p className="mb-4 rounded border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {error}

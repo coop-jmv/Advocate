@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { AppShell } from "@/components/app/AppShell";
+import { SettingsTabs } from "@/components/app/SettingsTabs";
 import { DataTable, Tag, type Tone } from "@/components/app/primitives";
 import { listAuditLog } from "@/lib/audit.functions";
 
@@ -63,6 +64,7 @@ function AuditLog() {
       title="Audit log"
       subtitle="Logins and every create, update or delete across your chamber — visible to owners and admins"
     >
+      <SettingsTabs />
       {error ? (
         <p className="mb-4 rounded border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {error}

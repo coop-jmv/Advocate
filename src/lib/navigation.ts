@@ -2,7 +2,6 @@ import {
   Bot,
   Briefcase,
   CalendarDays,
-  CreditCard,
   FolderOpen,
   LayoutDashboard,
   ListChecks,
@@ -10,11 +9,9 @@ import {
   Mic,
   PenLine,
   ReceiptIndianRupee,
-  ShieldCheck,
   ShieldQuestion,
   Sparkles,
   Users,
-  UsersRound,
 } from "lucide-react";
 
 // The one place the app's destinations are defined. Both surfaces read from
@@ -136,32 +133,11 @@ export const APP_DESTINATIONS = [
     blurb: "Time entries and GST invoices",
   },
   {
-    to: "/app/team",
-    label: "Team",
-    icon: UsersRound,
-    group: "Chamber",
-    blurb: "Members, roles and seats",
-  },
-  {
-    to: "/app/audit-log",
-    label: "Audit log",
-    icon: ShieldCheck,
-    group: "Chamber",
-    blurb: "Who did what, and when",
-  },
-  {
-    to: "/app/subscription",
-    label: "Subscription",
-    icon: CreditCard,
-    group: "Chamber",
-    blurb: "Your plan, trial status and upgrades",
-  },
-  {
     to: "/app/profile",
-    label: "Profile & privacy",
+    label: "Settings",
     icon: ShieldQuestion,
     group: "Chamber",
-    blurb: "Your account, consent and data rights",
+    blurb: "Profile, team, subscription and audit log — as tabs on one page",
   },
 ] as const satisfies readonly DestinationShape[];
 

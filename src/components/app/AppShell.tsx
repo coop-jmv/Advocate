@@ -1,6 +1,6 @@
 import { Link, Outlet, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { LayoutGrid, Scale, Bell, LogOut } from "lucide-react";
+import { LayoutDashboard, LayoutGrid, Scale, Bell, LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { logAuthEvent } from "@/lib/edge-functions";
 import { APP_DESTINATIONS, GROUP_TONE } from "@/lib/navigation";
@@ -153,6 +153,16 @@ export function AppShell({
           </div>
           <div className="flex items-center gap-2">
             <HeaderSearch />
+            <Link
+              to="/app"
+              title="Dashboard"
+              aria-label="Dashboard"
+              className="rounded border border-docket-sapphire/30 bg-docket-sapphire/10 p-2 text-docket-sapphire transition-colors hover:bg-docket-sapphire/20 md:hidden"
+              activeOptions={{ exact: true }}
+              activeProps={{ className: "bg-docket-sapphire/20" }}
+            >
+              <LayoutDashboard className="size-4" />
+            </Link>
             <button
               type="button"
               className="relative rounded border border-docket-amber/30 bg-docket-amber/10 p-2 text-docket-amber transition-colors hover:bg-docket-amber/20"
