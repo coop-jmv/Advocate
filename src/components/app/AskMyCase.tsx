@@ -188,9 +188,11 @@ export function AskMyCase({ context }: { context: MatterContext }) {
           sources: result.sources,
         },
       ]);
-    } catch {
+    } catch (cause) {
       setError(
-        "I couldn't generate an answer right now. Your case records are still available above.",
+        cause instanceof Error
+          ? cause.message
+          : "I couldn't generate an answer right now. Your case records are still available above.",
       );
     } finally {
       setBusy(false);

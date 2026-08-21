@@ -56,8 +56,8 @@ export function MatterAiSummary({ context }: { context: MatterContext }) {
     try {
       const result = await generateMatterSummary(toSummaryInput(context));
       setSummary(result.summary);
-    } catch {
-      setError("AI summary temporarily unavailable.");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "AI summary temporarily unavailable.");
     } finally {
       setBusy(false);
     }
