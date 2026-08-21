@@ -1,9 +1,34 @@
 import { supabase } from "@/integrations/supabase/client";
 
+// Every edge function here returns a friendly `{ error: "..." }` body on a
+// non-2xx response (see supabase/functions/_shared/cors.ts's errorResponse),
+// but supabase-js's FunctionsHttpError.message is always the generic
+// "Edge Function returned a non-2xx status code" — the actual body only
+// lives on error.context, a raw Response the caller has to read itself.
+// Left unhandled, every edge-function error in the app (quota limits, legal-
+// safety refusals, "that scan was empty", etc.) shows that generic sentence
+// instead of the real reason. Reproduced live via the OCR path's "too small"
+// scan during Gate 1 boundary testing.
 async function invoke<T>(name: string, body: Record<string, unknown>): Promise<T> {
   const { data, error } = await supabase.functions.invoke<T>(name, { body });
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(await friendlyEdgeFunctionError(error));
   return data as T;
+}
+
+async function friendlyEdgeFunctionError(error: {
+  message: string;
+  context?: unknown;
+}): Promise<string> {
+  const context = error.context;
+  if (context instanceof Response) {
+    try {
+      const body = (await context.clone().json()) as { error?: unknown };
+      if (typeof body.error === "string" && body.error) return body.error;
+    } catch {
+      // Body wasn't JSON (or already consumed) — fall through to the generic message.
+    }
+  }
+  return error.message;
 }
 
 export function askAssistant(input: {
