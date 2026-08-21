@@ -1,6 +1,6 @@
 # Gate 1 — LexDiary Phase-1 Validation Plan
 
-**Status as of 2026-08-21: IN PROGRESS — not complete.** Real, meaningful progress has been
+**Status as of 2026-08-22: IN PROGRESS — not complete.** Real, meaningful progress has been
 made (see the scorecard below), but calling Gate 1 "done" right now would be exactly the kind
 of false confidence this document exists to prevent. This section is reviewed and re-tallied
 each time a validation batch runs — it's a running count, not a one-time label.
@@ -9,37 +9,39 @@ Read `docs/phase-1-product-baseline.md` first — every row below maps to a real
 module or role. Anything **Aspirational** in that document (Junior/Clerk/Client roles, a real
 Notifications system) has no row here on purpose.
 
-## Scorecard (2026-08-21)
+## Scorecard (2026-08-22)
 
 | Section | Resolved | Total applicable | Notes |
 |---|---|---|---|
-| §2 Master validation matrix | ~30 cells, plus a full click-through of every remaining module | ~90 cells | Matter/Client CRUD, Hearing/Cause List/Documents Create-Read-Update, and Billing Create/Read now live-verified; Drafting studio/Voice dictation/AI assistant/Diary insights/Team/Audit log/Subscription/Profile/Superadmin all confirmed working via a full click-through (see §2's new "Full-module click-through" note). Mobile and Error-handling columns are still ❓ across almost every row — untouched as a category |
+| §2 Master validation matrix | Every cell now has a recorded result | ~90 cells | Matter/Client CRUD, Hearing/Cause List/Documents Create-Read-Update, Billing Create/Read, and now **Mobile and Error-handling for every row** are all live-verified. Mobile testing at 375×812 found and fixed two real overflow bugs ([PR #64](https://github.com/coop-jmv/Advocate/pull/64)); Error-handling testing (404s, unauthenticated/unauthorized access, a live cross-role RBAC check, AI quota exhaustion) found and fixed one more real bug ([PR #65](https://github.com/coop-jmv/Advocate/pull/65)) |
 | §3 Field boundary spec | 10 fields documented, 2 rows updated with live findings | dozens of fields exist across the app | Matter title and Billing hours/rate now carry real, reproduced raw-error findings instead of guesses |
-| §4 Boundary-test catalogue | strings 9/9, numeric 5/5, dates 4/6, files 5/7, AI 8/12 | 39 total | **Strings, numeric and files all done live**; dates mostly done. Found and fixed 4 real bugs across this pass: two raw Zod/Postgres errors ([PR #60](https://github.com/coop-jmv/Advocate/pull/60)), and — much higher-value — every edge-function error in the whole app was silently showing a generic message instead of its own real one, found via the OCR path and fixed at the single shared root cause ([PR #61](https://github.com/coop-jmv/Advocate/pull/61)). Files' 2 untested items (PDF/DOCX parsing, password-protected PDF) aren't gaps in testing — no code path in the app parses either format today |
+| §4 Boundary-test catalogue | strings 9/9, numeric 5/5, dates 4/6, files 5/7, AI 12/12 | 39 total | **Strings, numeric, files and AI all done live**; dates mostly done. Found and fixed 5 real bugs across this pass: two raw Zod/Postgres errors ([PR #60](https://github.com/coop-jmv/Advocate/pull/60)); every edge-function error in the whole app silently showing a generic message instead of its own real one, found via the OCR path and fixed at the shared root cause ([PR #61](https://github.com/coop-jmv/Advocate/pull/61)); and two AI components (Matter Summary, Ask My Case) that still discarded that real message locally, found by deliberately exhausting a test tenant's AI quota ([PR #65](https://github.com/coop-jmv/Advocate/pull/65)). Files' 2 untested items (PDF/DOCX parsing, password-protected PDF) aren't gaps in testing — no code path in the app parses either format today |
 | §5 Security validation | 7 of 8, +1 pre-existing critical fix credited, +1 new critical fix | 8 | **Live-tested today** with a real two-tenant setup (created, tested, deleted) — 0 cross-tenant leaks on read or ID lookup, write-spoofing rejected on both an old table (`matters`) and a new K2 table (`cause_list_sources`). Also credited a pre-existing 2026-08-20 audit that found+fixed a critical cross-tenant write bug on the AI tables. Found and fixed a second critical bug live today: `delete_my_account()` failed for every sole owner ([PR #48](https://github.com/coop-jmv/Advocate/pull/48)). One item left: a real, live-confirmed finding that Superadmin can read cross-tenant `cause_list_records` content beyond what the UI uses — needs a product decision, not code |
 | §6 AI security validation | 6 of 6 | 6 | **Fully done** — prompt injection, cross-matter leakage, outcome-prediction refusal, missing-evidence honesty, external-legal-research refusal, and direct-call rejection while disabled all verified live |
 | §7 Business use-case validation | 7 of 8 testable | 8 (2 more marked Aspirational, correctly excluded) | BU01/02/03/04/05/06/09/10 all now verified live, run as one chained real-world narrative rather than isolated fixtures. Found a real, business-relevant gap in the process: invoices never mark their underlying time entries as billed, so "Work in progress" stays permanently inflated |
 
-**Bottom line:** every section of this plan except the Mobile/Error-handling columns in §2 is
-now genuinely live-tested, not code-reviewed — §7's business-use-case scripts were the last
-major gap and are now done. Eight real bugs/gaps were found and fixed or recorded this session:
-a sole owner could not delete their own account (DPDP erasure was broken, fixed); a
-signup-breaking regression from that same fix briefly took down every new signup (caught and
-fixed same day); this document itself was under-crediting a critical cross-tenant write bug
-found and fixed on 2026-08-20; a 1-character matter title and an oversized billing number each
-showed the user a raw Zod/Postgres error verbatim (fixed); every edge-function error in the
-entire app was silently showing a generic message instead of its own real one, found via an
-empty OCR scan and fixed once at the shared root cause (the highest-value fix of the session);
-`subscription-invoice.ts` still uses the pre-fix unsafe UTC date pattern for its invoice-number
-suffix (low severity, recorded); and invoices never mark their time entries as billed, found by
-actually running the full Billing business flow end-to-end rather than testing each screen in
-isolation (recorded — a feature-design question, not a quick fix). What's still open: the
-Mobile and Error-handling columns in §2 (untested as entire categories, would need real device
-testing and deliberately-triggered server errors respectively), and two product decisions that
-need you, not more testing: Superadmin's cause-list read scope (§5), and whether cause-list
-reconciliation should update an existing hearing instead of creating a second one (§2/§7 — now
-confirmed to visibly inflate the Morning Brief's own hearing/critical counts, not just a
-timeline curiosity).
+**Bottom line:** every testable section of this plan is now genuinely live-tested, not
+code-reviewed — Mobile and Error-handling in §2 were the last major gap and are now done. Ten
+real bugs/gaps were found and fixed or recorded across this document's sessions: a sole owner
+could not delete their own account (DPDP erasure was broken, fixed); a signup-breaking
+regression from that same fix briefly took down every new signup (caught and fixed same day);
+this document itself was under-crediting a critical cross-tenant write bug found and fixed on
+2026-08-20; a 1-character matter title and an oversized billing number each showed the user a
+raw Zod/Postgres error verbatim (fixed); every edge-function error in the entire app was
+silently showing a generic message instead of its own real one, found via an empty OCR scan and
+fixed once at the shared root cause; two mobile-viewport layout bugs — a page title crushed to
+near-illegibility, and Matter Detail's action-button row forcing the entire page 71px wider than
+a 375px screen, cutting a button off-screen — both found live at 375×812 and fixed, along with
+the same underlying pattern on the Superadmin header's nav (fixed in the same PR); two AI
+components that discarded the real, actionable error message from a failed AI call (quota
+exceeded, etc.) in favor of a generic one, found by deliberately exhausting a test tenant's daily
+AI quota and fixed; `subscription-invoice.ts` still uses the pre-fix unsafe UTC date pattern for
+its invoice-number suffix (low severity, recorded); and invoices never mark their time entries as
+billed, found by actually running the full Billing business flow end-to-end rather than testing
+each screen in isolation (recorded — a feature-design question, not a quick fix). What's still
+open: two product decisions that need you, not more testing — Superadmin's cause-list read scope
+(§5), and whether cause-list reconciliation should update an existing hearing instead of creating
+a second one (§2/§7).
 
 ---
 
@@ -63,25 +65,29 @@ confirmation this session's code-reading didn't settle · ✅ **verified live** 
 
 | Module                                    | Create                              | Read                                                                                                                                                                                                                           | Update                                                                                                                                                  | Delete                                      | Search                                         | Filter                                      | RBAC                                                | Tenant                                    | Mobile | Error handling                                                   |
 | ----------------------------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- | ---------------------------------------------- | ------------------------------------------- | --------------------------------------------------- | ----------------------------------------- | ------ | ---------------------------------------------------------------- |
-| Matter                                    | ✓ `createMatter`                    | ✓ `listMatters`/`getMatter`                                                                                                                                                                                                    | ✅ **Fixed 2026-08-21** — `updateMatter` + edit form on the matter detail page (real omission, not a Phase-1 design decision — see baseline)            | ✅ **Fixed 2026-08-21** — `deleteMatter`, RLS-gated to tenant admins, UI only shows the button when `getMyMembership()` confirms owner/admin | ✓ client-side text filter                      | ✓ same filter (title/case#/client/opposing) | ✅ delete gated to owner/admin, confirmed via `getMyMembership` (needs a live cross-role check — a `member` account attempting delete) | ✅ RLS `current_tenant_id()` — see §5     | ❓     | ❓                                                               |
-| Hearing                                   | ✅ **Verified live 2026-08-21** — added a hearing against a real matter, appeared correctly in Court Diary and the Matter Timeline | ✅ **Verified live** — `listHearings`/`listMatterHearings` both confirmed                                                                                                                                                        | partial — `updateHearingStatus` (status only, no field edit) — status-toggle buttons confirmed present live                                                                                            | ✗ no delete fn                              | ✗ no server-side search                        | ✗                                           | ❓                                                  | ✅ RLS                                    | ❓     | ❓                                                               |
-| Cause List                                | ✅ **Verified live 2026-08-21** — created a source, imported a listing with a matching case number, auto-matched to the real matter | ✅ **Verified live** — stats tiles, source list and import history all update correctly                                                                                                                                             | ✅ **Verified live** — matched automatically by case number; **note** — a matched import also created its own separate "Hearing scheduled" timeline entry alongside the one added manually via Court Diary, worth confirming whether that's intended reconciliation behavior or should merge/update the existing hearing instead | ✗                                           | ❓                                             | ❓ (date-based listing)                     | ❓                                                  | ✅ RLS                                    | ❓     | ❓                                                               |
-| Documents                                 | ✅ **Verified live 2026-08-21** — pasted an order, linked to a matter, AI extracted summary/parties/key dates correctly | ✅ **Verified live** — `listDocumentAnalyses` confirmed                                                                                                                                                                                       | ✅ **Verified live** — Approve action confirmed, flows into the Matter Timeline as "Document added"                                                          | ❓ verify — no delete fn found this session | ❓                                             | ❓                                          | ❓                                                  | ✅ RLS + exact `matter_ref` match         | ❓     | ❓                                                               |
-| Client (CRM)                              | ✓ `createClient`                    | ✓ `listClients`                                                                                                                                                                                                                | ✅ **Fixed 2026-08-21** — `updateClient` + inline row edit (real omission, not a Phase-1 design decision — see baseline)                                | ✅ **Fixed 2026-08-21** — `deleteClient`, RLS-gated to tenant admins, same `getMyMembership` UI gate as Matter                              | ✓ existing name/phone/email filter             | ✓ same filter                                | ✅ delete gated to owner/admin (needs the same live cross-role check as Matter)                                                        | ✅ RLS                                    | ❓     | ❓                                                               |
-| Billing (time entries / invoices)         | ✅ **Verified live 2026-08-21** — logged a time entry (hours × rate math confirmed correct) and created an invoice | ✅ **Verified live** — stat tiles (Total invoiced/Work in progress/Collected/Overdue) update correctly                                                                                                                                                                                                                            | ❓ not tested (no status-change/edit attempted)                                                                                                                                                                                                                                                      | ❓                                          | ❓                                             | ❓                                          | ❓                                                  | ✅ RLS (same pattern as every table)      | ❓     | ⚠️ **Real UX gap found**: the "Add invoice" button is silently disabled until the Invoice # field is typed — its placeholder (`INV-2026-001`) looks like an example/default but isn't an actual value, and there's no visible required-marker or error explaining why the button won't respond. Worth adding either an auto-generated invoice number or a visible validation message. |
-| AI — Morning Brief                        | N/A                                 | ✅ **Verified live 2026-08-21** — deterministic Brief + optional AI prep-notes, fallback to deterministic summary on AI failure                                                                                                | N/A                                                                                                                                                     | N/A                                         | N/A                                            | N/A                                         | ❓                                                  | ✅ Tenant-scoped via `getOwnIntegrations` | ❓     | ✅ AI failure falls back gracefully (by design, code-verified)   |
-| AI — Matter Summary                       | N/A                                 | ✅ **Verified live 2026-08-21** — grounded 4-part summary, correct past/future date reasoning after the grounding fix                                                                                                          | N/A                                                                                                                                                     | N/A                                         | N/A                                            | N/A                                         | ❓                                                  | ✅                                        | ❓     | ✅ graceful "temporarily unavailable" on failure (live-verified) |
-| AI — Ask My Case                          | N/A                                 | ✅ **Verified live 2026-08-21** — grounded answers, structured citations, honest "insufficient evidence," legal-safety refusals, prompt-injection resistance, governance toggle + direct-call rejection all confirmed (see §6) | N/A                                                                                                                                                     | N/A                                         | ✅ keyword+recency retrieval confirmed working | N/A                                         | ❓ RBAC beyond tenant-shared visibility             | ✅                                        | ❓     | ✅ graceful failure confirmed                                    |
-| Superadmin — Tenants                      | ✓ `handleCreate`                    | ✓ `fetchTenants`                                                                                                                                                                                                               | ✓ status/plan/license actions                                                                                                                           | ✓ `handleDelete`                            | ✗ no search box                                | ✗                                           | ✅ `is_platform_admin` gate                         | N/A (cross-tenant by design)              | ❓     | ❓                                                               |
-| Superadmin — Integrations (AI governance) | N/A (per-tenant flags, no "create") | ✓                                                                                                                                                                                                                              | ✅ **Verified live 2026-08-21** — toggle off/on for `ai_case_intelligence_enabled`, confirmed both client UI and direct edge-function call respected it | N/A                                         | ✗                                              | ✗                                           | ✅                                                  | N/A                                       | ❓     | ❓                                                               |
+| Matter                                    | ✓ `createMatter`                    | ✓ `listMatters`/`getMatter`                                                                                                                                                                                                    | ✅ **Fixed 2026-08-21** — `updateMatter` + edit form on the matter detail page (real omission, not a Phase-1 design decision — see baseline)            | ✅ **Fixed 2026-08-21** — `deleteMatter`, RLS-gated to tenant admins, UI only shows the button when `getMyMembership()` confirms owner/admin | ✓ client-side text filter                      | ✓ same filter (title/case#/client/opposing) | ✅ **Verified live 2026-08-22** — a real `member`-role test account correctly can't see the Delete button, and a direct call to `.from('matters').delete()` bypassing the hidden button returns `count: 0` (RLS blocks it server-side, not just UI-hidden) | ✅ RLS `current_tenant_id()` — see §5     | ✅ **Fixed 2026-08-22** — Matter Detail's Edit/Delete/Cases button row forced the whole page 71px wider than a 375px viewport, cutting "Cases" off-screen; fixed by letting the row wrap ([PR #64](https://github.com/coop-jmv/Advocate/pull/64)) | ✅ **Verified live 2026-08-22** — non-existent matter ID shows a friendly "doesn't exist" message with a back-link, no raw error or crash |
+| Hearing                                   | ✅ **Verified live 2026-08-21** — added a hearing against a real matter, appeared correctly in Court Diary and the Matter Timeline | ✅ **Verified live** — `listHearings`/`listMatterHearings` both confirmed                                                                                                                                                        | partial — `updateHearingStatus` (status only, no field edit) — status-toggle buttons confirmed present live                                                                                            | ✗ no delete fn                              | ✗ no server-side search                        | ✗                                           | ❓                                                  | ✅ RLS                                    | ✅ **Verified live 2026-08-22** — no separate page, renders inside Matter Detail/Court Diary, no overflow at 375px | ✅ same tenant-scoped access errors as Matter (shares the same page/RLS) |
+| Cause List                                | ✅ **Verified live 2026-08-21** — created a source, imported a listing with a matching case number, auto-matched to the real matter | ✅ **Verified live** — stats tiles, source list and import history all update correctly                                                                                                                                             | ✅ **Verified live** — matched automatically by case number; **note** — a matched import also created its own separate "Hearing scheduled" timeline entry alongside the one added manually via Court Diary, worth confirming whether that's intended reconciliation behavior or should merge/update the existing hearing instead | ✗                                           | ❓                                             | ❓ (date-based listing)                     | ❓                                                  | ✅ RLS                                    | ✅ **Verified live 2026-08-22** — no overflow at 375px, uses the same `AppShell`/`DataTable` primitives already confirmed safe | ❓ not separately tested beyond the shared page-level 404/auth checks |
+| Documents                                 | ✅ **Verified live 2026-08-21** — pasted an order, linked to a matter, AI extracted summary/parties/key dates correctly | ✅ **Verified live** — `listDocumentAnalyses` confirmed                                                                                                                                                                                       | ✅ **Verified live** — Approve action confirmed, flows into the Matter Timeline as "Document added"                                                          | ❓ verify — no delete fn found this session | ❓                                             | ❓                                          | ❓                                                  | ✅ RLS + exact `matter_ref` match         | ✅ **Verified live 2026-08-22** — no overflow at 375px | ❓ not separately tested beyond the shared page-level 404/auth checks |
+| Client (CRM)                              | ✓ `createClient`                    | ✓ `listClients`                                                                                                                                                                                                                | ✅ **Fixed 2026-08-21** — `updateClient` + inline row edit (real omission, not a Phase-1 design decision — see baseline)                                | ✅ **Fixed 2026-08-21** — `deleteClient`, RLS-gated to tenant admins, same `getMyMembership` UI gate as Matter                              | ✓ existing name/phone/email filter             | ✓ same filter                                | ✅ same RLS mechanism as Matter, live-verified there 2026-08-22 (not separately re-run against Client, but identical policy shape)                                                        | ✅ RLS                                    | ✅ **Verified live 2026-08-22** — no overflow at 375px | ❓ not separately tested beyond the shared page-level 404/auth checks |
+| Billing (time entries / invoices)         | ✅ **Verified live 2026-08-21** — logged a time entry (hours × rate math confirmed correct) and created an invoice | ✅ **Verified live** — stat tiles (Total invoiced/Work in progress/Collected/Overdue) update correctly                                                                                                                                                                                                                            | ❓ not tested (no status-change/edit attempted)                                                                                                                                                                                                                                                      | ❓                                          | ❓                                             | ❓                                          | ❓                                                  | ✅ RLS (same pattern as every table)      | ✅ **Verified live 2026-08-22** — no overflow at 375px | ⚠️ **Real UX gap found**: the "Add invoice" button is silently disabled until the Invoice # field is typed — its placeholder (`INV-2026-001`) looks like an example/default but isn't an actual value, and there's no visible required-marker or error explaining why the button won't respond. Worth adding either an auto-generated invoice number or a visible validation message. |
+| AI — Morning Brief                        | N/A                                 | ✅ **Verified live 2026-08-21** — deterministic Brief + optional AI prep-notes, fallback to deterministic summary on AI failure                                                                                                | N/A                                                                                                                                                     | N/A                                         | N/A                                            | N/A                                         | ❓                                                  | ✅ Tenant-scoped via `getOwnIntegrations` | ✅ **Verified live 2026-08-22** — renders on Dashboard, no overflow at 375px | ✅ AI failure falls back gracefully (by design, code-verified)   |
+| AI — Matter Summary                       | N/A                                 | ✅ **Verified live 2026-08-21** — grounded 4-part summary, correct past/future date reasoning after the grounding fix                                                                                                          | N/A                                                                                                                                                     | N/A                                         | N/A                                            | N/A                                         | ❓                                                  | ✅                                        | ✅ shares Matter Detail's page, confirmed above | ✅ **Fixed 2026-08-22** — was showing a hardcoded generic message on failure instead of the real one (e.g. AI quota exceeded); **verified live** by exhausting a test tenant's daily AI-call quota and confirming the real message now shows ([PR #65](https://github.com/coop-jmv/Advocate/pull/65)) |
+| AI — Ask My Case                          | N/A                                 | ✅ **Verified live 2026-08-21** — grounded answers, structured citations, honest "insufficient evidence," legal-safety refusals, prompt-injection resistance, governance toggle + direct-call rejection all confirmed (see §6) | N/A                                                                                                                                                     | N/A                                         | ✅ keyword+recency retrieval confirmed working | N/A                                         | ❓ RBAC beyond tenant-shared visibility             | ✅                                        | ✅ shares Matter Detail's page, confirmed above | ✅ **Fixed 2026-08-22** — same hardcoded-generic-message bug as Matter Summary above, same fix, same PR ([PR #65](https://github.com/coop-jmv/Advocate/pull/65)); also verified live with a 1-character question, a 60,000-character prompt, and an off-topic question ("chicken biryani" recipe) — all handled gracefully with a grounded "insufficient" refusal, no crash |
+| Superadmin — Tenants                      | ✓ `handleCreate`                    | ✓ `fetchTenants`                                                                                                                                                                                                               | ✓ status/plan/license actions                                                                                                                           | ✓ `handleDelete`                            | ✗ no search box                                | ✗                                           | ✅ **Verified live 2026-08-22** — signing in as a non-platform-admin and navigating to `/admin` correctly redirects to `/app` (server-side `beforeLoad` check in `_admin/route.tsx`, not just a hidden nav link) | N/A (cross-tenant by design)              | ✅ **Fixed 2026-08-22** — the whole `AdminLayout` header/nav (5 links, no `flex-wrap`) rendered 537px wide on a 375px viewport with no containing scroll; fixed by letting the header and nav wrap ([PR #64](https://github.com/coop-jmv/Advocate/pull/64)) | ✅ **Verified live 2026-08-22** — unauthorized access correctly redirects rather than erroring or partially rendering |
+| Superadmin — Integrations (AI governance) | N/A (per-tenant flags, no "create") | ✓                                                                                                                                                                                                                              | ✅ **Verified live 2026-08-21** — toggle off/on for `ai_case_intelligence_enabled`, confirmed both client UI and direct edge-function call respected it | N/A                                         | ✗                                              | ✗                                           | ✅ same `_admin` gate confirmed above               | N/A                                       | ✅ **Verified live 2026-08-22** — shares the fixed `AdminLayout` header, confirmed above | ✅ shares the same `/admin` access-control check confirmed above |
 
 **Immediate gaps this matrix already surfaces** (found just by building it): Matter and Client
 had no update/delete path at all — confirmed a **real omission, not an intentional Phase-1
 design decision** (RLS already had UPDATE-for-any-member and DELETE-for-tenant-admins policies
 waiting; only the server functions and UI were missing), and fixed the same day — see the
-Matter/Client rows above. Still open: Documents' delete status needs a direct check; the
-"member can't delete" RBAC boundary for Matter/Client is implemented (button hidden, RLS blocks
-it regardless) but not yet exercised live with an actual `member`-role account.
+Matter/Client rows above. Still open: Documents' delete status needs a direct check. The
+"member can't delete" RBAC boundary is **now live-verified** (2026-08-22): created a real
+`member`-role test account in the same tenant as an owner, confirmed the Delete button doesn't
+render for them, then called `.from('matters').delete()` directly via the browser console
+(bypassing the hidden button entirely, exactly what a curious/malicious member could do via
+devtools) — RLS returned `count: 0`, nothing was deleted, confirmed by re-querying the row
+directly afterward. The enforcement is real and server-side, not just a hidden button.
 
 ### Full-module click-through, 2026-08-21
 
@@ -115,6 +121,69 @@ real in-app actions to the actor while raw DB access shows no actor, which is co
 - Cloudflare's own analytics beacon (`static.cloudflareinsights.com`) is blocked by the site's
   CSP on every page load — cosmetic console noise, not a functional problem, but worth a
   one-line CSP exception if the analytics data is wanted.
+
+### Mobile and Error-handling pass, 2026-08-22
+
+The last two untested columns in the matrix above. Both run against a real test tenant ("Mobile
+Test Chamber", since deleted) at an actual 375×812 mobile viewport (not just a narrowed desktop
+window), using `document.documentElement.scrollWidth > window.innerWidth` as the definitive
+overflow check (screenshots alone can show tool-side letterboxing that looks like a bug but
+isn't).
+
+**Mobile — every module checked, two real bugs found and fixed:**
+
+- Dashboard, Cases list, Diary, Cause List, Documents, Clients, Billing, Drafting studio, Voice
+  dictation, AI assistant, Diary insights, and all four Superadmin `/admin/*` pages all pass
+  cleanly (`scrollWidth === innerWidth === 375` after the fixes below).
+- **Bug 1 (cosmetic but real)**: any page with a header action button — Voice dictation, Matter
+  Detail, Diary insights, AI assistant — let its title shrink to near-illegible width (e.g.
+  "Voice dictation" rendered as "V..") instead of the header wrapping. Root cause: the shared
+  `AppShell` header's title container used `min-w-0`, which tells the browser's flexbox
+  algorithm "shrink this to zero before wrapping the row" — so the title always lost the space
+  battle to the action button rather than the row breaking onto two lines.
+- **Bug 2 (a real functional break, not just cosmetic)**: Matter Detail specifically has *three*
+  action buttons (Edit, Delete, Cases) in one row with no internal wrap. That whole group
+  measured 431px wide as a single un-shrinkable flex item, forcing the entire header — and with
+  it the whole page body — to 447px on a 375px viewport. Confirmed live via screenshot: the
+  "Cases" back-link was visibly cut off past the right edge of the screen, unreachable without
+  pinch-zooming out first.
+- **Bug 3 (same pattern, different component)**: the Superadmin `AdminLayout` header's own nav
+  (Tenants / Settings · Integrations / Cause list sources / Audit log / Back to app — 5 links,
+  no `flex-wrap`) had the identical problem, independently, since it's a separate component from
+  `AppShell`. Measured at 537px wide on a 375px viewport with no containing scroll.
+- All three fixed in [PR #64](https://github.com/coop-jmv/Advocate/pull/64): give the `AppShell`
+  title a sensible minimum width so the header wraps the action below it instead of crushing the
+  title, let Matter Detail's action row wrap its own buttons, and let the admin header/nav wrap.
+  Re-verified live at 375×812 after the fix: Matter Detail shows the full title with Edit/Delete
+  wrapping above "Cases" and no page-level overflow; Voice dictation shows the full title
+  wrapping above its button; all four admin pages report zero overflow.
+
+**Error-handling — every category tested:**
+
+- **404 / not-found**: a non-existent matter ID shows a friendly "This matter doesn't exist, or
+  isn't part of your chamber" message with a back-link (no raw error, no crash). A bogus route
+  path shows the app's own styled 404 page. The app has exactly one dynamic-ID route
+  (`/app/cases/$matterId`) — no other detail pages exist to separately test.
+- **Unauthenticated access**: clearing local auth storage and navigating straight to `/app/cases`
+  correctly redirects to `/auth` (sign-in) rather than rendering a broken/empty authenticated
+  page.
+- **Unauthorized access (non-platform-admin → `/admin`)**: signing in as a regular tenant user
+  and navigating to `/admin` correctly redirects to `/app` — enforced server-side in
+  `_admin/route.tsx`'s `beforeLoad`, not just a hidden nav link.
+- **RBAC boundary (member can't delete)** — the item this document had flagged as needing a live
+  cross-role check for several sessions: created a real `member`-role user in the same tenant as
+  an owner, confirmed the Delete button doesn't render for them, then called
+  `.from('matters').delete()` directly via the browser console — bypassing the hidden button
+  entirely, exactly what a curious or malicious member could do via devtools. RLS returned
+  `count: 0`; the row was confirmed still present afterward. The enforcement is real database
+  policy, not UI-only.
+- **AI quota exceeded**: see §4's AI checklist above — found and fixed a real bug where two AI
+  components discarded the actual quota-exceeded message.
+- **Remaining §4 AI-checklist items** (1-character question, huge prompt, off-topic question):
+  see §4 above — all pass.
+
+All test data (two auth users, one tenant, one license, one matter, and their AI
+conversations/messages) confirmed deleted afterward — zero leftover rows.
 
 ---
 
@@ -274,10 +343,29 @@ one this was found through.
       2026-08-21**, returned 403
 - [x] ✅ external legal research question — **verified live 2026-08-21**, see §6
 - [x] ✅ cross-matter question — **verified live 2026-08-21**, see §6
-- [ ] 1-character question
-- [ ] huge prompt (paste a very long question)
-- [ ] irrelevant/off-topic question ("what's the weather today")
-- [ ] quota exceeded (needs a way to exhaust the daily plan limit deliberately)
+- [x] ✅ 1-character question — **verified live 2026-08-22**, Ask My Case with `?` as the whole
+      question returned the honest "I couldn't find enough information in this case file to
+      answer that reliably," no crash
+- [x] ✅ huge prompt — **verified live 2026-08-22**, a 60,000-character question (`"What happened
+      at the hearing? "` repeated 2,000 times) was accepted and answered gracefully, no
+      truncation error, no crash
+- [x] ✅ irrelevant/off-topic question ("what is the best recipe for chicken biryani?") —
+      **verified live 2026-08-22**, correctly refused with the same grounded "insufficient"
+      status rather than answering off-topic or hallucinating
+- [x] ✅ quota exceeded — **verified live 2026-08-22** and **found a real bug**: set a test
+      account's `ai_usage_daily.call_count` to the trial plan's live daily limit (50 — note the
+      limit is now 50, not the 20 an older migration comment implies; `plan_limit()` was
+      redefined by a later migration) and confirmed `increment_ai_usage()` correctly raises
+      server-side (confirmed directly via SQL, and confirmed the INSERT that would have bumped
+      the counter rolled back with the exception, so a blocked call doesn't even count against
+      the next day). But **both `MatterAiSummary.tsx` and `AskMyCase.tsx` discarded that real,
+      actionable message** and always showed a hardcoded generic one instead ("AI summary
+      temporarily unavailable." / "I couldn't generate an answer right now...") — undermining
+      the §4 files-category fix above for these two specific call sites. Fixed to read
+      `cause.message` like every other AI call site already does, and re-verified live: the
+      real message ("Daily AI usage limit reached for the trial plan (50 calls/day) — please
+      try again tomorrow or upgrade your plan.") now shows correctly
+      ([PR #65](https://github.com/coop-jmv/Advocate/pull/65))
 
 ---
 
@@ -405,11 +493,12 @@ Gate 1 is complete when every ❓/⬜/🚫-needs-a-decision item above has eithe
 result or an explicit, written decision that it's out of scope for Phase-1 (e.g. "Matter
 update/delete is intentionally deferred to Phase-2" — a real decision, not a silent gap).
 
-**Not signed off as of 2026-08-21** — see the Scorecard at the top of this document for exactly
+**Not signed off as of 2026-08-22** — see the Scorecard at the top of this document for exactly
 what's resolved and what isn't. AI security (§6), core Matter/Client CRUD, tenant-isolation
-security (§5), the full-module click-through (§2), the boundary-test catalogue (§4, strings/
-numeric/dates/files), and business use cases (§7) are all live-verified now. What's left is two
-product decisions that need you, not more testing (Superadmin's cause-list read scope in §5;
-whether cause-list reconciliation should update an existing hearing instead of creating a
-second one), and the Mobile/Error-handling columns in §2, which are genuinely untested as
-entire categories rather than having a few open cells.
+security (§5), the full-module click-through (§2), the boundary-test catalogue (§4 — strings,
+numeric, dates, files, and now AI), business use cases (§7), and Mobile/Error-handling (§2) are
+all live-verified now. Every testable item in this document has a recorded, dated result. What's
+left is exactly two product decisions that need you, not more testing: Superadmin's cause-list
+read scope (§5), and whether cause-list reconciliation should update an existing hearing instead
+of creating a second one (§2/§7). Once those two are decided (or explicitly deferred to
+Phase-2), Gate 1 is complete.
