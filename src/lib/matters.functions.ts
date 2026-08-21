@@ -21,6 +21,24 @@ export const listMatters = createServerFn({ method: "GET" })
     return data ?? [];
   });
 
+// Single-matter fetch for the matter detail page. RLS makes "belongs to
+// another tenant" and "doesn't exist" indistinguishable (both resolve to
+// null) — that's the correct, non-leaking behavior, not a bug to fix.
+export const getMatter = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({ matterId: z.string().uuid() }).parse(data))
+  .handler(async ({ data, context }) => {
+    const { data: matter, error } = await context.supabase
+      .from("matters")
+      .select(
+        "id, title, client_name, case_number, court, status, opposing_party, filed_date, notes, created_at",
+      )
+      .eq("id", data.matterId)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    return matter;
+  });
+
 export const createMatter = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>

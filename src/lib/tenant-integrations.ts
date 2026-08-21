@@ -5,6 +5,7 @@ export type Integrations = {
   whatsapp_enabled?: boolean;
   ai_morning_brief_enabled?: boolean;
   cause_list_enabled?: boolean;
+  ai_matter_intelligence_enabled?: boolean;
 };
 
 /**

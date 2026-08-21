@@ -13,6 +13,7 @@ type Integrations = {
   whatsapp_enabled?: boolean;
   ai_morning_brief_enabled?: boolean;
   cause_list_enabled?: boolean;
+  ai_matter_intelligence_enabled?: boolean;
 };
 type TenantIntegrations = {
   id: string;
@@ -100,6 +101,12 @@ function AdminIntegrations() {
         here first, and enforced again server-side in the import itself. Listings already imported
         and matched stay visible either way; turning it off only blocks new imports.
       </p>
+      <p className="mt-2 text-sm text-muted-foreground">
+        AI Matter Intelligence governs whether a matter's AI summary can be generated at all —
+        checked here first, and enforced again server-side in the ai-matter-summary edge function
+        itself. The Matter Timeline, hearings, cause-list history and documents keep working either
+        way; turning it off only hides the AI summary.
+      </p>
 
       {error ? (
         <p className="mt-4 rounded border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
@@ -114,7 +121,13 @@ function AdminIntegrations() {
           <p className="text-sm text-muted-foreground">No tenants yet.</p>
         ) : (
           <DataTable
-            headers={["Tenant", "WhatsApp API", "AI Morning Brief", "Cause List Intelligence"]}
+            headers={[
+              "Tenant",
+              "WhatsApp API",
+              "AI Morning Brief",
+              "Cause List Intelligence",
+              "AI Matter Intelligence",
+            ]}
           >
             {rows.map((row) => (
               <tr key={row.id} className="hover:bg-secondary/40">
@@ -160,6 +173,25 @@ function AdminIntegrations() {
                       className="size-4 rounded border-input"
                     />
                     {(row.integrations?.cause_list_enabled ?? true) ? "Enabled" : "Disabled"}
+                  </label>
+                </td>
+                <td className="px-4 py-3">
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={row.integrations?.ai_matter_intelligence_enabled ?? true}
+                      onChange={(event) =>
+                        void setIntegration(
+                          row.id,
+                          "ai_matter_intelligence_enabled",
+                          event.target.checked,
+                        )
+                      }
+                      className="size-4 rounded border-input"
+                    />
+                    {(row.integrations?.ai_matter_intelligence_enabled ?? true)
+                      ? "Enabled"
+                      : "Disabled"}
                   </label>
                 </td>
               </tr>
