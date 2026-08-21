@@ -16,16 +16,20 @@ Notifications system) has no row here on purpose.
 | §2 Master validation matrix | ~14 cells | ~90 cells | Matter/Client CRUD fully resolved this session; Hearing/Cause List/Documents/Billing/Superadmin still mostly ❓; Mobile and Error-handling columns are ❓ across almost every row — **untouched as a category, not just a few gaps** |
 | §3 Field boundary spec | 10 fields documented | dozens of fields exist across the app | A start, not close to finished |
 | §4 Boundary-test catalogue | 8 of 12 AI-row items done | strings 0/9, numeric 0/5, dates 0/6, files 0/7, AI 8/12 | AI row is the only one started — 4 items left there (1-char/huge/irrelevant question, quota exceeded); every non-AI category (strings/numbers/dates/files) hasn't been touched at all |
-| §5 Security validation | 0 of 8 | 8 | **The Tenant A/B setup itself doesn't exist yet** — no second tenant has been created this session, so none of these can be run until it is |
+| §5 Security validation | 7 of 8, +1 pre-existing critical fix credited, +1 new critical fix | 8 | **Live-tested today** with a real two-tenant setup (created, tested, deleted) — 0 cross-tenant leaks on read or ID lookup, write-spoofing rejected on both an old table (`matters`) and a new K2 table (`cause_list_sources`). Also credited a pre-existing 2026-08-20 audit that found+fixed a critical cross-tenant write bug on the AI tables. Found and fixed a second critical bug live today: `delete_my_account()` failed for every sole owner ([PR #48](https://github.com/coop-jmv/Advocate/pull/48)). One item left: a real, live-confirmed finding that Superadmin can read cross-tenant `cause_list_records` content beyond what the UI uses — needs a product decision, not code |
 | §6 AI security validation | 6 of 6 | 6 | **Fully done** — prompt injection, cross-matter leakage, outcome-prediction refusal, missing-evidence honesty, external-legal-research refusal, and direct-call rejection while disabled all verified live |
 | §7 Business use-case validation | 2 fully + 1 partial of 8 testable | 8 (2 more marked Aspirational, correctly excluded) | BU05 and BU10 (partial) done; BU01/02/03/06/09 not run as scripted passes |
 
-**Bottom line:** the AI layer (K1/K3/K4) and core Matter/Client CRUD are the best-validated
-parts of the product right now — genuinely tested, not just code-reviewed. Everything else in
-this plan — Hearing/Cause List/Documents/Billing completeness, the entire tenant-isolation
-test suite (blocked on not having a second tenant yet), field-level boundary testing, and most
-business workflows — is still open. The next highest-value batch is standing up the Tenant
-A/B setup in §5, since that single piece of setup work unblocks 8 checklist items at once.
+**Bottom line:** the AI layer (K1/K3/K4), core Matter/Client CRUD, and now tenant-isolation
+security (§5) are the best-validated parts of the product — genuinely tested with real tokens
+against a real second tenant, not code-reviewed. Two real bugs were found and fixed today: a
+sole owner could not delete their own account (DPDP erasure was broken), and this document
+itself was under-crediting a critical cross-tenant write bug that was found and fixed on
+2026-08-20, before this document existed. What's still open: Hearing/Cause
+List/Documents/Billing completeness in §2, field-level boundary testing (§3/§4), most business
+workflows (§7), and one product decision on Superadmin's cause-list read scope (§5). The next
+highest-value batch is the §2 matrix rows for Hearing/Cause List/Documents/Billing, since
+those are still mostly ❓ with no live testing at all.
 
 ---
 
@@ -172,42 +176,60 @@ Apply this same catalogue to every text/numeric/date/file input found while fill
 
 ## 5. Security validation
 
-**Setup required (not yet created):**
+**Status: mostly resolved as of 2026-08-21**, in two parts — an earlier, pre-existing audit this
+document hadn't previously credited, and a fresh live test run today that closed the remaining
+gaps and found (and fixed) one critical bug.
 
-```
-Tenant A — Advocate A
-  Matter A1, Hearing A1, Document A1
-Tenant B — Advocate B
-  Matter B1, Hearing B1, Document B1
-```
+### 5a. Pre-existing isolation audit (2026-08-20, discovered/credited 2026-08-21)
 
-For each of the following, the expected result is a clean **403 / not found / empty result**
-— never real data, never a raw stack trace, never a Postgres constraint error leaking schema
-details:
+Before this Gate 1 document existed, a full tenant-isolation and DPDP audit was run against
+production with real attacker/victim tokens (not inferred from code), covering the 16
+pre-K2 tables (`matters`, `clients`, `hearings`, `invoices`, `time_entries`, `licenses`,
+`tenants`, `platform_admins`, `tenant_invites`, `audit_log`, `consents`, `ai_usage_daily`,
+`ai_documents`, `ai_drafts`, `ai_conversations`, `ai_messages`). Results, verified against the
+actual merged migrations rather than taken on faith:
 
-- [ ] A's session requesting B's matter by ID (`getMatter`, `getMatterContext`)
-- [ ] A's session requesting B's document
-- [ ] A's session requesting B's hearing
-- [ ] A's session requesting B's cause-list record/match/change
-- [ ] A's session requesting B's `ai_conversations`/`ai_messages` by ID
-- [ ] A's session attempting to POST/insert with a spoofed `tenant_id` pointing at B (expected:
-      ignored — every insert path derives `tenant_id` server-side, never from client input, per
-      `docs/phase-1-freeze.md` §7 — this should be a no-op confirmation, not a real risk, but
-      confirm it rather than assume it)
+- **Cross-tenant reads**: 0 rows leaked across 14 tables tested with a real attacker token.
+- **Critical bug found and fixed**: `ai_documents`/`ai_drafts`/`ai_conversations`/`ai_messages`
+  accepted a client-supplied `tenant_id` on INSERT (the tenant-assignment trigger only derived
+  it `IF NEW.tenant_id IS NULL`, and those four tables' INSERT policies never constrained
+  `tenant_id`) — a user in one chamber could plant a row that then appeared in another firm's
+  own screens. Fixed in `20260820030000_fix_cross_tenant_ai_table_writes.sql`: `tenant_id` is
+  now always derived server-side, unconditionally, and every INSERT/UPDATE/DELETE policy on
+  those four tables is scoped to `current_tenant_id()`. Retested clean at the time (0 leaks).
+- **DPDP Act groundwork implemented** the same day (`20260820040000_dpdp_consent_export_erasure.sql`):
+  consent capture/withdrawal, self-export (`export_my_personal_data`), chamber export
+  (`export_chamber_data`), and erasure (`delete_my_account`) — see §5b below, since live-testing
+  this today found the erasure path was actually broken.
+- **Grant housekeeping** (`20260821041000_grant_housekeeping.sql`): revoked Supabase's default
+  blanket `anon`/`authenticated` grants that RLS alone was already blocking, and closed a low
+  gap where a member could delete their own `profiles` row directly (bypassing
+  `delete_my_account()`'s last-owner check).
 
-**Superadmin boundary check:**
+This predates K2 (cause-list) and K3/K4 (Matter Timeline, Ask My Case) — those needed their own
+live test, done below.
 
-- [ ] Confirm a Superadmin can manage tenants/licenses/feature flags/monitoring (already
-      exercised live for the K4 governance toggle — extend to tenant status/plan changes)
-- [ ] Confirm a Superadmin **cannot** casually browse into a tenant's matters/hearings/
-      documents/AI conversations through the regular in-app routes — Superadmin's data access
-      should be limited to what `/admin/*` actually exposes (tenants, licenses, integrations,
-      cause-list sources, platform audit log), not a backdoor into every tenant's working data.
-      This is a real design question to settle explicitly, not assume: **is a Superadmin
-      currently able to read a tenant's matters via RLS?** `is_platform_admin()` gates the
-      _admin-specific_ policies, but check whether any tenant-data table's SELECT policy also
-      grants platform admins blanket access as a side effect — worth a direct RLS-policy audit,
-      not a guess.
+### 5b. Live-tested today, 2026-08-21
+
+Ran the actual Tenant A/B setup this section previously said didn't exist: two fresh real
+tenants created via Supabase Auth, each with its own matter, hearing, cause-list source and
+cause-list record, and real bearer tokens obtained by signing in as each — not service-role
+access, not inferred from policy text.
+
+| Test | Result |
+| --- | --- |
+| A's token listing `matters`/`hearings`/`cause_list_sources`/`cause_list_records` (no filter) | ✅ Empty on every table — 0 of B's rows returned |
+| A's token fetching B's matter/hearing/cause-list record **by exact ID** | ✅ Empty result on all three — not found, not a leak |
+| A's token POST to `matters` with `tenant_id` spoofed to B, `Prefer: return=minimal` (the exact trick that hid the 2026-08-20 bug) | ✅ `403`, and confirmed directly in the DB afterward — 0 rows landed anywhere |
+| A's token POST to `cause_list_sources` (a table that didn't exist during the 2026-08-20 audit) with `tenant_id` spoofed to B | ✅ `403`, confirmed 0 rows landed — the K2 schema's `tenant_id DEFAULT current_tenant_id()` + `WITH CHECK` pattern holds |
+| Superadmin boundary: does any tenant-data table's SELECT policy grant platform admins blanket cross-tenant access? | ⚠️ **Found, real**: `cause_list_sources` and `cause_list_records` both carry a `Platform admins view all …` SELECT policy with no column restriction. Verified live — temporarily granting a test account platform-admin status let its *existing* token read another tenant's `cause_list_records.petitioner`/`respondent` (real case party names) directly via the REST API, while the same account still correctly got nothing back from `matters`. `matters`/`hearings`/`clients` carry no such policy. The in-app `/admin/cause-list-sources` screen only ever selects source-level health fields (`sync_status`, `last_sync_at`, `error_message`, etc.) — it never touches `cause_list_records` — so this is wider than what any screen uses, not wider than what the RLS layer permits. **This needs a product decision**, not a silent fix: is record-level cross-tenant read (case party names, CNRs) for Superadmin intentional ops visibility, or should the policy be narrowed to match what the UI actually needs? |
+| `delete_my_account()` for a real sole-chamber-owner account | 🔴→✅ **Found broken, fixed, retested live.** Genuinely failed with a `23503` FK violation for the single most common real case (a solo advocate deleting their account) — two audit-log triggers logging against a `tenant_id` a cascaded delete had already removed. Fixed in [PR #48](https://github.com/coop-jmv/Advocate/pull/48) (two migrations: trigger timing, then explicit delete ordering); retested against the same account afterward — `200 OK`, tenant/license/user rows confirmed actually gone, audit trail confirmed intact. |
+
+All test tenants, users, and seeded records were deleted afterward — confirmed zero leftover
+rows.
+
+**Still open:** the Superadmin/`cause_list_records` scope question above needs a decision from
+you, not code. Everything else in this section that's testable today is now resolved.
 
 ---
 
@@ -262,6 +284,8 @@ result or an explicit, written decision that it's out of scope for Phase-1 (e.g.
 update/delete is intentionally deferred to Phase-2" — a real decision, not a silent gap).
 
 **Not signed off as of 2026-08-21** — see the Scorecard at the top of this document for exactly
-what's resolved and what isn't. AI security (§6) and core Matter/Client CRUD are done; the
-Tenant A/B security suite (§5) hasn't even had its test tenant created yet, and most of the
-boundary-test catalogue (§4) and business use cases (§7) haven't been run.
+what's resolved and what isn't. AI security (§6), core Matter/Client CRUD, and tenant-isolation
+security (§5) are all live-verified now; §5 has exactly one open item left, and it's a product
+decision (Superadmin's cause-list read scope), not a test still to run. Still genuinely open:
+most of §2's Hearing/Cause List/Documents/Billing rows, the boundary-test catalogue (§4), and
+most business use cases (§7).
