@@ -36,7 +36,7 @@ export const listMessages = createServerFn({ method: "POST" })
 
     const { data: rows, error } = await context.supabase
       .from("ai_messages")
-      .select("id, role, content, created_at")
+      .select("id, role, content, sources, created_at")
       .eq("conversation_id", data.conversationId)
       .order("created_at", { ascending: true });
     if (error) throw new Error(error.message);

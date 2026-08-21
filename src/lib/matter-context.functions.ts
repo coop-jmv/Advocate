@@ -69,6 +69,7 @@ export type MatterContext = {
   causeListEvents: MatterContextCauseListEvent[];
   documents: MatterContextDocument[];
   aiEnabled: boolean;
+  askCaseEnabled: boolean;
 };
 
 export const getMatterContext = createServerFn({ method: "GET" })
@@ -215,5 +216,66 @@ export const getMatterContext = createServerFn({ method: "GET" })
       causeListEvents,
       documents,
       aiEnabled: integrations.ai_matter_intelligence_enabled ?? true,
+      askCaseEnabled: integrations.ai_case_intelligence_enabled ?? true,
     };
+  });
+
+// K4 Ask My Case — document full text for retrieval. Kept separate from
+// getMatterContext above rather than folded into MatterContextDocument:
+// raw_text can be up to 60,000 characters per document (see
+// ai-analyze-document/index.ts), and the Matter page's timeline/AI-summary
+// consumers of getMatterContext have no use for it — fetching it on every
+// matter-page view for every document would be pure waste. Only the Ask My
+// Case flow, which genuinely needs to search document text, asks for it.
+export const getMatterDocumentTexts = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({ matterId: z.string().uuid() }).parse(data))
+  .handler(async ({ data, context }) => {
+    const { data: matterRow, error: matterError } = await context.supabase
+      .from("matters")
+      .select("title")
+      .eq("id", data.matterId)
+      .maybeSingle();
+    if (matterError) throw new Error(matterError.message);
+    if (!matterRow) return [];
+
+    const { data: documents, error } = await context.supabase
+      .from("ai_documents")
+      .select("id, name, doc_kind, raw_text, created_at")
+      .eq("matter_ref", matterRow.title)
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+
+    return (documents ?? []).map((d) => ({
+      id: d.id,
+      name: d.name,
+      docKind: d.doc_kind,
+      rawText: d.raw_text,
+      createdAt: d.created_at,
+    }));
+  });
+
+// K4 Ask My Case — conversations scoped to one matter, unlike the general
+// /app/assistant page's listConversations (tenant-wide, no matter filter).
+// Same exact-string matter_ref === title convention as everywhere else.
+export const listMatterConversations = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({ matterId: z.string().uuid() }).parse(data))
+  .handler(async ({ data, context }) => {
+    const { data: matterRow, error: matterError } = await context.supabase
+      .from("matters")
+      .select("title")
+      .eq("id", data.matterId)
+      .maybeSingle();
+    if (matterError) throw new Error(matterError.message);
+    if (!matterRow) return [];
+
+    const { data: conversations, error } = await context.supabase
+      .from("ai_conversations")
+      .select("id, title, updated_at")
+      .eq("matter_ref", matterRow.title)
+      .order("updated_at", { ascending: false })
+      .limit(10);
+    if (error) throw new Error(error.message);
+    return conversations ?? [];
   });
