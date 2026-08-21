@@ -5,6 +5,7 @@ import { Loader2, Plus } from "lucide-react";
 import { AppShell } from "@/components/app/AppShell";
 import { DataTable, Tag, type Tone } from "@/components/app/primitives";
 import { createMatter, listMatters } from "@/lib/matters.functions";
+import { friendlyErrorMessage } from "@/lib/friendly-error";
 
 export const Route = createFileRoute("/_authenticated/app/cases/")({
   head: () => ({
@@ -106,7 +107,7 @@ function Cases() {
       });
       await reload();
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Failed to create matter.");
+      setError(friendlyErrorMessage(cause, "Failed to create matter."));
     } finally {
       setCreating(false);
     }
