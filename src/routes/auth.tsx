@@ -28,15 +28,6 @@ export const Route = createFileRoute("/auth")({
   component: AuthPage,
 });
 
-// On a phone, checking today's hearings is the first thing a lawyer does —
-// signing in lands straight on the court diary rather than the dashboard or
-// the tile menu. Wider screens keep the sidebar and go to the dashboard as
-// before, where the diary is already front and center in the Court Brief.
-function landingRoute(): "/app" | "/app/diary" {
-  if (typeof window === "undefined") return "/app";
-  return window.matchMedia("(max-width: 767px)").matches ? "/app/diary" : "/app";
-}
-
 // Indian mobiles are the norm here, so a bare 10-digit number is accepted and
 // assumed +91 — that is what people actually type. An explicit +<country code>
 // is passed through untouched so an advocate practising on an overseas number
@@ -73,7 +64,7 @@ function AuthPage() {
   useEffect(() => {
     let active = true;
     void supabase.auth.getSession().then(({ data }) => {
-      if (active && data.session) void navigate({ to: landingRoute() });
+      if (active && data.session) void navigate({ to: "/app" });
     });
     return () => {
       active = false;
@@ -117,7 +108,7 @@ function AuthPage() {
         void logAuthEvent({ event: "signup", email, userId: signUpData.user?.id });
         const { data } = await supabase.auth.getSession();
         if (data.session) {
-          void navigate({ to: landingRoute() });
+          void navigate({ to: "/app" });
           return;
         }
         setNotice("Check your inbox to confirm the email address, then sign in.");
@@ -125,7 +116,7 @@ function AuthPage() {
       }
       const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
       if (signInError) throw signInError;
-      void navigate({ to: landingRoute() });
+      void navigate({ to: "/app" });
     } catch (cause) {
       if (mode === "signin") void logAuthEvent({ event: "login_failed", email });
       setError(cause instanceof Error ? cause.message : "Could not complete that request.");

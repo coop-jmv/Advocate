@@ -3,8 +3,16 @@ import { useEffect, useState } from "react";
 import { LayoutGrid, Scale, Bell, LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { logAuthEvent } from "@/lib/edge-functions";
-import { APP_DESTINATIONS } from "@/lib/navigation";
+import { APP_DESTINATIONS, GROUP_TONE } from "@/lib/navigation";
 import { HeaderSearch } from "@/components/app/HeaderSearch";
+import { cn } from "@/lib/utils";
+
+const navIconToneClasses = {
+  sapphire: "text-docket-sapphire",
+  amber: "text-docket-amber",
+  teal: "text-docket-teal",
+  rose: "text-docket-rose",
+} as const;
 
 export function AppShell({
   title,
@@ -92,7 +100,12 @@ export function AppShell({
                   "bg-sidebar-accent text-sidebar-accent-foreground font-semibold shadow-sm ring-1 ring-sidebar-primary/40 md:ring-0",
               }}
             >
-              <item.icon className="size-5 shrink-0 md:size-4" />
+              <item.icon
+                className={cn(
+                  "size-5 shrink-0 md:size-4",
+                  navIconToneClasses[GROUP_TONE[item.group]],
+                )}
+              />
               <span className="md:hidden lg:inline">{item.label}</span>
             </Link>
           ))}

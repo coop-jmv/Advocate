@@ -25,6 +25,18 @@ import {
 export const DESTINATION_GROUPS = ["Today", "Casework", "Drafting", "Chamber"] as const;
 export type DestinationGroup = (typeof DESTINATION_GROUPS)[number];
 
+// One docket jewel tone per group, so the mobile launcher (/app/menu) and the
+// desktop sidebar nav read as color-coded sections instead of a wall of
+// identical gray icons. Defined here, next to the groups themselves, for the
+// same reason the destinations live in one place: nothing else should invent
+// its own mapping and drift.
+export const GROUP_TONE: Record<DestinationGroup, "sapphire" | "amber" | "teal" | "rose"> = {
+  Today: "sapphire",
+  Casework: "amber",
+  Drafting: "teal",
+  Chamber: "rose",
+};
+
 // Shape contract for each entry. Applied with `satisfies` rather than as an
 // annotation so `to` keeps its literal type — TanStack Router's <Link to> is
 // typed against the generated route tree and rejects a widened string.
