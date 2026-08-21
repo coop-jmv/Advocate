@@ -71,7 +71,7 @@ export function AppShell({
           to="/"
           className="flex h-16 items-center gap-2.5 px-5 md:w-full md:justify-center md:px-0 lg:justify-start lg:px-5"
         >
-          <span className="flex size-8 shrink-0 items-center justify-center rounded bg-sidebar-primary text-sidebar-primary-foreground">
+          <span className="flex size-8 shrink-0 items-center justify-center rounded bg-docket-sapphire text-docket-sapphire-foreground">
             <Scale className="size-4" />
           </span>
           <span className="font-display text-sm font-bold text-sidebar-accent-foreground md:hidden lg:inline">
