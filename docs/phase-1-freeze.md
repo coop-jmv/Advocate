@@ -46,8 +46,8 @@ tenant-scoped root every feature keys off of by `id` (preferred) or `title` (fal
   populates `matter_id` — only `matter_title`. Every read path that joins hearings to matters
   (K1's Morning Brief, K3's timeline, K4's retrieval) therefore does an id-then-title fallback
   join, matching by `matter_id` first and `matter_title` second. K2's cause-list reconciliation
-  is the *only* write path that populates `matter_id` reliably (when a listing is matched).
-- There is no hearing-status *history* — only the current value. "What did the previous
+  is the _only_ write path that populates `matter_id` reliably (when a listing is matched).
+- There is no hearing-status _history_ — only the current value. "What did the previous
   hearing say" answers come from separate hearing rows with earlier dates, not from a status
   audit trail on one row.
 
@@ -61,13 +61,13 @@ K2's four tables are the tenant's court-intelligence foundation:
 
 - `cause_list_sources` — one row per tracked court/bench feed (`source_type` currently only
   `manual_import`).
-- `cause_list_records` — one row per ingested listing *per ingestion*; re-ingestion never
+- `cause_list_records` — one row per ingested listing _per ingestion_; re-ingestion never
   overwrites, it chains forward via `superseded_by`.
 - `cause_list_matches` — the record→matter link (`UNIQUE(record_id)`, `confidence`, `status`
   in `matched | needs_review | unmatched | rejected`). A matter can accumulate several match
   rows over time as new versions get re-matched.
 - `cause_list_changes` — the diff/history log (`change_type` in `new_listing | date_changed |
-  serial_changed | hall_changed | bench_changed | stage_changed | unchanged | removed`).
+serial_changed | hall_changed | bench_changed | stage_changed | unchanged | removed`).
 
 Matching (`src/lib/cause-list-matching.ts`) and change detection
 (`src/lib/cause-list-changes.ts`) are pure, deterministic, explainable functions — **no AI
@@ -94,7 +94,7 @@ model exists — this is K5's problem to solve, not to fake here), Payment/Expen
 forgotten).
 
 **Frozen:** timeline-as-computed-view (not a stored log), and the four implemented event
-types. A future feature needing a *stored*, independently-queryable event log (e.g. for
+types. A future feature needing a _stored_, independently-queryable event log (e.g. for
 analytics across many matters) is a new capability, not an extension of this one.
 
 ## 5. MatterContextService

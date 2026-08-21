@@ -39,6 +39,68 @@ export const getMatter = createServerFn({ method: "GET" })
     return matter;
   });
 
+// Real omission, not an intentional Phase-1 gap — flagged in the Gate 1 QA
+// baseline (docs/gate-1-qa-validation-plan.md) and fixed here. RLS already
+// allowed UPDATE for any tenant member and DELETE for tenant admins only
+// (20260819101123_tenant_scoped_matters.sql) — this was purely a missing
+// server function + UI, not a missing policy.
+export const updateMatter = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        matterId: z.string().uuid(),
+        title: z.string().min(2),
+        clientName: z.string().optional(),
+        caseNumber: z.string().optional(),
+        court: z.string().optional(),
+        opposingParty: z.string().optional(),
+        filedDate: z.string().optional(),
+        status: z.enum(["active", "closed", "archived"]),
+        notes: z.string().optional(),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: saved, error } = await context.supabase
+      .from("matters")
+      .update({
+        title: data.title,
+        client_name: data.clientName ?? null,
+        case_number: data.caseNumber ?? null,
+        court: data.court ?? null,
+        opposing_party: data.opposingParty ?? null,
+        filed_date: data.filedDate ?? null,
+        status: data.status,
+        notes: data.notes ?? null,
+      })
+      .eq("id", data.matterId)
+      .select(
+        "id, title, client_name, case_number, court, status, opposing_party, filed_date, notes, created_at",
+      )
+      .single();
+    if (error) throw new Error(error.message);
+    return saved;
+  });
+
+// DELETE is restricted to tenant admins by RLS (is_tenant_admin()) — a
+// member calling this gets a clean "0 rows affected", surfaced below as a
+// generic failure rather than a silent no-op, since Supabase doesn't
+// distinguish "not found" from "not authorized" here any more than
+// getMatter does for reads.
+export const deleteMatter = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({ matterId: z.string().uuid() }).parse(data))
+  .handler(async ({ data, context }) => {
+    const { error, count } = await context.supabase
+      .from("matters")
+      .delete({ count: "exact" })
+      .eq("id", data.matterId);
+    if (error) throw new Error(error.message);
+    if (!count) throw new Error("Matter not found, or you don't have permission to delete it.");
+    return { ok: true };
+  });
+
 export const createMatter = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>
@@ -83,6 +145,51 @@ export const listClients = createServerFn({ method: "GET" })
       .limit(100);
     if (error) throw new Error(error.message);
     return data ?? [];
+  });
+
+// Same fix as updateMatter/deleteMatter above, same reason: RLS already
+// allowed UPDATE for any tenant member and DELETE for tenant admins only —
+// only the server function and UI were missing.
+export const updateClient = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        clientId: z.string().uuid(),
+        name: z.string().min(2),
+        phone: z.string().optional(),
+        email: z.string().email().optional().or(z.literal("")),
+        notes: z.string().optional(),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: saved, error } = await context.supabase
+      .from("clients")
+      .update({
+        name: data.name,
+        phone: data.phone ?? null,
+        email: data.email || null,
+        notes: data.notes ?? null,
+      })
+      .eq("id", data.clientId)
+      .select("id, name, phone, email, notes, created_at")
+      .single();
+    if (error) throw new Error(error.message);
+    return saved;
+  });
+
+export const deleteClient = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({ clientId: z.string().uuid() }).parse(data))
+  .handler(async ({ data, context }) => {
+    const { error, count } = await context.supabase
+      .from("clients")
+      .delete({ count: "exact" })
+      .eq("id", data.clientId);
+    if (error) throw new Error(error.message);
+    if (!count) throw new Error("Client not found, or you don't have permission to delete it.");
+    return { ok: true };
   });
 
 export const createClient = createServerFn({ method: "POST" })
