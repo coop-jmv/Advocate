@@ -150,7 +150,7 @@ function Diary() {
       subtitle={
         loading
           ? "Loading…"
-          : `${hearings.length} hearings on record${conflictCount > 0 ? ` · ${conflictCount} listing conflict${conflictCount > 1 ? "s" : ""} detected` : ""}`
+          : `${hearings.length} hearing${hearings.length === 1 ? "" : "s"} on record${conflictCount > 0 ? ` · ${conflictCount} listing conflict${conflictCount > 1 ? "s" : ""} detected` : ""}`
       }
     >
       <form

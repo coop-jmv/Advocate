@@ -124,7 +124,11 @@ function Cases() {
   return (
     <AppShell
       title="Cases & matters"
-      subtitle={loading ? "Loading…" : `${matters.length} matters in your chamber`}
+      subtitle={
+        loading
+          ? "Loading…"
+          : `${matters.length} matter${matters.length === 1 ? "" : "s"} in your chamber`
+      }
     >
       <form
         onSubmit={handleCreate}

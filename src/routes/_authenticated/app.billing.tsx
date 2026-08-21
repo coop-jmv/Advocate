@@ -109,6 +109,23 @@ function Billing() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Invoice # looked pre-filled because of its placeholder but was actually
+  // empty, so the submit button silently stayed disabled until someone typed
+  // into it. Give it a real starting value instead — still editable, just no
+  // longer a trap.
+  useEffect(() => {
+    if (loading || invoiceForm.invoiceNumber) return;
+    const year = new Date().getFullYear();
+    setInvoiceForm((f) => ({
+      ...f,
+      invoiceNumber: `INV-${year}-${String(invoices.length + 1).padStart(3, "0")}`,
+    }));
+    // Only re-run when the invoice count changes (e.g. after adding one) —
+    // invoiceForm.invoiceNumber is checked, not depended on, so typing into
+    // the field doesn't retrigger this.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, invoices.length]);
+
   async function handleAddEntry(event: React.FormEvent) {
     event.preventDefault();
     const hours = Number(entryForm.hours);
@@ -203,7 +220,7 @@ function Billing() {
         <StatCard
           label="Total invoiced"
           value={rupees(stats.billed)}
-          note={`${invoices.length} invoices`}
+          note={`${invoices.length} invoice${invoices.length === 1 ? "" : "s"}`}
         />
         <StatCard
           label="Work in progress"

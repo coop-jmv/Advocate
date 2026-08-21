@@ -152,7 +152,11 @@ function Clients() {
   return (
     <AppShell
       title="Clients"
-      subtitle={loading ? "Loading…" : `${clients.length} clients in your chamber`}
+      subtitle={
+        loading
+          ? "Loading…"
+          : `${clients.length} client${clients.length === 1 ? "" : "s"} in your chamber`
+      }
     >
       <form
         onSubmit={handleCreate}
