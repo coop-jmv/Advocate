@@ -104,11 +104,33 @@ export async function extractTextFromImage(
     if (response.status === 429)
       throw new Error("OCR is rate limited right now — try again shortly.");
     if (response.status === 402) throw new Error("AI credits are exhausted for this workspace.");
+    if (response.status === 400) {
+      // A garbled/corrupted upload reaches here as the vision model's own
+      // rejection, e.g. an "unsupported image" format error — the model's
+      // own message is useful (it names the actual supported formats), but
+      // its raw envelope (`{"error":{"message":...,"type":...}}`, truncated
+      // at 200 chars) is not something a user should have to read verbatim.
+      const providerMessage = extractProviderErrorMessage(detail);
+      throw new Error(
+        providerMessage
+          ? `That photo couldn't be read: ${providerMessage}`
+          : "That photo couldn't be read — try a clearer JPEG, PNG or WebP scan.",
+      );
+    }
     throw new Error(`OCR request failed [${response.status}]: ${detail.slice(0, 200)}`);
   }
 
   const result = (await response.json()) as { choices?: { message?: { content?: string } }[] };
   return { text: (result.choices?.[0]?.message?.content ?? "").trim() };
+}
+
+function extractProviderErrorMessage(detail: string): string | undefined {
+  try {
+    const parsed = JSON.parse(detail) as { error?: { message?: unknown } };
+    return typeof parsed.error?.message === "string" ? parsed.error.message : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 export function extractJson(text: string): unknown {
