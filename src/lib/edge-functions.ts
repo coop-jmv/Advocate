@@ -77,6 +77,7 @@ export function generateMorningBriefSummaries(input: { items: MorningBriefSummar
 // to look up a fact not already in this payload, same trust model as
 // generateMorningBriefSummaries above.
 export type MatterSummaryInput = {
+  today: string;
   matter: {
     title: string;
     caseNumber: string | null;
