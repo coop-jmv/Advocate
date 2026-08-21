@@ -7,6 +7,7 @@ import { DataTable, StatCard, Tag, type Tone } from "@/components/app/primitives
 import { listHearings } from "@/lib/diary.functions";
 import { listMatters } from "@/lib/matters.functions";
 import { listInvoices, listTimeEntries } from "@/lib/billing.functions";
+import { addDaysIso, isoWeekday, todayIsoIST } from "@/lib/date-ist";
 
 export const Route = createFileRoute("/_authenticated/app/")({
   head: () => ({
@@ -62,22 +63,18 @@ const statusLabel: Record<string, string> = {
 };
 
 function todayIso() {
-  return new Date().toISOString().slice(0, 10);
+  return todayIsoIST();
 }
 
 function startOfWeekIso() {
-  const now = new Date();
-  const day = now.getDay(); // 0 = Sunday
+  const today = todayIsoIST();
+  const day = isoWeekday(today); // 0 = Sunday
   const diff = (day + 6) % 7; // days since Monday
-  const monday = new Date(now);
-  monday.setDate(now.getDate() - diff);
-  return monday.toISOString().slice(0, 10);
+  return addDaysIso(today, -diff);
 }
 
 function endOfWeekIso() {
-  const start = new Date(startOfWeekIso() + "T00:00:00");
-  start.setDate(start.getDate() + 6);
-  return start.toISOString().slice(0, 10);
+  return addDaysIso(startOfWeekIso(), 6);
 }
 
 function rupees(value: number): string {
@@ -150,17 +147,20 @@ function Dashboard() {
   const recentTimeEntries = timeEntries.slice(0, 8);
 
   const weekDays = useMemo(() => {
-    const start = new Date(weekStart + "T00:00:00");
     return Array.from({ length: 7 }, (_, i) => {
-      const d = new Date(start);
-      d.setDate(start.getDate() + i);
-      const iso = d.toISOString().slice(0, 10);
+      const iso = addDaysIso(weekStart, i);
       const billed = timeEntries
         .filter((e) => e.entry_date === iso)
         .reduce((sum, e) => sum + e.hours, 0);
       const hearingCount = hearings.filter((h) => h.hearing_date === iso).length;
       return {
-        day: d.toLocaleDateString("en-IN", { weekday: "short" }),
+        // UTC-anchored: iso is a pure calendar date, so the weekday name
+        // must be read from the same UTC-midnight instant, not the
+        // viewer's local zone, or it could print the wrong day name.
+        day: new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-IN", {
+          weekday: "short",
+          timeZone: "UTC",
+        }),
         iso,
         billed,
         hearingCount,

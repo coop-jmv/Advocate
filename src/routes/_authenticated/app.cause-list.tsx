@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { AppShell } from "@/components/app/AppShell";
 import { StatCard, Tag, type Tone } from "@/components/app/primitives";
 import { listMatters } from "@/lib/matters.functions";
+import { todayIsoIST } from "@/lib/date-ist";
 import {
   createCauseListSource,
   getCauseListFeatureEnabled,
@@ -75,7 +76,7 @@ const matchStatusTone: Record<string, Tone> = {
 };
 
 function todayIso() {
-  return new Date().toISOString().slice(0, 10);
+  return todayIsoIST();
 }
 
 function CauseListIntelligence() {

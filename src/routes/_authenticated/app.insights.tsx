@@ -7,6 +7,7 @@ import { Markdown } from "@/components/app/Markdown";
 import { generateBriefing } from "@/lib/edge-functions";
 import { listHearings } from "@/lib/diary.functions";
 import { listMatters } from "@/lib/matters.functions";
+import { todayIsoIST } from "@/lib/date-ist";
 
 export const Route = createFileRoute("/_authenticated/app/insights")({
   head: () => ({
@@ -51,7 +52,7 @@ type Matter = {
 };
 
 function todayIso() {
-  return new Date().toISOString().slice(0, 10);
+  return todayIsoIST();
 }
 
 function buildContext(matters: Matter[], hearings: Hearing[]) {

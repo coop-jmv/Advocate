@@ -6,6 +6,7 @@ import { AppShell } from "@/components/app/AppShell";
 import { Tag, type Tone } from "@/components/app/primitives";
 import { createHearing, listHearings, updateHearingStatus } from "@/lib/diary.functions";
 import { findClashKeys, isClashing } from "@/lib/hearing-conflicts";
+import { todayIsoIST } from "@/lib/date-ist";
 
 export const Route = createFileRoute("/_authenticated/app/diary")({
   head: () => ({
@@ -45,7 +46,7 @@ const statusTone: Record<string, Tone> = {
 };
 
 function todayIso() {
-  return new Date().toISOString().slice(0, 10);
+  return todayIsoIST();
 }
 
 function Diary() {
