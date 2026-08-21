@@ -15,28 +15,30 @@ Notifications system) has no row here on purpose.
 |---|---|---|---|
 | §2 Master validation matrix | ~30 cells, plus a full click-through of every remaining module | ~90 cells | Matter/Client CRUD, Hearing/Cause List/Documents Create-Read-Update, and Billing Create/Read now live-verified; Drafting studio/Voice dictation/AI assistant/Diary insights/Team/Audit log/Subscription/Profile/Superadmin all confirmed working via a full click-through (see §2's new "Full-module click-through" note). Mobile and Error-handling columns are still ❓ across almost every row — untouched as a category |
 | §3 Field boundary spec | 10 fields documented, 2 rows updated with live findings | dozens of fields exist across the app | Matter title and Billing hours/rate now carry real, reproduced raw-error findings instead of guesses |
-| §4 Boundary-test catalogue | strings 9/9, numeric 5/5, dates 4/6, files 0/7, AI 8/12 | 39 total | **Strings and numeric fully done live** (found 2 real raw-error bugs); dates mostly done (found 1 real gap — an unsafe UTC date pattern in `subscription-invoice.ts` — and confirmed the IST midnight fix is correct by code review); files category still untouched — needs an actual file-upload flow, harder to script than form fields |
+| §4 Boundary-test catalogue | strings 9/9, numeric 5/5, dates 4/6, files 5/7, AI 8/12 | 39 total | **Strings, numeric and files all done live**; dates mostly done. Found and fixed 4 real bugs across this pass: two raw Zod/Postgres errors ([PR #60](https://github.com/coop-jmv/Advocate/pull/60)), and — much higher-value — every edge-function error in the whole app was silently showing a generic message instead of its own real one, found via the OCR path and fixed at the single shared root cause ([PR #61](https://github.com/coop-jmv/Advocate/pull/61)). Files' 2 untested items (PDF/DOCX parsing, password-protected PDF) aren't gaps in testing — no code path in the app parses either format today |
 | §5 Security validation | 7 of 8, +1 pre-existing critical fix credited, +1 new critical fix | 8 | **Live-tested today** with a real two-tenant setup (created, tested, deleted) — 0 cross-tenant leaks on read or ID lookup, write-spoofing rejected on both an old table (`matters`) and a new K2 table (`cause_list_sources`). Also credited a pre-existing 2026-08-20 audit that found+fixed a critical cross-tenant write bug on the AI tables. Found and fixed a second critical bug live today: `delete_my_account()` failed for every sole owner ([PR #48](https://github.com/coop-jmv/Advocate/pull/48)). One item left: a real, live-confirmed finding that Superadmin can read cross-tenant `cause_list_records` content beyond what the UI uses — needs a product decision, not code |
 | §6 AI security validation | 6 of 6 | 6 | **Fully done** — prompt injection, cross-matter leakage, outcome-prediction refusal, missing-evidence honesty, external-legal-research refusal, and direct-call rejection while disabled all verified live |
 | §7 Business use-case validation | 2 fully + 1 partial of 8 testable | 8 (2 more marked Aspirational, correctly excluded) | BU05 and BU10 (partial) done; BU01/02/03/06/09 not run as scripted passes |
 
 **Bottom line:** the AI layer (K1/K3/K4), core Matter/Client CRUD, tenant-isolation security
-(§5), every remaining module (§2's full click-through), and strings/numeric/dates boundary
-testing (§4) are all genuinely live-tested, not code-reviewed. Five real bugs were found and
-fixed this session, plus two more found and recorded (not yet fixed): a sole owner could not
-delete their own account (DPDP erasure was broken, fixed); a signup-breaking regression from
-that same fix briefly took down every new signup (caught and fixed same day); this document
-itself was under-crediting a critical cross-tenant write bug found and fixed on 2026-08-20;
-Matter title's 1-character rejection and Billing's numeric-overflow both show the user a raw
-Zod/Postgres error verbatim instead of a friendly message (recorded, not yet fixed); and
-`subscription-invoice.ts` still uses the unsafe pre-fix UTC date pattern for its invoice-number
-suffix (low severity, recorded). What's still open: the Files category in §4 (needs an actual
-upload flow, harder to script than form fields), most scripted business-use-case passes (§7),
-the Mobile and Error-handling columns in §2 (untested as entire categories), and one product
-decision on Superadmin's cause-list read scope (§5) that needs you, not more testing. The next
-highest-value batch is either the Files boundary category (§4) or a first pass fixing the
-raw-error findings — both are self-contained, unlike §7's business scripts which depend on
-several other modules already being right.
+(§5), every remaining module (§2's full click-through), and the entire §4 boundary-test
+catalogue except two categorically-inapplicable file formats are all genuinely live-tested, not
+code-reviewed. Seven real bugs were found and fixed this session: a sole owner could not delete
+their own account (DPDP erasure was broken); a signup-breaking regression from that same fix
+briefly took down every new signup (caught same day); this document itself was under-crediting
+a critical cross-tenant write bug found and fixed on 2026-08-20; a 1-character matter title and
+an oversized billing number each showed the user a raw Zod/Postgres error verbatim; and —
+highest-value of the batch — **every edge-function error in the entire app** was silently
+showing a generic "Edge Function returned a non-2xx status code" instead of its own real
+message, found via an empty OCR scan and fixed once at the shared root cause rather than
+per-feature. One low-severity item remains recorded, not fixed:
+`subscription-invoice.ts` still uses the pre-fix unsafe UTC date pattern for its invoice-number
+suffix. What's still open: most scripted business-use-case passes (§7), the Mobile and
+Error-handling columns in §2 (untested as entire categories), and one product decision on
+Superadmin's cause-list read scope (§5) that needs you, not more testing. The next
+highest-value batch is §7's business-use-case scripts — everything self-contained enough to
+find bugs through direct testing has now been covered; what's left mostly needs a full
+login-to-completion walkthrough of each flow.
 
 ---
 
@@ -219,15 +221,45 @@ Apply this same catalogue to every text/numeric/date/file input found while fill
       value
 - [ ] far past — not tested this pass
 
-**File uploads** (Documents — scan/upload path)
+**File uploads** (Documents — two separate paths: client-side-only ".txt extract" upload, and
+the server-validated OCR camera-scan) — live on 2026-08-21
 
-- [ ] 0-byte file
-- [ ] very large file (find the actual limit — not documented in the code read so far)
-- [ ] PDF / image / DOCX
-- [ ] corrupted file
-- [ ] renamed extension (e.g. a `.exe` renamed to `.pdf`)
-- [ ] password-protected PDF
-- [ ] duplicate upload (same file twice)
+- [x] ✅ 0-byte file (OCR scan) — **found a real bug**: showed the generic Supabase message
+      "Edge Function returned a non-2xx status code" instead of the edge function's own
+      friendly text. Root-caused and fixed (see below) — now correctly shows "imageBase64 is
+      required"
+- [x] ✅ very small file, 500 bytes (OCR scan, under the 1024-byte floor) — after the fix above,
+      correctly shows "That scan was empty — please retake the photo."
+- [x] ✅ very large file, 11MB (OCR scan, over the 10MB cap) — correctly shows "That photo is
+      too large (max 10MB) — please retake it."
+- [x] ✅ corrupted file (50KB of random bytes labeled `image/jpeg`) — **found a second real
+      bug**: the OCR path forwarded the vision model's raw error envelope verbatim (a truncated
+      `{"error":{"message":...,"type":...}}` blob). Fixed to show "That photo couldn't be read:
+      You uploaded an unsupported image. Please make sure your image has of one the following
+      formats: ['png', 'jpeg', 'gif', 'webp']."
+- [x] ✅ renamed extension (a PDF-header binary renamed to `.txt`, uploaded via the "Upload .txt
+      extract" path, which only filters by the browser's `accept` hint — trivially bypassed) —
+      handled safely: read as garbled UTF-8 text, no crash, correctly blocked by the existing
+      20-character analysis minimum
+- [ ] PDF / DOCX as a genuine file type — not tested; the "Upload .txt extract" path only ever
+      reads text, and the scan path only accepts images, so there's no code path that would
+      actually parse a PDF/DOCX today
+- [ ] password-protected PDF — not tested; no practical way to author a real encrypted PDF in
+      this environment, and see the note above — no path in the app parses PDFs at all right now
+- [ ] duplicate upload (same file scanned twice) — not live-tested (no real legible-text sample
+      image available in this environment to get two genuine successful OCR results), but
+      confirmed by code review: `handleScan` appends each result (`prev + "\n\n" + scanned`)
+      rather than replacing it, which reads as intentional multi-page-scan support, not a bug
+
+**Found and fixed, real and high-value**: the root cause behind the two bugs above turned out
+to be generic to the *entire app*, not OCR-specific. `supabase-js`'s `FunctionsHttpError.message`
+is always the sentence "Edge Function returned a non-2xx status code" — the actual friendly
+`{ error: "..." }` body every edge function here returns on failure only lives on
+`error.context`, a raw `Response` the caller has to read itself. This was silently discarding
+every edge-function error message in the app — quota limits, Ask My Case's legal-safety
+refusals, dictation/draft-generation failures, not just OCR — in favor of one generic sentence.
+Fixed once at the shared `invoke()` wrapper in `edge-functions.ts` ([PR #61](https://github.com/coop-jmv/Advocate/pull/61)), so every edge-function call site benefits, not just the
+one this was found through.
 
 **AI (all three grounded features — Morning Brief prep-notes, Matter Summary, Ask My Case)**
 
@@ -358,8 +390,8 @@ result or an explicit, written decision that it's out of scope for Phase-1 (e.g.
 update/delete is intentionally deferred to Phase-2" — a real decision, not a silent gap).
 
 **Not signed off as of 2026-08-21** — see the Scorecard at the top of this document for exactly
-what's resolved and what isn't. AI security (§6), core Matter/Client CRUD, and tenant-isolation
-security (§5) are all live-verified now; §5 has exactly one open item left, and it's a product
-decision (Superadmin's cause-list read scope), not a test still to run. Still genuinely open:
-most of §2's Hearing/Cause List/Documents/Billing rows, the boundary-test catalogue (§4), and
-most business use cases (§7).
+what's resolved and what isn't. AI security (§6), core Matter/Client CRUD, tenant-isolation
+security (§5), the full-module click-through (§2), and the boundary-test catalogue (§4, strings/
+numeric/dates/files) are all live-verified now; §5 has exactly one open item left, and it's a
+product decision (Superadmin's cause-list read scope), not a test still to run. Still genuinely
+open: most business use cases (§7), and the Mobile/Error-handling columns in §2.
