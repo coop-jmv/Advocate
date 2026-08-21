@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { findClashKeys, isClashing } from "@/lib/hearing-conflicts";
 import { getOwnIntegrations } from "@/lib/tenant-integrations";
+import { todayIsoIST } from "@/lib/date-ist";
 
 // Deterministic aggregation for the Court Morning Brief. Every value here
 // comes straight from a real query — nothing is inferred or generated. The
@@ -108,7 +109,7 @@ export const getMorningBrief = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => z.object({ date: z.string().optional() }).parse(data ?? {}))
   .handler(async ({ data, context }) => {
-    const targetDate = data.date ?? new Date().toISOString().slice(0, 10);
+    const targetDate = data.date ?? todayIsoIST();
 
     const { data: profile } = await context.supabase
       .from("profiles")
@@ -227,7 +228,7 @@ export const getMorningBrief = createServerFn({ method: "GET" })
       docsByTitle.set(doc.matter_ref!, list);
     }
 
-    const today = new Date().toISOString().slice(0, 10);
+    const today = todayIsoIST();
     const invoicesByMatterId = new Map<string, BriefInvoiceAlert[]>();
     for (const inv of invoicesRes.data ?? []) {
       if (!inv.matter_id) continue;
