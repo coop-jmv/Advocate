@@ -40,6 +40,7 @@ const modules = [
       "Everyone shares one login, or you're tracking who has access in a WhatsApp message you'll never find again.",
     automatic:
       "Each teammate gets their own login and a role — Advocate, Junior, Clerk or Client — with a Bar Council enrolment number on the profile. Step-up verification kicks in for sensitive actions.",
+    tone: "sapphire",
   },
   {
     icon: Scale,
@@ -47,6 +48,7 @@ const modules = [
     manual: "A paper case diary or a spreadsheet, updated whenever someone remembers to.",
     automatic:
       "Case number, court, stage, party details, opposing counsel and case notes stay in one file, current the moment anything changes. e-Courts (CNR) linking and automated conflict checks are on the roadmap.",
+    tone: "amber",
   },
   {
     icon: FileSearch,
@@ -55,6 +57,7 @@ const modules = [
       'Scanning to a folder named "final_v2", then re-reading the whole thing later to find one clause.',
     automatic:
       "Camera scanning with auto-crop, OCR in English and Hindi, and full-text search across everything stored — so a clause is a search, not a re-read. Redact privileged content before you share.",
+    tone: "teal",
   },
   {
     icon: CalendarClock,
@@ -62,6 +65,7 @@ const modules = [
     manual: "Cross-checking a cause list by hand to make sure you haven't double-booked a hearing.",
     automatic:
       "Day, week and month views flag a listing conflict before it happens. WhatsApp is licensed on Solo Pro and Chamber; automated sending, and cause-list sync, are on the roadmap.",
+    tone: "rose",
   },
   {
     icon: Users,
@@ -70,6 +74,7 @@ const modules = [
       "A phone call or a WhatsApp message, every time — often more than once a week, per client.",
     automatic:
       "Clients check status and approved documents themselves in a permission-controlled portal, and message you securely when they actually need to.",
+    tone: "emerald",
   },
   {
     icon: ReceiptIndianRupee,
@@ -78,6 +83,7 @@ const modules = [
       "Reconstructing hours from memory at month-end, then working out the CGST/SGST split by hand.",
     automatic:
       "Time logs by timer or manual entry against a matter, expenses attached automatically, and a GST-compliant invoice generated with UPI and Razorpay collection built in.",
+    tone: "violet",
   },
   {
     icon: ShieldCheck,
@@ -86,6 +92,7 @@ const modules = [
       "No real record — if a document goes missing or a hearing outcome changes, it's someone's word.",
     automatic:
       "Every access, download and change is logged and searchable, with annual independent penetration testing and a 99.5% uptime target.",
+    tone: "sapphire",
   },
   {
     icon: Lock,
@@ -94,16 +101,36 @@ const modules = [
       "Manually pulling someone's data together across systems whenever they ask — and hoping you got all of it.",
     automatic:
       "Self-service access, correction and erasure for the person asking, consent capture and withdrawal logged automatically, and a documented breach-notification commitment under the DPDP Act.",
+    tone: "amber",
   },
-];
+] as const;
+
+// Tailwind needs literal class names to scan for, so each tone's classes are
+// spelled out here rather than template-built from the `tone` string.
+const toneClasses: Record<(typeof modules)[number]["tone"], { chip: string; panel: string }> = {
+  sapphire: {
+    chip: "bg-docket-sapphire text-docket-sapphire-foreground",
+    panel: "bg-docket-sapphire/8",
+  },
+  amber: { chip: "bg-docket-amber text-docket-amber-foreground", panel: "bg-docket-amber/10" },
+  teal: { chip: "bg-docket-teal text-docket-teal-foreground", panel: "bg-docket-teal/8" },
+  rose: { chip: "bg-docket-rose text-docket-rose-foreground", panel: "bg-docket-rose/8" },
+  emerald: {
+    chip: "bg-docket-emerald text-docket-emerald-foreground",
+    panel: "bg-docket-emerald/8",
+  },
+  violet: { chip: "bg-docket-violet text-docket-violet-foreground", panel: "bg-docket-violet/8" },
+};
 
 function Features() {
   return (
     <div className="min-h-screen">
       <SiteHeader />
       <main className="mx-auto max-w-5xl px-5 py-16">
-        <p className="text-eyebrow text-accent">What it replaces</p>
-        <h1 className="mt-4 text-4xl font-bold">The manual work LexDiary takes off your plate</h1>
+        <span className="inline-flex items-center gap-2 rounded-full bg-docket-teal px-3 py-1 text-eyebrow text-docket-teal-foreground">
+          What it replaces
+        </span>
+        <h1 className="mt-5 text-4xl font-bold">The manual work LexDiary takes off your plate</h1>
         <p className="mt-4 max-w-2xl text-muted-foreground">
           Every module below follows the same shape: what you're doing by hand today, and what
           happens instead once it's in LexDiary. Full e-filing submission, large-firm litigation
@@ -111,32 +138,46 @@ function Features() {
         </p>
 
         <div className="mt-14 space-y-5">
-          {modules.map((mod) => (
-            <section
-              key={mod.name}
-              className="overflow-hidden rounded border border-border bg-card"
-            >
-              <div className="flex items-center gap-3 border-b border-border bg-secondary/60 px-6 py-4 sm:px-8">
-                <mod.icon className="size-5 shrink-0 text-accent" />
-                <h2 className="font-display text-lg font-bold">{mod.name}</h2>
-              </div>
-              <div className="grid sm:grid-cols-2">
-                <div className="border-b border-border p-6 sm:border-r sm:border-b-0 sm:p-8">
-                  <p className="text-eyebrow text-muted-foreground">Today, by hand</p>
-                  <p className="mt-2.5 text-sm leading-relaxed text-muted-foreground">
-                    {mod.manual}
-                  </p>
+          {modules.map((mod) => {
+            const tone = toneClasses[mod.tone];
+            return (
+              <section key={mod.name} className="surface-panel overflow-hidden rounded">
+                <div className="flex items-center gap-3 border-b border-border px-6 py-4 sm:px-8">
+                  <span
+                    className={`flex size-9 shrink-0 items-center justify-center rounded-lg ${tone.chip}`}
+                  >
+                    <mod.icon className="size-4.5" />
+                  </span>
+                  <h2 className="font-display text-lg font-bold">{mod.name}</h2>
                 </div>
-                <div className="bg-accent/10 p-6 sm:p-8">
-                  <p className="text-eyebrow text-accent">With LexDiary</p>
-                  <p className="mt-2.5 text-sm leading-relaxed text-foreground">{mod.automatic}</p>
+                <div className="grid sm:grid-cols-2">
+                  <div className="border-b border-border p-6 sm:border-r sm:border-b-0 sm:p-8">
+                    <p className="text-eyebrow text-muted-foreground">Today, by hand</p>
+                    <p className="mt-2.5 text-sm leading-relaxed text-muted-foreground">
+                      {mod.manual}
+                    </p>
+                  </div>
+                  <div className={`p-6 sm:p-8 ${tone.panel}`}>
+                    <p className="text-eyebrow text-foreground">With LexDiary</p>
+                    <p className="mt-2.5 text-sm leading-relaxed text-foreground">
+                      {mod.automatic}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            </section>
-          ))}
+              </section>
+            );
+          })}
         </div>
 
-        <div className="surface-panel mt-14 flex flex-col gap-6 rounded p-10 sm:flex-row sm:items-center sm:justify-between">
+        <div className="surface-panel relative mt-14 flex flex-col gap-6 overflow-hidden rounded p-10 sm:flex-row sm:items-center sm:justify-between">
+          <div className="absolute inset-x-0 top-0 flex h-1.5">
+            <span className="flex-1 bg-docket-sapphire" />
+            <span className="flex-1 bg-docket-amber" />
+            <span className="flex-1 bg-docket-teal" />
+            <span className="flex-1 bg-docket-rose" />
+            <span className="flex-1 bg-docket-emerald" />
+            <span className="flex-1 bg-docket-violet" />
+          </div>
           <div>
             <h2 className="text-2xl font-bold">See it against your own week</h2>
             <p className="mt-2 text-sm text-muted-foreground">

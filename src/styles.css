@@ -62,6 +62,23 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
+  /* Docket accents — public site only (landing, features). Six jewel tones,
+     one per capability module, styled after a shelf of leather-bound law
+     reports: distinct spines, same shelf. The in-app product keeps the
+     restrained Navy Trust palette above; these never appear inside /app. */
+  --color-docket-sapphire: var(--docket-sapphire);
+  --color-docket-sapphire-foreground: var(--docket-sapphire-foreground);
+  --color-docket-amber: var(--docket-amber);
+  --color-docket-amber-foreground: var(--docket-amber-foreground);
+  --color-docket-teal: var(--docket-teal);
+  --color-docket-teal-foreground: var(--docket-teal-foreground);
+  --color-docket-rose: var(--docket-rose);
+  --color-docket-rose-foreground: var(--docket-rose-foreground);
+  --color-docket-emerald: var(--docket-emerald);
+  --color-docket-emerald-foreground: var(--docket-emerald-foreground);
+  --color-docket-violet: var(--docket-violet);
+  --color-docket-violet-foreground: var(--docket-violet-foreground);
+
   --shadow-panel:
     0 1px 2px oklch(0.18 0.06 262 / 0.06), 0 8px 24px -12px oklch(0.18 0.06 262 / 0.18);
   --shadow-lift: 0 18px 48px -20px oklch(0.18 0.06 262 / 0.35);
@@ -121,6 +138,20 @@
   --sidebar-accent-foreground: oklch(0.985 0.004 250);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.555 0.088 250);
+
+  /* Docket accents — see @theme inline for where these are wired in. */
+  --docket-sapphire: oklch(0.48 0.17 258);
+  --docket-sapphire-foreground: oklch(0.985 0.004 250);
+  --docket-amber: oklch(0.74 0.16 70);
+  --docket-amber-foreground: oklch(0.24 0.05 60);
+  --docket-teal: oklch(0.58 0.11 200);
+  --docket-teal-foreground: oklch(0.985 0.004 250);
+  --docket-rose: oklch(0.56 0.18 20);
+  --docket-rose-foreground: oklch(0.985 0.004 250);
+  --docket-emerald: oklch(0.56 0.13 152);
+  --docket-emerald-foreground: oklch(0.985 0.004 250);
+  --docket-violet: oklch(0.48 0.15 305);
+  --docket-violet-foreground: oklch(0.985 0.004 250);
 }
 
 .dark {
