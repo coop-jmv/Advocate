@@ -198,21 +198,25 @@ function Dashboard() {
           label="Active matters"
           value={loading ? "—" : String(activeMatters.length)}
           note={`${matters.length} total`}
+          tone="sapphire"
         />
         <StatCard
           label="Hearings this week"
           value={loading ? "—" : String(hearingsThisWeek.length)}
           note={`${todaysHearings.length} today`}
+          tone="amber"
         />
         <StatCard
           label="Unbilled hours"
           value={loading ? "—" : unbilledHours.toFixed(1)}
           note={`≈ ${rupees(unbilledValue)} in WIP`}
+          tone="teal"
         />
         <StatCard
           label="Outstanding"
           value={loading ? "—" : rupees(outstandingValue)}
           note={`${overdueCount} invoice${overdueCount === 1 ? "" : "s"} overdue`}
+          tone="rose"
         />
       </div>
 
@@ -225,9 +229,11 @@ function Dashboard() {
             </Link>
           </div>
           {loading ? (
-            <p className="text-sm text-muted-foreground">Loading…</p>
+            <p className="text-sm text-foreground/70 sm:text-muted-foreground">Loading…</p>
           ) : todaysHearings.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No hearings listed for today.</p>
+            <p className="text-sm text-foreground/70 sm:text-muted-foreground">
+              No hearings listed for today.
+            </p>
           ) : (
             <DataTable headers={["Time", "Court", "Matter", "Purpose", "Status"]}>
               {todaysHearings.map((hearing) => (
@@ -237,7 +243,9 @@ function Dashboard() {
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">{hearing.court ?? "—"}</td>
                   <td className="px-4 py-3">{hearing.matter_title}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{hearing.purpose ?? "—"}</td>
+                  <td className="px-4 py-3 text-foreground/70 sm:text-muted-foreground">
+                    {hearing.purpose ?? "—"}
+                  </td>
                   <td className="px-4 py-3">
                     <Tag tone={statusTone[hearing.status] ?? "neutral"}>
                       {statusLabel[hearing.status] ?? hearing.status}
@@ -250,9 +258,11 @@ function Dashboard() {
 
           <h2 className="mt-8 mb-3 font-display text-lg font-bold">Recent time entries</h2>
           {loading ? (
-            <p className="text-sm text-muted-foreground">Loading…</p>
+            <p className="text-sm text-foreground/70 sm:text-muted-foreground">Loading…</p>
           ) : recentTimeEntries.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No time entries logged yet.</p>
+            <p className="text-sm text-foreground/70 sm:text-muted-foreground">
+              No time entries logged yet.
+            </p>
           ) : (
             <DataTable headers={["Date", "Matter", "Task", "Hours", "Value"]}>
               {recentTimeEntries.map((entry) => (
@@ -271,14 +281,18 @@ function Dashboard() {
         <div className="space-y-6">
           <section className="surface-panel rounded p-5">
             <h2 className="font-display text-lg font-bold">This week</h2>
-            <p className="mt-1 text-xs text-muted-foreground">Billable hours recorded per day</p>
+            <p className="mt-1 text-xs text-foreground/70 sm:text-muted-foreground">
+              Billable hours recorded per day
+            </p>
             {loading ? (
-              <p className="mt-5 text-sm text-muted-foreground">Loading…</p>
+              <p className="mt-5 text-sm text-foreground/70 sm:text-muted-foreground">Loading…</p>
             ) : (
               <ul className="mt-5 space-y-3">
                 {weekDays.map((day) => (
                   <li key={day.iso} className="flex items-center gap-3 text-sm">
-                    <span className="w-9 text-muted-foreground">{day.day}</span>
+                    <span className="w-9 text-foreground/70 sm:text-muted-foreground">
+                      {day.day}
+                    </span>
                     <span className="h-2 flex-1 rounded-full bg-secondary">
                       <span
                         className="block h-2 rounded-full bg-accent"
@@ -286,7 +300,7 @@ function Dashboard() {
                       />
                     </span>
                     <span className="w-14 text-right tabular-nums">{day.billed.toFixed(1)} h</span>
-                    <span className="w-16 text-right text-xs text-muted-foreground">
+                    <span className="w-16 text-right text-xs text-foreground/70 sm:text-muted-foreground">
                       {day.hearingCount} hrgs
                     </span>
                   </li>

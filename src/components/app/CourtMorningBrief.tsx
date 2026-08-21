@@ -187,7 +187,7 @@ export function CourtMorningBrief() {
           <h2 className="font-display text-xl font-bold">
             Good morning{advocateName ? `, ${advocateName}` : ""}
           </h2>
-          <p className="mt-0.5 text-sm text-muted-foreground">
+          <p className="mt-0.5 text-sm text-foreground/70 sm:text-muted-foreground">
             Your Court Brief —{" "}
             {date
               ? new Date(date + "T00:00:00").toLocaleDateString("en-IN", {
@@ -220,7 +220,7 @@ export function CourtMorningBrief() {
       </div>
 
       {items.length === 0 ? (
-        <p className="mt-6 text-sm text-muted-foreground">
+        <p className="mt-6 text-sm text-foreground/70 sm:text-muted-foreground">
           No hearings listed for today. Add one from the{" "}
           <Link to="/app/diary" className="text-accent hover:underline">
             court diary
