@@ -47,6 +47,32 @@ export const createHearing = createServerFn({ method: "POST" })
     return saved;
   });
 
+// All hearings for one matter, past and future — used by the Matter
+// Timeline (K3). Same id-or-title dual-key fallback morning-brief.functions.ts
+// already established: matter_id isn't reliably populated by createHearing,
+// so results from both keys are unioned and de-duplicated by hearing id
+// rather than trusting either key alone.
+export const listMatterHearings = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z.object({ matterId: z.string().uuid(), matterTitle: z.string().min(1) }).parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const columns =
+      "id, matter_id, matter_title, court, hearing_date, hearing_time, purpose, status, court_hall, bench, cause_list_record_id, created_at";
+    const [byIdRes, byTitleRes] = await Promise.all([
+      context.supabase.from("hearings").select(columns).eq("matter_id", data.matterId),
+      context.supabase.from("hearings").select(columns).eq("matter_title", data.matterTitle),
+    ]);
+    if (byIdRes.error) throw new Error(byIdRes.error.message);
+    if (byTitleRes.error) throw new Error(byTitleRes.error.message);
+
+    const byId = new Map(
+      [...(byIdRes.data ?? []), ...(byTitleRes.data ?? [])].map((h) => [h.id, h]),
+    );
+    return [...byId.values()].sort((a, b) => a.hearing_date.localeCompare(b.hearing_date));
+  });
+
 export const updateHearingStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>

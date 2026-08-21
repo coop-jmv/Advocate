@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Loader2, Plus } from "lucide-react";
@@ -218,11 +218,13 @@ function Cases() {
           {filteredMatters.map((matter) => (
             <tr key={matter.id} className="hover:bg-secondary/40">
               <td className="px-4 py-3">
-                <p className="font-medium">{matter.title}</p>
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  {matter.client_name ? `Client ${matter.client_name}` : "No client set"}
-                  {matter.opposing_party ? ` · Opposite ${matter.opposing_party}` : ""}
-                </p>
+                <Link to="/app/cases/$matterId" params={{ matterId: matter.id }} className="block">
+                  <p className="font-medium text-accent hover:underline">{matter.title}</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    {matter.client_name ? `Client ${matter.client_name}` : "No client set"}
+                    {matter.opposing_party ? ` · Opposite ${matter.opposing_party}` : ""}
+                  </p>
+                </Link>
               </td>
               <td className="px-4 py-3 font-mono text-xs whitespace-nowrap">
                 {matter.case_number ?? "—"}

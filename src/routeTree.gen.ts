@@ -41,6 +41,7 @@ import { Route as AuthenticatedAppProfileRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAppSubscriptionRouteImport } from './routes/_authenticated/app.subscription'
 import { Route as AuthenticatedAppTeamRouteImport } from './routes/_authenticated/app.team'
 import { Route as AdminAdminSettingsIntegrationsRouteImport } from './routes/_admin/admin.settings.integrations'
+import { Route as AuthenticatedAppCasesMatterIdRouteImport } from './routes/_authenticated/app.cases.$matterId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -210,6 +211,12 @@ const AdminAdminSettingsIntegrationsRoute =
     path: '/settings/integrations',
     getParentRoute: () => AdminAdminRoute,
   } as any)
+const AuthenticatedAppCasesMatterIdRoute =
+  AuthenticatedAppCasesMatterIdRouteImport.update({
+    id: '/$matterId',
+    path: '/$matterId',
+    getParentRoute: () => AuthenticatedAppCasesRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -227,7 +234,7 @@ export interface FileRoutesByFullPath {
   '/app/assistant': typeof AuthenticatedAppAssistantRoute
   '/app/audit-log': typeof AuthenticatedAppAuditLogRoute
   '/app/billing': typeof AuthenticatedAppBillingRoute
-  '/app/cases': typeof AuthenticatedAppCasesRoute
+  '/app/cases': typeof AuthenticatedAppCasesRouteWithChildren
   '/app/cause-list': typeof AuthenticatedAppCauseListRoute
   '/app/clients': typeof AuthenticatedAppClientsRoute
   '/app/diary': typeof AuthenticatedAppDiaryRoute
@@ -242,6 +249,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminAdminIndexRoute
   '/app/': typeof AuthenticatedAppIndexRoute
   '/admin/settings/integrations': typeof AdminAdminSettingsIntegrationsRoute
+  '/app/cases/$matterId': typeof AuthenticatedAppCasesMatterIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -257,7 +265,7 @@ export interface FileRoutesByTo {
   '/app/assistant': typeof AuthenticatedAppAssistantRoute
   '/app/audit-log': typeof AuthenticatedAppAuditLogRoute
   '/app/billing': typeof AuthenticatedAppBillingRoute
-  '/app/cases': typeof AuthenticatedAppCasesRoute
+  '/app/cases': typeof AuthenticatedAppCasesRouteWithChildren
   '/app/cause-list': typeof AuthenticatedAppCauseListRoute
   '/app/clients': typeof AuthenticatedAppClientsRoute
   '/app/diary': typeof AuthenticatedAppDiaryRoute
@@ -272,6 +280,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminAdminIndexRoute
   '/app': typeof AuthenticatedAppIndexRoute
   '/admin/settings/integrations': typeof AdminAdminSettingsIntegrationsRoute
+  '/app/cases/$matterId': typeof AuthenticatedAppCasesMatterIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -292,7 +301,7 @@ export interface FileRoutesById {
   '/_authenticated/app/assistant': typeof AuthenticatedAppAssistantRoute
   '/_authenticated/app/audit-log': typeof AuthenticatedAppAuditLogRoute
   '/_authenticated/app/billing': typeof AuthenticatedAppBillingRoute
-  '/_authenticated/app/cases': typeof AuthenticatedAppCasesRoute
+  '/_authenticated/app/cases': typeof AuthenticatedAppCasesRouteWithChildren
   '/_authenticated/app/cause-list': typeof AuthenticatedAppCauseListRoute
   '/_authenticated/app/clients': typeof AuthenticatedAppClientsRoute
   '/_authenticated/app/diary': typeof AuthenticatedAppDiaryRoute
@@ -307,6 +316,7 @@ export interface FileRoutesById {
   '/_admin/admin/': typeof AdminAdminIndexRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_admin/admin/settings/integrations': typeof AdminAdminSettingsIntegrationsRoute
+  '/_authenticated/app/cases/$matterId': typeof AuthenticatedAppCasesMatterIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -341,6 +351,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/app/'
     | '/admin/settings/integrations'
+    | '/app/cases/$matterId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -371,6 +382,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/app'
     | '/admin/settings/integrations'
+    | '/app/cases/$matterId'
   id:
     | '__root__'
     | '/'
@@ -405,6 +417,7 @@ export interface FileRouteTypes {
     | '/_admin/admin/'
     | '/_authenticated/app/'
     | '/_admin/admin/settings/integrations'
+    | '/_authenticated/app/cases/$matterId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -646,6 +659,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAdminSettingsIntegrationsRouteImport
       parentRoute: typeof AdminAdminRoute
     }
+    '/_authenticated/app/cases/$matterId': {
+      id: '/_authenticated/app/cases/$matterId'
+      path: '/$matterId'
+      fullPath: '/app/cases/$matterId'
+      preLoaderRoute: typeof AuthenticatedAppCasesMatterIdRouteImport
+      parentRoute: typeof AuthenticatedAppCasesRoute
+    }
   }
 }
 
@@ -679,11 +699,24 @@ const AdminRouteRouteWithChildren = AdminRouteRoute._addFileChildren(
   AdminRouteRouteChildren,
 )
 
+interface AuthenticatedAppCasesRouteChildren {
+  AuthenticatedAppCasesMatterIdRoute: typeof AuthenticatedAppCasesMatterIdRoute
+}
+
+const AuthenticatedAppCasesRouteChildren: AuthenticatedAppCasesRouteChildren = {
+  AuthenticatedAppCasesMatterIdRoute: AuthenticatedAppCasesMatterIdRoute,
+}
+
+const AuthenticatedAppCasesRouteWithChildren =
+  AuthenticatedAppCasesRoute._addFileChildren(
+    AuthenticatedAppCasesRouteChildren,
+  )
+
 interface AuthenticatedAppRouteChildren {
   AuthenticatedAppAssistantRoute: typeof AuthenticatedAppAssistantRoute
   AuthenticatedAppAuditLogRoute: typeof AuthenticatedAppAuditLogRoute
   AuthenticatedAppBillingRoute: typeof AuthenticatedAppBillingRoute
-  AuthenticatedAppCasesRoute: typeof AuthenticatedAppCasesRoute
+  AuthenticatedAppCasesRoute: typeof AuthenticatedAppCasesRouteWithChildren
   AuthenticatedAppCauseListRoute: typeof AuthenticatedAppCauseListRoute
   AuthenticatedAppClientsRoute: typeof AuthenticatedAppClientsRoute
   AuthenticatedAppDiaryRoute: typeof AuthenticatedAppDiaryRoute
@@ -702,7 +735,7 @@ const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppAssistantRoute: AuthenticatedAppAssistantRoute,
   AuthenticatedAppAuditLogRoute: AuthenticatedAppAuditLogRoute,
   AuthenticatedAppBillingRoute: AuthenticatedAppBillingRoute,
-  AuthenticatedAppCasesRoute: AuthenticatedAppCasesRoute,
+  AuthenticatedAppCasesRoute: AuthenticatedAppCasesRouteWithChildren,
   AuthenticatedAppCauseListRoute: AuthenticatedAppCauseListRoute,
   AuthenticatedAppClientsRoute: AuthenticatedAppClientsRoute,
   AuthenticatedAppDiaryRoute: AuthenticatedAppDiaryRoute,

@@ -656,6 +656,86 @@ export const rejectCauseListMatch = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// The matter-scoped cause-list history used by the Matter Timeline (K3).
+// cause_list_matches.matter_id already exists (K2) — nothing queried by it
+// before this. A matter can be matched to more than one record over time
+// (each re-ingested version is matched independently, UNIQUE(record_id)),
+// so this expands every matched record to its full source/source_reference
+// version chain before pulling changes, the same reference-chain shape
+// listCauseListChangeHistory already reads — reusing K2's own change log,
+// not a second change-detection mechanism.
+export const listMatterCauseListHistory = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({ matterId: z.string().uuid() }).parse(data))
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+
+    const { data: matches, error: matchesError } = await supabase
+      .from("cause_list_matches")
+      .select("record_id")
+      .eq("matter_id", data.matterId);
+    if (matchesError) throw new Error(matchesError.message);
+    const matchedRecordIds = (matches ?? []).map((m) => m.record_id);
+    if (matchedRecordIds.length === 0) return [];
+
+    const { data: matchedRecords, error: matchedRecordsError } = await supabase
+      .from("cause_list_records")
+      .select("source_id, source_reference")
+      .in("id", matchedRecordIds);
+    if (matchedRecordsError) throw new Error(matchedRecordsError.message);
+
+    const chainKeys = [
+      ...new Map(
+        (matchedRecords ?? []).map((r) => [
+          `${r.source_id}:${r.source_reference}`,
+          { sourceId: r.source_id, sourceReference: r.source_reference },
+        ]),
+      ).values(),
+    ];
+
+    const chains = await Promise.all(
+      chainKeys.map(({ sourceId, sourceReference }) =>
+        supabase
+          .from("cause_list_records")
+          .select("id, list_date, serial_number, court_hall, bench, stage")
+          .eq("source_id", sourceId)
+          .eq("source_reference", sourceReference),
+      ),
+    );
+    for (const chain of chains) if (chain.error) throw new Error(chain.error.message);
+
+    const chainRecords = chains.flatMap((c) => c.data ?? []);
+    const recordById = new Map(chainRecords.map((r) => [r.id, r]));
+    const chainRecordIds = chainRecords.map((r) => r.id);
+    if (chainRecordIds.length === 0) return [];
+
+    const { data: changes, error: changesError } = await supabase
+      .from("cause_list_changes")
+      .select("id, record_id, change_type, field_name, old_value, new_value, detected_at")
+      .in("record_id", chainRecordIds)
+      .neq("change_type", "unchanged")
+      .order("detected_at", { ascending: true });
+    if (changesError) throw new Error(changesError.message);
+
+    return (changes ?? []).map((c) => {
+      const record = recordById.get(c.record_id);
+      return {
+        id: c.id,
+        recordId: c.record_id,
+        changeType: c.change_type,
+        fieldName: c.field_name,
+        oldValue: c.old_value,
+        newValue: c.new_value,
+        detectedAt: c.detected_at,
+        listDate: record?.list_date ?? null,
+        serialNumber: record?.serial_number ?? null,
+        courtHall: record?.court_hall ?? null,
+        bench: record?.bench ?? null,
+        stage: record?.stage ?? null,
+      };
+    });
+  });
+
 export const listCauseListChangeHistory = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>

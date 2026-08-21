@@ -71,6 +71,43 @@ export function generateMorningBriefSummaries(input: { items: MorningBriefSummar
   return invoke<{ summaries: { hearingId: string; summary: string }[] }>("ai-morning-brief", input);
 }
 
+// K3 — Matter Intelligence. The client sends only the already-authorized,
+// already-aggregated facts (see MatterContext / getMatterContext), never a
+// raw matter_id — the edge function has no DB access of its own and no way
+// to look up a fact not already in this payload, same trust model as
+// generateMorningBriefSummaries above.
+export type MatterSummaryInput = {
+  matter: {
+    title: string;
+    caseNumber: string | null;
+    court: string | null;
+    status: string;
+    clientName: string | null;
+    opposingParty: string | null;
+    filedDate: string | null;
+  };
+  hearings: { hearingDate: string; status: string; purpose: string | null }[];
+  causeListEvents: {
+    changeType: string;
+    detectedAt: string;
+    fieldName: string | null;
+    oldValue: string | null;
+    newValue: string | null;
+  }[];
+  documentCount: number;
+};
+
+export type MatterSummary = {
+  currentPosition: string;
+  recentDevelopment: string;
+  previousActivity: string;
+  nextEvent: string;
+};
+
+export function generateMatterSummary(input: MatterSummaryInput) {
+  return invoke<{ summary: MatterSummary }>("ai-matter-summary", input);
+}
+
 export function transcribeDictation(input: { audioBase64: string; language?: string | undefined }) {
   return invoke<{ text: string }>("dictation-transcribe", input);
 }
