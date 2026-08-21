@@ -41,6 +41,7 @@ import { Route as AuthenticatedAppProfileRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAppSubscriptionRouteImport } from './routes/_authenticated/app.subscription'
 import { Route as AuthenticatedAppTeamRouteImport } from './routes/_authenticated/app.team'
 import { Route as AdminAdminSettingsIntegrationsRouteImport } from './routes/_admin/admin.settings.integrations'
+import { Route as AuthenticatedAppCasesIndexRouteImport } from './routes/_authenticated/app.cases.index'
 import { Route as AuthenticatedAppCasesMatterIdRouteImport } from './routes/_authenticated/app.cases.$matterId'
 
 const IndexRoute = IndexRouteImport.update({
@@ -211,6 +212,12 @@ const AdminAdminSettingsIntegrationsRoute =
     path: '/settings/integrations',
     getParentRoute: () => AdminAdminRoute,
   } as any)
+const AuthenticatedAppCasesIndexRoute =
+  AuthenticatedAppCasesIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedAppCasesRoute,
+  } as any)
 const AuthenticatedAppCasesMatterIdRoute =
   AuthenticatedAppCasesMatterIdRouteImport.update({
     id: '/$matterId',
@@ -250,6 +257,7 @@ export interface FileRoutesByFullPath {
   '/app/': typeof AuthenticatedAppIndexRoute
   '/admin/settings/integrations': typeof AdminAdminSettingsIntegrationsRoute
   '/app/cases/$matterId': typeof AuthenticatedAppCasesMatterIdRoute
+  '/app/cases/': typeof AuthenticatedAppCasesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -265,7 +273,6 @@ export interface FileRoutesByTo {
   '/app/assistant': typeof AuthenticatedAppAssistantRoute
   '/app/audit-log': typeof AuthenticatedAppAuditLogRoute
   '/app/billing': typeof AuthenticatedAppBillingRoute
-  '/app/cases': typeof AuthenticatedAppCasesRouteWithChildren
   '/app/cause-list': typeof AuthenticatedAppCauseListRoute
   '/app/clients': typeof AuthenticatedAppClientsRoute
   '/app/diary': typeof AuthenticatedAppDiaryRoute
@@ -281,6 +288,7 @@ export interface FileRoutesByTo {
   '/app': typeof AuthenticatedAppIndexRoute
   '/admin/settings/integrations': typeof AdminAdminSettingsIntegrationsRoute
   '/app/cases/$matterId': typeof AuthenticatedAppCasesMatterIdRoute
+  '/app/cases': typeof AuthenticatedAppCasesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -317,6 +325,7 @@ export interface FileRoutesById {
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_admin/admin/settings/integrations': typeof AdminAdminSettingsIntegrationsRoute
   '/_authenticated/app/cases/$matterId': typeof AuthenticatedAppCasesMatterIdRoute
+  '/_authenticated/app/cases/': typeof AuthenticatedAppCasesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -352,6 +361,7 @@ export interface FileRouteTypes {
     | '/app/'
     | '/admin/settings/integrations'
     | '/app/cases/$matterId'
+    | '/app/cases/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -367,7 +377,6 @@ export interface FileRouteTypes {
     | '/app/assistant'
     | '/app/audit-log'
     | '/app/billing'
-    | '/app/cases'
     | '/app/cause-list'
     | '/app/clients'
     | '/app/diary'
@@ -383,6 +392,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/admin/settings/integrations'
     | '/app/cases/$matterId'
+    | '/app/cases'
   id:
     | '__root__'
     | '/'
@@ -418,6 +428,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/'
     | '/_admin/admin/settings/integrations'
     | '/_authenticated/app/cases/$matterId'
+    | '/_authenticated/app/cases/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -659,6 +670,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAdminSettingsIntegrationsRouteImport
       parentRoute: typeof AdminAdminRoute
     }
+    '/_authenticated/app/cases/': {
+      id: '/_authenticated/app/cases/'
+      path: '/'
+      fullPath: '/app/cases/'
+      preLoaderRoute: typeof AuthenticatedAppCasesIndexRouteImport
+      parentRoute: typeof AuthenticatedAppCasesRoute
+    }
     '/_authenticated/app/cases/$matterId': {
       id: '/_authenticated/app/cases/$matterId'
       path: '/$matterId'
@@ -701,10 +719,12 @@ const AdminRouteRouteWithChildren = AdminRouteRoute._addFileChildren(
 
 interface AuthenticatedAppCasesRouteChildren {
   AuthenticatedAppCasesMatterIdRoute: typeof AuthenticatedAppCasesMatterIdRoute
+  AuthenticatedAppCasesIndexRoute: typeof AuthenticatedAppCasesIndexRoute
 }
 
 const AuthenticatedAppCasesRouteChildren: AuthenticatedAppCasesRouteChildren = {
   AuthenticatedAppCasesMatterIdRoute: AuthenticatedAppCasesMatterIdRoute,
+  AuthenticatedAppCasesIndexRoute: AuthenticatedAppCasesIndexRoute,
 }
 
 const AuthenticatedAppCasesRouteWithChildren =
