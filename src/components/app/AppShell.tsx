@@ -143,7 +143,7 @@ export function AppShell({
 
       <div className="min-w-0 flex-1">
         <header className="flex flex-wrap items-center gap-4 border-b border-border bg-card px-4 py-4 sm:px-6">
-          <div className="min-w-0 flex-1">
+          <div className="min-w-32 flex-1">
             <h1 className="truncate text-lg font-bold sm:text-xl">{title}</h1>
             {subtitle ? (
               <p className="mt-0.5 line-clamp-2 text-sm text-muted-foreground sm:truncate">
