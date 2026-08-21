@@ -97,6 +97,7 @@ function CauseListIntelligence() {
   const [summary, setSummary] = useState({
     total: 0,
     newOrChanged: 0,
+    removed: 0,
     matched: 0,
     needsReview: 0,
     conflicts: 0,
@@ -284,9 +285,10 @@ function CauseListIntelligence() {
       title="Cause list intelligence"
       subtitle="Import a cause list, see what changed since it was last published, and match listings to your matters"
     >
-      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         <StatCard label="Listings" value={String(summary.total)} />
         <StatCard label="New / changed" value={String(summary.newOrChanged)} />
+        <StatCard label="Removed" value={String(summary.removed)} />
         <StatCard label="Matched" value={String(summary.matched)} />
         <StatCard label="Needs review" value={String(summary.needsReview)} />
         <StatCard label="Conflicts" value={String(summary.conflicts)} />
@@ -511,7 +513,10 @@ function CauseListIntelligence() {
       ) : (
         <ul className="space-y-3">
           {filteredEntries.map((entry) => (
-            <li key={entry.recordId} className="surface-panel rounded p-4">
+            <li
+              key={entry.recordId}
+              className={`surface-panel rounded p-4 ${entry.isRemoved ? "opacity-60" : ""}`}
+            >
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
@@ -524,7 +529,11 @@ function CauseListIntelligence() {
                       {entry.petitioner ?? "—"}
                       {entry.respondent ? ` vs ${entry.respondent}` : ""}
                     </p>
-                    {entry.hasChangedToday ? <Tag tone="accent">Changed</Tag> : null}
+                    {entry.isRemoved ? (
+                      <Tag tone="neutral">Removed from list</Tag>
+                    ) : entry.hasChangedToday ? (
+                      <Tag tone="accent">Changed</Tag>
+                    ) : null}
                     {entry.hasConflict ? (
                       <Tag tone="danger">
                         <span className="flex items-center gap-1">
@@ -550,7 +559,7 @@ function CauseListIntelligence() {
                   <Tag tone={matchStatusTone[entry.match?.status ?? "unmatched"]}>
                     {matchStatusLabel[entry.match?.status ?? "unmatched"]}
                   </Tag>
-                  {entry.match?.method ? (
+                  {entry.match?.method && entry.match.status !== "unmatched" ? (
                     <span className="text-[11px] text-muted-foreground">
                       via {entry.match.method}
                     </span>

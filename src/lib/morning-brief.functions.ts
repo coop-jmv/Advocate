@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { findClashKeys, isClashing } from "@/lib/hearing-conflicts";
+import { getOwnIntegrations } from "@/lib/tenant-integrations";
 
 // Deterministic aggregation for the Court Morning Brief. Every value here
 // comes straight from a real query — nothing is inferred or generated. The
@@ -123,14 +124,7 @@ export const getMorningBrief = createServerFn({ method: "GET" })
     // all — the real enforcement, which this can't bypass, lives in the
     // ai-morning-brief edge function, which checks the same flag itself
     // before ever calling the AI service layer.
-    const { data: license } = await context.supabase
-      .from("licenses")
-      .select("integrations")
-      .maybeSingle();
-    const integrations = (license?.integrations ?? {}) as {
-      ai_morning_brief_enabled?: boolean;
-      cause_list_enabled?: boolean;
-    };
+    const integrations = await getOwnIntegrations(context.supabase, context.userId);
     const aiEnabled = integrations.ai_morning_brief_enabled ?? true;
     const causeListEnabled = integrations.cause_list_enabled ?? true;
 

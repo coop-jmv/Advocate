@@ -13,6 +13,7 @@ import {
   findRemovedReferences,
   type ComparableRecord,
 } from "@/lib/cause-list-changes";
+import { getOwnIntegrations } from "@/lib/tenant-integrations";
 import type { Database } from "@/integrations/supabase/types";
 
 // Tenant-scoped cause-list CRUD, ingestion and matching. Same trust model as
@@ -51,11 +52,7 @@ function normalizeCnrKey(raw: string): string {
 export const getCauseListFeatureEnabled = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data: license } = await context.supabase
-      .from("licenses")
-      .select("integrations")
-      .maybeSingle();
-    const integrations = (license?.integrations ?? {}) as { cause_list_enabled?: boolean };
+    const integrations = await getOwnIntegrations(context.supabase, context.userId);
     return { enabled: integrations.cause_list_enabled ?? true };
   });
 
@@ -193,10 +190,8 @@ export const ingestCauseList = createServerFn({ method: "POST" })
     // /admin/settings/integrations. This is the real enforcement — the
     // Diary Portal UI hides the import panel when disabled, but a direct
     // call to this function is stopped here regardless.
-    const { data: license } = await supabase.from("licenses").select("integrations").maybeSingle();
-    const causeListEnabled =
-      ((license?.integrations ?? {}) as { cause_list_enabled?: boolean }).cause_list_enabled ??
-      true;
+    const integrations = await getOwnIntegrations(supabase, context.userId);
+    const causeListEnabled = integrations.cause_list_enabled ?? true;
     if (!causeListEnabled) {
       throw new Error(
         "Cause List Intelligence is turned off for this chamber by your workspace administrator.",
@@ -267,11 +262,14 @@ export const ingestCauseList = createServerFn({ method: "POST" })
     }));
     const advocateName = profile?.full_name ?? null;
 
+    // Every currently-live listing for this source, not just the ones in
+    // this paste — removed-listing detection needs the full set to notice
+    // a reference that used to be a head record and now isn't in the batch
+    // at all, not just to diff references that are still present.
     const { data: headRecords, error: headError } = await supabase
       .from("cause_list_records")
       .select("*")
       .eq("source_id", source.id)
-      .in("source_reference", [...currentReferences])
       .is("superseded_by", null);
     if (headError) throw new Error(headError.message);
     const headByRef = new Map((headRecords ?? []).map((r) => [r.source_reference, r]));
@@ -498,10 +496,13 @@ export const listCauseListEntries = createServerFn({ method: "GET" })
       recordIds.length
         ? supabase
             .from("cause_list_changes")
-            .select("record_id, change_type")
+            .select("record_id, change_type, detected_at")
             .in("record_id", recordIds)
             .neq("change_type", "unchanged")
-        : Promise.resolve({ data: [] as { record_id: string; change_type: string }[] }),
+            .order("detected_at", { ascending: true })
+        : Promise.resolve({
+            data: [] as { record_id: string; change_type: string; detected_at: string }[],
+          }),
       recordIds.length
         ? supabase
             .from("hearings")
@@ -511,7 +512,13 @@ export const listCauseListEntries = createServerFn({ method: "GET" })
     ]);
 
     const matchByRecordId = new Map((matches ?? []).map((m) => [m.record_id, m]));
-    const changedRecordIds = new Set((changesToday ?? []).map((c) => c.record_id));
+    // Ascending order means the last write per record_id wins — this is the
+    // record's most recent state, which is what distinguishes "changed but
+    // still on the list" from "no longer on the list" (a 'removed' entry
+    // logged after an earlier 'new_listing'/field-change on the same record
+    // when a later ingestion omits it — see findRemovedReferences).
+    const latestChangeByRecordId = new Map<string, string>();
+    for (const c of changesToday ?? []) latestChangeByRecordId.set(c.record_id, c.change_type);
     const hearingByRecordId = new Map(
       (hearings ?? [])
         .filter((h) => h.cause_list_record_id)
@@ -542,6 +549,8 @@ export const listCauseListEntries = createServerFn({ method: "GET" })
       const hasConflict = !!(
         hearing?.hearing_time && clashKeys.has(`${hearing.hearing_date}|${hearing.hearing_time}`)
       );
+      const latestChange = latestChangeByRecordId.get(r.id) ?? null;
+      const isRemoved = latestChange === "removed";
       return {
         recordId: r.id,
         sourceId: r.source_id,
@@ -556,7 +565,8 @@ export const listCauseListEntries = createServerFn({ method: "GET" })
         advocateNames: r.advocate_names,
         stage: r.stage,
         courtHall: r.court_hall,
-        hasChangedToday: changedRecordIds.has(r.id),
+        hasChangedToday: !!latestChange && !isRemoved,
+        isRemoved,
         match: match
           ? {
               id: match.id,
@@ -575,6 +585,7 @@ export const listCauseListEntries = createServerFn({ method: "GET" })
     const summary = {
       total: entries.length,
       newOrChanged: entries.filter((e) => e.hasChangedToday).length,
+      removed: entries.filter((e) => e.isRemoved).length,
       matched: entries.filter((e) => e.match?.status === "matched").length,
       needsReview: entries.filter((e) => e.match?.status === "needs_review").length,
       conflicts: entries.filter((e) => e.hasConflict).length,
