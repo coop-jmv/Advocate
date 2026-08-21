@@ -14,24 +14,29 @@ Notifications system) has no row here on purpose.
 | Section | Resolved | Total applicable | Notes |
 |---|---|---|---|
 | §2 Master validation matrix | ~30 cells, plus a full click-through of every remaining module | ~90 cells | Matter/Client CRUD, Hearing/Cause List/Documents Create-Read-Update, and Billing Create/Read now live-verified; Drafting studio/Voice dictation/AI assistant/Diary insights/Team/Audit log/Subscription/Profile/Superadmin all confirmed working via a full click-through (see §2's new "Full-module click-through" note). Mobile and Error-handling columns are still ❓ across almost every row — untouched as a category |
-| §3 Field boundary spec | 10 fields documented | dozens of fields exist across the app | A start, not close to finished |
-| §4 Boundary-test catalogue | 8 of 12 AI-row items done | strings 0/9, numeric 0/5, dates 0/6, files 0/7, AI 8/12 | AI row is the only one started — 4 items left there (1-char/huge/irrelevant question, quota exceeded); every non-AI category (strings/numbers/dates/files) hasn't been touched at all |
+| §3 Field boundary spec | 10 fields documented, 2 rows updated with live findings | dozens of fields exist across the app | Matter title and Billing hours/rate now carry real, reproduced raw-error findings instead of guesses |
+| §4 Boundary-test catalogue | strings 9/9, numeric 5/5, dates 4/6, files 0/7, AI 8/12 | 39 total | **Strings and numeric fully done live** (found 2 real raw-error bugs); dates mostly done (found 1 real gap — an unsafe UTC date pattern in `subscription-invoice.ts` — and confirmed the IST midnight fix is correct by code review); files category still untouched — needs an actual file-upload flow, harder to script than form fields |
 | §5 Security validation | 7 of 8, +1 pre-existing critical fix credited, +1 new critical fix | 8 | **Live-tested today** with a real two-tenant setup (created, tested, deleted) — 0 cross-tenant leaks on read or ID lookup, write-spoofing rejected on both an old table (`matters`) and a new K2 table (`cause_list_sources`). Also credited a pre-existing 2026-08-20 audit that found+fixed a critical cross-tenant write bug on the AI tables. Found and fixed a second critical bug live today: `delete_my_account()` failed for every sole owner ([PR #48](https://github.com/coop-jmv/Advocate/pull/48)). One item left: a real, live-confirmed finding that Superadmin can read cross-tenant `cause_list_records` content beyond what the UI uses — needs a product decision, not code |
 | §6 AI security validation | 6 of 6 | 6 | **Fully done** — prompt injection, cross-matter leakage, outcome-prediction refusal, missing-evidence honesty, external-legal-research refusal, and direct-call rejection while disabled all verified live |
 | §7 Business use-case validation | 2 fully + 1 partial of 8 testable | 8 (2 more marked Aspirational, correctly excluded) | BU05 and BU10 (partial) done; BU01/02/03/06/09 not run as scripted passes |
 
 **Bottom line:** the AI layer (K1/K3/K4), core Matter/Client CRUD, tenant-isolation security
-(§5), and now every remaining module (§2's full click-through) are all genuinely live-tested,
-not code-reviewed. Three real bugs were found and fixed this session: a sole owner could not
-delete their own account (DPDP erasure was broken), a signup-breaking regression from that same
-fix briefly took down every new signup (caught and fixed same day), and this document itself
-was under-crediting a critical cross-tenant write bug found and fixed on 2026-08-20. What's
-still open: field-level boundary testing (§3/§4 — strings/numeric/dates/files categories are
-completely untouched), most scripted business-use-case passes (§7), the Mobile and
-Error-handling columns in §2 (untested as entire categories, not just a few gaps), and one
-product decision on Superadmin's cause-list read scope (§5) that needs you, not more testing.
-The next highest-value batch is §4's boundary-test catalogue — it's reusable across every
-field in §3, so starting there compounds faster than picking off individual §7 scripts.
+(§5), every remaining module (§2's full click-through), and strings/numeric/dates boundary
+testing (§4) are all genuinely live-tested, not code-reviewed. Five real bugs were found and
+fixed this session, plus two more found and recorded (not yet fixed): a sole owner could not
+delete their own account (DPDP erasure was broken, fixed); a signup-breaking regression from
+that same fix briefly took down every new signup (caught and fixed same day); this document
+itself was under-crediting a critical cross-tenant write bug found and fixed on 2026-08-20;
+Matter title's 1-character rejection and Billing's numeric-overflow both show the user a raw
+Zod/Postgres error verbatim instead of a friendly message (recorded, not yet fixed); and
+`subscription-invoice.ts` still uses the unsafe pre-fix UTC date pattern for its invoice-number
+suffix (low severity, recorded). What's still open: the Files category in §4 (needs an actual
+upload flow, harder to script than form fields), most scripted business-use-case passes (§7),
+the Mobile and Error-handling columns in §2 (untested as entire categories), and one product
+decision on Superadmin's cause-list read scope (§5) that needs you, not more testing. The next
+highest-value batch is either the Files boundary category (§4) or a first pass fixing the
+raw-error findings — both are self-contained, unlike §7's business scripts which depend on
+several other modules already being right.
 
 ---
 
@@ -117,7 +122,7 @@ highest-traffic and highest-risk):
 
 | Field                      | Type   | Required                    | Min                                      | Max                 | Allowed chars                              | Format                                                                                                             | DB constraint                                                                  | UI constraint                       | Error message                                                                                           |
 | -------------------------- | ------ | --------------------------- | ---------------------------------------- | ------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ | ----------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| Matter title               | string | Yes                         | 2 (Zod `.min(2)`)                        | none enforced today | any                                        | free text                                                                                                          | `title TEXT NOT NULL`                                                          | none beyond required                | generic Zod error only — **no user-friendly message today, worth adding**                               |
+| Matter title               | string | Yes                         | 2 (Zod `.min(2)`)                        | none enforced today | any                                        | free text                                                                                                          | `title TEXT NOT NULL`                                                          | none beyond required                | ⚠️ **Live-verified 2026-08-21**: a 1-character title shows the user this raw JSON verbatim: `[ { "code": "too_small", "minimum": 2, ..., "message": "String must contain at least 2 character(s)", "path": [ "title" ] } ]` — a real, reproduced UX gap, not a hypothetical one |
 | Case number                | string | No                          | —                                        | none                | any                                        | free text                                                                                                          | `case_number TEXT` nullable                                                    | none                                | —                                                                                                       |
 | Client name (matter)       | string | No                          | —                                        | none                | any                                        | free text                                                                                                          | `client_name TEXT` nullable                                                    | none                                | —                                                                                                       |
 | Opposing party             | string | No                          | —                                        | none                | any                                        | free text                                                                                                          | `opposing_party TEXT` nullable                                                 | none                                | —                                                                                                       |
@@ -138,46 +143,81 @@ the component), and the actual error message a user would see (many of these are
 just a raw Zod/Postgres error surfaced verbatim — that's a real UX gap worth fixing during
 hardening, not something to paper over in this document).
 
+**Billing hours/rate**: `NUMERIC` columns with a real precision ceiling. Live-verified
+2026-08-21 — entering `999999999999` in either field shows the user this raw Postgres error
+verbatim: `numeric field overflow`. Same class of gap as Matter title's raw Zod error above —
+worth a shared "friendly error" wrapper around both Zod and Postgres errors rather than fixing
+field-by-field.
+
 ---
 
 ## 4. Boundary-test catalogue (reusable checklist)
 
 Apply this same catalogue to every text/numeric/date/file input found while filling in §3.
 
-**String fields**
+**String fields** — all run against Matter title live on 2026-08-21, real tenant, since deleted
 
-- [ ] empty
-- [ ] 1 character
-- [ ] min − 1 / min / min + 1 (where a min exists)
-- [ ] max − 1 / max / max + 1 (where a max exists — **note: most string fields in this app have
-      no enforced max today**, so this specifically tests "does an extremely long string break
-      the UI/DB" rather than "does validation correctly reject it")
-- [ ] leading/trailing whitespace
-- [ ] Unicode (Hindi/Devanagari — this app explicitly supports Hindi OCR, so this isn't an edge
-      case, it's a real usage pattern)
-- [ ] emoji
-- [ ] raw HTML (`<script>alert(1)</script>`) — confirm it renders as inert text, not executed
-- [ ] SQL-like input (`' OR 1=1 --`) — confirm Supabase's parameterized queries reject/escape it
-      (expected: safe, since no raw SQL string concatenation exists in this codebase)
+- [x] ✅ empty — client-side disables submit
+- [x] ✅ 1 character — server rejects (min 2), but see the raw-error finding in §3 above
+- [x] ✅ min (2 chars, "AB") — accepted correctly; min+1 needs no separate test, same code path
+- [x] ✅ max — no enforced max exists; a 10,400-character title was accepted, stored, and
+      rendered without breaking the UI or DB
+- [x] ✅ leading/trailing whitespace — trimmed correctly both client- and server-side, confirmed
+      via direct DB read (stored length matched the trimmed string exactly)
+- [x] ✅ Unicode (Hindi/Devanagari) — renders and stores correctly
+- [x] ✅ emoji — renders and stores correctly (confirmed incidentally via a Documents-page matter
+      dropdown showing it rendered fine)
+- [x] ✅ raw HTML (`<script>alert(1)</script>`) — confirmed rendered as inert escaped text
+      (`&lt;script&gt;...`), no execution, no console alert
+- [x] ✅ SQL-like input (`Sharma' OR 1=1 --`) — stored as a literal inert string, confirmed via
+      direct DB query, no injection
 
-**Numeric fields** (hours, rates, amounts in Billing)
+**Numeric fields** (Billing time-entry hours/rate) — live on 2026-08-21
 
-- [ ] 0
-- [ ] negative
-- [ ] decimal
-- [ ] non-numeric input
-- [ ] extremely large number
+- [x] ✅ 0 — correctly rejected client-side (silently — no error shown, a minor UX gap of its
+      own, distinct from the raw-error findings above)
+- [x] ✅ negative (`-3`) — correctly rejected, same silent behavior as 0
+- [x] ✅ decimal (`2.5` hours × `₹5,000`/hr) — accepted, math confirmed correct (₹12,500 shown in
+      "Work in progress")
+- [x] ✅ non-numeric (`abc`) — blocked entirely at the native `type="number"` input level, never
+      reaches the app
+- [x] ✅ extremely large (`999999999999`) — **real bug**: shows the user a raw Postgres error
+      verbatim, `numeric field overflow` — see §3's new note
 
-**Date fields**
+  **Methodology note**: the first pass at this used synthetic JS `dispatchEvent` calls to fill
+  the form, which silently failed to register with React's controlled state for this
+  particular form (no error, no submission, nothing — a false negative that looked identical to
+  a correctly-rejected boundary case). Caught by cross-checking against the database directly.
+  Redone with real keyboard/click input via the `computer` tool and confirmed trustworthy. Worth
+  remembering for future automated testing here: a "nothing happened" result needs a DB check to
+  confirm it was actually the *validation* rejecting the input, not the test harness failing to
+  submit at all.
 
-- [ ] today (IST)
-- [ ] yesterday / tomorrow
-- [ ] far past / far future
-- [ ] leap day (2026 is not a leap year — use 2028-02-29 or 2024-02-29 for this test)
-- [ ] invalid date string typed directly into the input
-- [ ] **IST midnight boundary specifically** — this app has a documented history of a real
-      UTC/IST bug (see the `fix/utc-ist-date-bug` PR): test hearing/dashboard "today" logic
-      at 23:30–00:30 IST, not just during the day
+**Date fields** — live on 2026-08-21
+
+- [x] ✅ today (IST) — Court Diary's date field defaults to the correct IST calendar date
+- [x] ✅ leap day (`2028-02-29`) — accepted, stored, and correctly displayed as "Tuesday, 29
+      February" (day-of-week arithmetic is correct for leap years)
+- [x] ✅ invalid date string (`not-a-date`) typed into the native date input — rejected at the
+      browser level, input value stays empty, submit correctly stays disabled
+- [x] ✅ **IST midnight boundary** — verified by code review rather than a live clock observation
+      (real IST midnight was ~1 hour away at test time, too long to wait on). `date-ist.ts`'s
+      `todayIsoIST()` uses `Intl.DateTimeFormat` with an explicit `Asia/Kolkata` timezone, which
+      is correct by construction — it does not depend on the runtime's own clock/timezone at any
+      instant, so it doesn't need a live-clock test to be trusted the way a naive
+      `new Date().toISOString()` approach would. Confirmed it's actually used everywhere "today"
+      matters (Diary, Matter Detail, Ask My Case, Matter AI Summary, Dashboard, Insights, Cause
+      List, Morning Brief — 8 call sites). **Found one remaining gap**: `subscription-invoice.ts`
+      (a server function, so it runs on Cloudflare's UTC clock) still generates its invoice
+      number suffix via the old unsafe `new Date().toISOString().slice(0, 10)` pattern — same bug
+      class as the original fix targeted, just in a low-stakes spot (an invoice number label,
+      not a hearing disappearing from the diary). The two other remaining uses of that pattern
+      (`app.profile.tsx`'s DPDP export filenames) are fine as-is — they run client-side in the
+      advocate's own browser, which is the exact "already IST for this audience" case the
+      `date-ist.ts` comment carves out.
+- [ ] yesterday / tomorrow — not separately tested; same code path as leap day, low incremental
+      value
+- [ ] far past — not tested this pass
 
 **File uploads** (Documents — scan/upload path)
 
@@ -306,7 +346,7 @@ testable today. Use the other eight as your actual end-to-end scripts.
 | BU06 | Court Hearing: open today's matter → review history → review documents → attend → record note → update next hearing               | ⬜ — note: "record hearing note" has no dedicated field beyond `purpose`; confirm this is acceptable for Phase-1 or flag as a gap |
 | BU07 | Client Communication                                                                                                              | 🚫 **Aspirational — no client portal exists**                                                                                     |
 | BU08 | Junior Workflow                                                                                                                   | 🚫 **Aspirational — no junior/clerk role exists**                                                                                 |
-| BU09 | Billing: matter → invoice → payment → outstanding                                                                                 | ⬜ Not inspected this session — needs its own code-reading pass before scripting the test                                         |
+| BU09 | Billing: matter → invoice → payment → outstanding                                                                                 | ⬜ Time entry + invoice creation individually verified live (see §2/§4); full matter→invoice→payment→outstanding flow as one scripted pass still not run |
 | BU10 | Superadmin Governance: tenant → feature enable/disable → AI governance → monitoring → audit                                       | ✅ **Verified 2026-08-21** for the AI governance slice specifically; extend to tenant status/plan/license actions                 |
 
 ---
