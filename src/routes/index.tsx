@@ -99,7 +99,7 @@ function Landing() {
       <SiteHeader />
 
       <main>
-        <section className="border-b border-border bg-brief text-primary-foreground">
+        <section className="overflow-hidden border-b border-border bg-brief text-primary-foreground">
           <div className="mx-auto grid max-w-6xl gap-12 px-5 py-20 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:py-28">
             <div>
               <span className="inline-flex items-center gap-2 rounded-full bg-docket-amber px-3 py-1 text-eyebrow text-docket-amber-foreground">
