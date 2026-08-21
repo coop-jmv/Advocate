@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Check, Loader2, ExternalLink } from "lucide-react";
 import { AppShell } from "@/components/app/AppShell";
+import { SettingsTabs } from "@/components/app/SettingsTabs";
 import { getEntitlements } from "@/lib/team.functions";
 
 export const Route = createFileRoute("/_authenticated/app/subscription")({
@@ -108,6 +109,7 @@ function Subscription() {
 
   return (
     <AppShell title="Subscription" subtitle="Choose a plan to keep adding to your chamber">
+      <SettingsTabs />
       {loading ? (
         <p className="flex items-center gap-2 text-sm text-muted-foreground">
           <Loader2 className="size-4 animate-spin" /> Loading your plan…

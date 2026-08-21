@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Loader2, Mail, MessageCircle, Minus, Plus, Users, X } from "lucide-react";
 import { AppShell } from "@/components/app/AppShell";
+import { SettingsTabs } from "@/components/app/SettingsTabs";
 import { DataTable, Tag, type Tone } from "@/components/app/primitives";
 import { confirmDestructive, confirmPermanentRemoval } from "@/lib/confirm";
 import {
@@ -237,6 +238,7 @@ function Team() {
 
   return (
     <AppShell title="Team" subtitle="Manage who has access to your chamber's account">
+      <SettingsTabs />
       {error ? (
         <p className="mb-4 rounded border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {error}
