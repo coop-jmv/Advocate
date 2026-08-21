@@ -87,6 +87,9 @@ const LANGUAGES = [
   { value: "hi", label: "Hindi" },
   { value: "mr", label: "Marathi" },
   { value: "ta", label: "Tamil" },
+  { value: "te", label: "Telugu" },
+  { value: "kn", label: "Kannada" },
+  { value: "ml", label: "Malayalam" },
 ] as const;
 
 type StepKey = (typeof STEPS)[number]["key"];

@@ -156,7 +156,8 @@ export function DocumentIntelligence() {
         <h2 className="font-display text-base font-bold">Document intelligence</h2>
       </div>
       <p className="mt-1.5 text-sm text-muted-foreground">
-        Scan a document with your camera (English &amp; Hindi), upload a text extract, or paste
+        Scan a document with your camera (English, Hindi, Tamil, Telugu, Kannada or Malayalam),
+        upload a text extract, or paste
         document text — AI returns a summary, parties, key dates, tags and drafting risks, saved to
         your account.
       </p>
