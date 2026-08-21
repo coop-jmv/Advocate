@@ -232,7 +232,7 @@ function AuthPage() {
                       onChange={(event) => setFullName(event.target.value)}
                       required
                       className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
-                      placeholder="Adv. Priya Nair"
+                      placeholder="Your full name"
                     />
                   </label>
                   <label className="block text-sm">
@@ -241,7 +241,7 @@ function AuthPage() {
                       value={firmName}
                       onChange={(event) => setFirmName(event.target.value)}
                       className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
-                      placeholder="Nair & Associates"
+                      placeholder="Your chamber or firm name"
                     />
                   </label>
                   <label className="block text-sm">
@@ -254,7 +254,7 @@ function AuthPage() {
                       onChange={(event) => setPhone(event.target.value)}
                       required
                       className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
-                      placeholder="98200 41122"
+                      placeholder="10-digit mobile number"
                     />
                     <span className="mt-1 block text-xs text-muted-foreground">
                       For hearing reminders and account recovery. Indian numbers can be entered as
