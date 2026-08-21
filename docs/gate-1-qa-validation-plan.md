@@ -18,27 +18,28 @@ Notifications system) has no row here on purpose.
 | §4 Boundary-test catalogue | strings 9/9, numeric 5/5, dates 4/6, files 5/7, AI 8/12 | 39 total | **Strings, numeric and files all done live**; dates mostly done. Found and fixed 4 real bugs across this pass: two raw Zod/Postgres errors ([PR #60](https://github.com/coop-jmv/Advocate/pull/60)), and — much higher-value — every edge-function error in the whole app was silently showing a generic message instead of its own real one, found via the OCR path and fixed at the single shared root cause ([PR #61](https://github.com/coop-jmv/Advocate/pull/61)). Files' 2 untested items (PDF/DOCX parsing, password-protected PDF) aren't gaps in testing — no code path in the app parses either format today |
 | §5 Security validation | 7 of 8, +1 pre-existing critical fix credited, +1 new critical fix | 8 | **Live-tested today** with a real two-tenant setup (created, tested, deleted) — 0 cross-tenant leaks on read or ID lookup, write-spoofing rejected on both an old table (`matters`) and a new K2 table (`cause_list_sources`). Also credited a pre-existing 2026-08-20 audit that found+fixed a critical cross-tenant write bug on the AI tables. Found and fixed a second critical bug live today: `delete_my_account()` failed for every sole owner ([PR #48](https://github.com/coop-jmv/Advocate/pull/48)). One item left: a real, live-confirmed finding that Superadmin can read cross-tenant `cause_list_records` content beyond what the UI uses — needs a product decision, not code |
 | §6 AI security validation | 6 of 6 | 6 | **Fully done** — prompt injection, cross-matter leakage, outcome-prediction refusal, missing-evidence honesty, external-legal-research refusal, and direct-call rejection while disabled all verified live |
-| §7 Business use-case validation | 2 fully + 1 partial of 8 testable | 8 (2 more marked Aspirational, correctly excluded) | BU05 and BU10 (partial) done; BU01/02/03/06/09 not run as scripted passes |
+| §7 Business use-case validation | 7 of 8 testable | 8 (2 more marked Aspirational, correctly excluded) | BU01/02/03/04/05/06/09/10 all now verified live, run as one chained real-world narrative rather than isolated fixtures. Found a real, business-relevant gap in the process: invoices never mark their underlying time entries as billed, so "Work in progress" stays permanently inflated |
 
-**Bottom line:** the AI layer (K1/K3/K4), core Matter/Client CRUD, tenant-isolation security
-(§5), every remaining module (§2's full click-through), and the entire §4 boundary-test
-catalogue except two categorically-inapplicable file formats are all genuinely live-tested, not
-code-reviewed. Seven real bugs were found and fixed this session: a sole owner could not delete
-their own account (DPDP erasure was broken); a signup-breaking regression from that same fix
-briefly took down every new signup (caught same day); this document itself was under-crediting
-a critical cross-tenant write bug found and fixed on 2026-08-20; a 1-character matter title and
-an oversized billing number each showed the user a raw Zod/Postgres error verbatim; and —
-highest-value of the batch — **every edge-function error in the entire app** was silently
-showing a generic "Edge Function returned a non-2xx status code" instead of its own real
-message, found via an empty OCR scan and fixed once at the shared root cause rather than
-per-feature. One low-severity item remains recorded, not fixed:
+**Bottom line:** every section of this plan except the Mobile/Error-handling columns in §2 is
+now genuinely live-tested, not code-reviewed — §7's business-use-case scripts were the last
+major gap and are now done. Eight real bugs/gaps were found and fixed or recorded this session:
+a sole owner could not delete their own account (DPDP erasure was broken, fixed); a
+signup-breaking regression from that same fix briefly took down every new signup (caught and
+fixed same day); this document itself was under-crediting a critical cross-tenant write bug
+found and fixed on 2026-08-20; a 1-character matter title and an oversized billing number each
+showed the user a raw Zod/Postgres error verbatim (fixed); every edge-function error in the
+entire app was silently showing a generic message instead of its own real one, found via an
+empty OCR scan and fixed once at the shared root cause (the highest-value fix of the session);
 `subscription-invoice.ts` still uses the pre-fix unsafe UTC date pattern for its invoice-number
-suffix. What's still open: most scripted business-use-case passes (§7), the Mobile and
-Error-handling columns in §2 (untested as entire categories), and one product decision on
-Superadmin's cause-list read scope (§5) that needs you, not more testing. The next
-highest-value batch is §7's business-use-case scripts — everything self-contained enough to
-find bugs through direct testing has now been covered; what's left mostly needs a full
-login-to-completion walkthrough of each flow.
+suffix (low severity, recorded); and invoices never mark their time entries as billed, found by
+actually running the full Billing business flow end-to-end rather than testing each screen in
+isolation (recorded — a feature-design question, not a quick fix). What's still open: the
+Mobile and Error-handling columns in §2 (untested as entire categories, would need real device
+testing and deliberately-triggered server errors respectively), and two product decisions that
+need you, not more testing: Superadmin's cause-list read scope (§5), and whether cause-list
+reconciliation should update an existing hearing instead of creating a second one (§2/§7 — now
+confirmed to visibly inflate the Morning Brief's own hearing/critical counts, not just a
+timeline curiosity).
 
 ---
 
@@ -366,20 +367,35 @@ builder), but the open item as originally written is closed.
 The ten flows below, re-grounded to what's real (per `docs/phase-1-product-baseline.md`).
 **BU07 (Client Communication)** and **BU08 (Junior Workflow)** are marked Aspirational — the
 underlying client-portal and junior/clerk roles don't exist, so these two are deferred, not
-testable today. Use the other eight as your actual end-to-end scripts.
+testable today.
+
+**BU01/02/03/04/06/09 run 2026-08-21** as one continuous scripted narrative against a single
+fresh test tenant ("Rao & Associates", since deleted) — a client, a matter with full case
+details, a real document analysis, a first hearing, a cause-list import/match, a Morning Brief
+pass, a dedicated Matter Investigation pass, a status update plus a follow-up hearing, and a
+full time-entry-to-invoice-to-payment billing pass — rather than isolated fixtures per flow,
+so the flows chain the way an advocate's actual day would.
 
 | #    | Flow                                                                                                                              | Status                                                                                                                            |
 | ---- | --------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| BU01 | Morning Court Prep: login → Morning Brief → today's hearings → conflicts → required docs → open matter → prepare                  | ⬜ Not yet run end-to-end as a single scripted pass                                                                               |
-| BU02 | New Matter Registration: create matter → client → court → case details → documents → first hearing                                | ⬜                                                                                                                                |
-| BU03 | Cause List Workflow: import → parse → match → review uncertain → reconcile hearing → (no notification step exists — see baseline) | ⬜                                                                                                                                |
-| BU04 | Matter Investigation: open matter → timeline → previous hearings → documents → AI Matter Summary                                  | ✅ **Partially verified 2026-08-21** as part of K3/K4 live testing — run once more as a dedicated, scripted pass                  |
+| BU01 | Morning Court Prep: login → Morning Brief → today's hearings → conflicts → required docs → open matter → prepare                  | ✅ **Verified 2026-08-21** — Court Brief correctly showed 2 hearings today (see the duplication note below), 0 conflicts (no times set to compare), "Without documents: 0" (matter had one), generated a real AI prep summary correctly grounded in the matter/document/hearing purpose |
+| BU02 | New Matter Registration: create matter → client → court → case details → documents → first hearing                                | ✅ **Verified 2026-08-21** — client → matter (case number/court/opposing party) → document analysis (approved) → first hearing, all chained correctly |
+| BU03 | Cause List Workflow: import → parse → match → review uncertain → reconcile hearing → (no notification step exists — see baseline) | ✅ **Verified 2026-08-21** — imported a 2-line list: one exact case-number match (auto-matched), one with no candidate at all (correctly Unmatched with a manual "Match matter" action). A third import specifically triggered the fuzzy `party_name` match path into **Needs review** with "Match matter"/"Not a match" actions — the full matching taxonomy (matched/needs_review/unmatched) confirmed live, not just by reading the matcher code |
+| BU04 | Matter Investigation: open matter → timeline → previous hearings → documents → AI Matter Summary                                  | ✅ **Verified 2026-08-21** as a dedicated pass — timeline showed all 7 real events newest-first, AI Matter Summary and Ask My Case ("Summarize this case") both generated correctly with real citations |
 | BU05 | Ask My Case: open matter → ask → retrieve evidence → AI answer → sources → open source                                            | ✅ **Verified 2026-08-21**                                                                                                        |
-| BU06 | Court Hearing: open today's matter → review history → review documents → attend → record note → update next hearing               | ⬜ — note: "record hearing note" has no dedicated field beyond `purpose`; confirm this is acceptable for Phase-1 or flag as a gap |
+| BU06 | Court Hearing: open today's matter → review history → review documents → attend → record note → update next hearing               | ✅ **Verified 2026-08-21** — marked the hearing Completed, confirmed (again) there's no note field beyond `purpose` — this is a real, live-reconfirmed Phase-1 gap, not an assumption — then scheduled a genuine follow-up hearing a month out, which correctly grouped under its own future date |
 | BU07 | Client Communication                                                                                                              | 🚫 **Aspirational — no client portal exists**                                                                                     |
 | BU08 | Junior Workflow                                                                                                                   | 🚫 **Aspirational — no junior/clerk role exists**                                                                                 |
-| BU09 | Billing: matter → invoice → payment → outstanding                                                                                 | ⬜ Time entry + invoice creation individually verified live (see §2/§4); full matter→invoice→payment→outstanding flow as one scripted pass still not run |
+| BU09 | Billing: matter → invoice → payment → outstanding                                                                                 | ✅ **Verified 2026-08-21** — logged time (4h × ₹6,000 = ₹24,000, correct), created an invoice for the same amount, marked it `overdue` (Overdue stat correctly showed ₹24,000) then `paid` (Collected correctly showed ₹24,000, Overdue correctly reset to ₹0). **Found a real gap in the process**, not from reading code: `time_entries.billed` is read into the "Work in progress" stat but is never written anywhere in the app — creating an invoice doesn't mark the time entries it covers as billed, so "Work in progress" stays permanently inflated by hours that have already been invoiced. Recorded below, not fixed — this is a feature-design question (should invoice creation let you select which unbilled entries it covers?), not a one-line bug |
 | BU10 | Superadmin Governance: tenant → feature enable/disable → AI governance → monitoring → audit                                       | ✅ **Verified 2026-08-21** for the AI governance slice specifically; extend to tenant status/plan/license actions                 |
+
+**Reconfirmed, with more concrete impact than before**: the cause-list-reconciliation duplicate-
+hearing behavior flagged during the full-module sweep is not just a timeline curiosity — it
+directly inflates the Morning Brief's own "Hearings today" and "Critical" counts (both showed 2
+instead of 1 for what was genuinely one court appearance), which is exactly the kind of number a
+real advocate would trust first thing in the morning. Still the same open question as before:
+is this intentional (cause-list reconciliation always creates its own hearing record) or should
+it update the existing hearing that's already on record for the same matter/date instead.
 
 ---
 
@@ -391,7 +407,9 @@ update/delete is intentionally deferred to Phase-2" — a real decision, not a s
 
 **Not signed off as of 2026-08-21** — see the Scorecard at the top of this document for exactly
 what's resolved and what isn't. AI security (§6), core Matter/Client CRUD, tenant-isolation
-security (§5), the full-module click-through (§2), and the boundary-test catalogue (§4, strings/
-numeric/dates/files) are all live-verified now; §5 has exactly one open item left, and it's a
-product decision (Superadmin's cause-list read scope), not a test still to run. Still genuinely
-open: most business use cases (§7), and the Mobile/Error-handling columns in §2.
+security (§5), the full-module click-through (§2), the boundary-test catalogue (§4, strings/
+numeric/dates/files), and business use cases (§7) are all live-verified now. What's left is two
+product decisions that need you, not more testing (Superadmin's cause-list read scope in §5;
+whether cause-list reconciliation should update an existing hearing instead of creating a
+second one), and the Mobile/Error-handling columns in §2, which are genuinely untested as
+entire categories rather than having a few open cells.
