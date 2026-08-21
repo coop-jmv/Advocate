@@ -9,14 +9,14 @@ function AdminLayout() {
   return (
     <div className="min-h-screen bg-secondary/30">
       <header className="border-b border-border bg-background">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-y-2 px-6 py-4">
           <Link to="/admin" className="flex items-center gap-2.5">
             <span className="flex size-8 items-center justify-center rounded bg-ink text-background">
               <ShieldCheck className="size-4" />
             </span>
             <span className="font-display text-base font-bold">Platform admin</span>
           </Link>
-          <nav className="flex items-center gap-4 text-sm font-medium text-muted-foreground">
+          <nav className="flex flex-wrap items-center gap-4 text-sm font-medium text-muted-foreground">
             <Link
               to="/admin"
               className="flex items-center gap-1.5 hover:text-foreground"

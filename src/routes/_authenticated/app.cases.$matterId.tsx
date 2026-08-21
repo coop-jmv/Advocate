@@ -205,7 +205,7 @@ function MatterDetail() {
         [matter.caseNumber, matter.court].filter(Boolean).join(" · ") || "No details on record"
       }
       action={
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {!editing ? (
             <button
               type="button"
