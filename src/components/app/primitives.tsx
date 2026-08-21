@@ -51,12 +51,48 @@ export function DataTable({ headers, children }: { headers: string[]; children: 
   );
 }
 
-export function StatCard({ label, value, note }: { label: string; value: string; note?: string }) {
+// Accent for the Dashboard's stat tiles: a colored top rule and tinted
+// label, reusing the docket-* jewel tones at every screen size. Every other
+// page that renders a StatCard (cause-list, billing, CourtMorningBrief)
+// never passes `tone`, so they keep the plain Navy Trust look.
+const statCardTones = {
+  sapphire: { rule: "bg-docket-sapphire", label: "text-docket-sapphire" },
+  amber: { rule: "bg-docket-amber", label: "text-docket-amber" },
+  teal: { rule: "bg-docket-teal", label: "text-docket-teal" },
+  rose: { rule: "bg-docket-rose", label: "text-docket-rose" },
+} as const;
+
+export function StatCard({
+  label,
+  value,
+  note,
+  tone,
+}: {
+  label: string;
+  value: string;
+  note?: string;
+  tone?: keyof typeof statCardTones;
+}) {
+  const toneClasses = tone ? statCardTones[tone] : null;
   return (
-    <div className="surface-panel rounded p-5">
-      <p className="text-eyebrow text-muted-foreground">{label}</p>
+    <div className="surface-panel relative overflow-hidden rounded p-5">
+      {toneClasses ? (
+        <span className={cn("absolute inset-x-0 top-0 h-1", toneClasses.rule)} />
+      ) : null}
+      <p className={cn("text-eyebrow", toneClasses ? toneClasses.label : "text-muted-foreground")}>
+        {label}
+      </p>
       <p className="mt-3 font-display text-2xl font-bold">{value}</p>
-      {note ? <p className="mt-1 text-xs text-muted-foreground">{note}</p> : null}
+      {note ? (
+        <p
+          className={cn(
+            "mt-1 text-xs",
+            toneClasses ? "text-foreground/70" : "text-muted-foreground",
+          )}
+        >
+          {note}
+        </p>
+      ) : null}
     </div>
   );
 }

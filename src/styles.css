@@ -62,10 +62,13 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  /* Docket accents — public site only (landing, features). Six jewel tones,
-     one per capability module, styled after a shelf of leather-bound law
-     reports: distinct spines, same shelf. The in-app product keeps the
-     restrained Navy Trust palette above; these never appear inside /app. */
+  /* Docket accents — six jewel tones, one per capability module, styled
+     after a shelf of leather-bound law reports: distinct spines, same
+     shelf. Originally scoped to the public site (landing, features); now
+     also used for a few deliberate splashes of color inside the otherwise
+     restrained Navy Trust in-app product: the Dashboard's stat tiles (see
+     StatCard's `tone` prop), the AppShell header's spine strip and bell/
+     menu/logout icons, and the sign-in/sign-up/reset-password card. */
   --color-docket-sapphire: var(--docket-sapphire);
   --color-docket-sapphire-foreground: var(--docket-sapphire-foreground);
   --color-docket-amber: var(--docket-amber);

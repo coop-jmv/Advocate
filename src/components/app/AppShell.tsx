@@ -61,7 +61,7 @@ export function AppShell({
       <aside className="bg-sidebar text-sidebar-foreground md:flex md:w-16 md:shrink-0 md:flex-col md:items-center lg:w-60 lg:items-stretch">
         <Link
           to="/"
-          className="flex h-16 items-center gap-2.5 border-b border-sidebar-border px-5 md:w-full md:justify-center md:px-0 lg:justify-start lg:px-5"
+          className="flex h-16 items-center gap-2.5 px-5 md:w-full md:justify-center md:px-0 lg:justify-start lg:px-5"
         >
           <span className="flex size-8 shrink-0 items-center justify-center rounded bg-sidebar-primary text-sidebar-primary-foreground">
             <Scale className="size-4" />
@@ -70,6 +70,14 @@ export function AppShell({
             LexDiary
           </span>
         </Link>
+        <div className="flex h-1">
+          <span className="flex-1 bg-docket-sapphire" />
+          <span className="flex-1 bg-docket-amber" />
+          <span className="flex-1 bg-docket-teal" />
+          <span className="flex-1 bg-docket-rose" />
+          <span className="flex-1 bg-docket-emerald" />
+          <span className="flex-1 bg-docket-violet" />
+        </div>
 
         <nav className="hidden md:flex md:w-full md:flex-col md:gap-1 md:p-3 md:items-center lg:items-stretch">
           {APP_DESTINATIONS.map((item) => (
@@ -134,7 +142,7 @@ export function AppShell({
             <HeaderSearch />
             <button
               type="button"
-              className="relative rounded border border-input p-2 transition-colors hover:bg-secondary"
+              className="relative rounded border border-docket-amber/30 bg-docket-amber/10 p-2 text-docket-amber transition-colors hover:bg-docket-amber/20"
               aria-label="Notifications"
             >
               <Bell className="size-4" />
@@ -144,8 +152,8 @@ export function AppShell({
               to="/app/menu"
               title="Menu"
               aria-label="Menu"
-              className="rounded border border-input p-2 transition-colors hover:bg-secondary md:hidden"
-              activeProps={{ className: "bg-secondary" }}
+              className="rounded border border-docket-teal/30 bg-docket-teal/10 p-2 text-docket-teal transition-colors hover:bg-docket-teal/20 md:hidden"
+              activeProps={{ className: "bg-docket-teal/20" }}
             >
               <LayoutGrid className="size-4" />
             </Link>
@@ -154,7 +162,7 @@ export function AppShell({
               onClick={() => void handleSignOut()}
               title="Sign out"
               aria-label="Sign out"
-              className="rounded border border-input p-2 transition-colors hover:bg-secondary md:hidden"
+              className="rounded border border-docket-rose/30 bg-docket-rose/10 p-2 text-docket-rose transition-colors hover:bg-docket-rose/20 md:hidden"
             >
               <LogOut className="size-4" />
             </button>
