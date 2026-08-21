@@ -15,6 +15,7 @@ import {
 // call fails, the Matter page keeps working: timeline, hearings, cause-list
 // history and documents never depend on AI succeeding (see MatterAiSummary.tsx).
 type MatterSummaryInput = {
+  today: string;
   matter: {
     title: string;
     caseNumber: string | null;
@@ -36,8 +37,9 @@ type MatterSummaryInput = {
 };
 
 function factsBlockFor(input: MatterSummaryInput): string {
-  const { matter, hearings, causeListEvents, documentCount } = input;
+  const { today, matter, hearings, causeListEvents, documentCount } = input;
   const lines = [
+    `Today's date: ${today}`,
     `Matter: ${matter.title}`,
     `Case number: ${matter.caseNumber ?? "not on record"}`,
     `Court: ${matter.court ?? "not on record"}`,
@@ -135,12 +137,19 @@ Deno.serve(async (req) => {
           "legal provision, procedural event, deadline or outcome that is not stated. This is not legal research or " +
           "legal advice — summarize only what is on record. If a part has nothing to report, write exactly " +
           '"Not available in LexDiary." for that part instead of guessing or inferring.\n\n' +
+          'Use the "Today\'s date" fact to classify each hearing: a hearing dated on or after today is upcoming ' +
+          "(relevant to currentPosition / nextEvent); a hearing dated before today has already happened (relevant " +
+          "to recentDevelopment / previousActivity). Do not call a hearing on or after today's date unavailable " +
+          "just because you are not told its outcome yet.\n\n" +
           "Return ONLY a JSON object, no prose outside it, in exactly this shape:\n" +
           '{"currentPosition": "...", "recentDevelopment": "...", "previousActivity": "...", "nextEvent": "..."}\n\n' +
-          "- currentPosition: the matter's current status and, if there is one, its next scheduled hearing.\n" +
-          "- recentDevelopment: what happened at the most recent past hearing or cause-list event, if any.\n" +
-          "- previousActivity: what happened before that, if there is an earlier event to report.\n" +
-          "- nextEvent: the next hearing date if one is on record, otherwise say so plainly.\n\n" +
+          "- currentPosition: the matter's current status and, if there is one, its next scheduled hearing (a " +
+          "hearing dated on or after today).\n" +
+          "- recentDevelopment: what happened at the most recent hearing or cause-list event dated before today, " +
+          "if any.\n" +
+          "- previousActivity: what happened before that, if there is an earlier past event to report.\n" +
+          "- nextEvent: the date of the next hearing dated on or after today, if one is on record, otherwise say " +
+          "so plainly.\n\n" +
           factsBlock,
       },
     ]);

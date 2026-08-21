@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Loader2, Sparkles } from "lucide-react";
 import { generateMatterSummary, type MatterSummary } from "@/lib/edge-functions";
 import type { MatterContext } from "@/lib/matter-context.functions";
+import { todayIsoIST } from "@/lib/date-ist";
 
 // Optional, on-demand AI summary — generated fresh each time (no
 // persistence), same pattern as CourtMorningBrief's "Generate AI prep
@@ -14,6 +15,7 @@ import type { MatterContext } from "@/lib/matter-context.functions";
 
 function toSummaryInput(context: MatterContext) {
   return {
+    today: todayIsoIST(),
     matter: {
       title: context.matter.title,
       caseNumber: context.matter.caseNumber,
