@@ -20,16 +20,18 @@ Notifications system) has no row here on purpose.
 | §6 AI security validation | 6 of 6 | 6 | **Fully done** — prompt injection, cross-matter leakage, outcome-prediction refusal, missing-evidence honesty, external-legal-research refusal, and direct-call rejection while disabled all verified live |
 | §7 Business use-case validation | 2 fully + 1 partial of 8 testable | 8 (2 more marked Aspirational, correctly excluded) | BU05 and BU10 (partial) done; BU01/02/03/06/09 not run as scripted passes |
 
-**Bottom line:** the AI layer (K1/K3/K4), core Matter/Client CRUD, and now tenant-isolation
-security (§5) are the best-validated parts of the product — genuinely tested with real tokens
-against a real second tenant, not code-reviewed. Two real bugs were found and fixed today: a
-sole owner could not delete their own account (DPDP erasure was broken), and this document
-itself was under-crediting a critical cross-tenant write bug that was found and fixed on
-2026-08-20, before this document existed. What's still open: Hearing/Cause
-List/Documents/Billing completeness in §2, field-level boundary testing (§3/§4), most business
-workflows (§7), and one product decision on Superadmin's cause-list read scope (§5). The next
-highest-value batch is the §2 matrix rows for Hearing/Cause List/Documents/Billing, since
-those are still mostly ❓ with no live testing at all.
+**Bottom line:** the AI layer (K1/K3/K4), core Matter/Client CRUD, tenant-isolation security
+(§5), and now every remaining module (§2's full click-through) are all genuinely live-tested,
+not code-reviewed. Three real bugs were found and fixed this session: a sole owner could not
+delete their own account (DPDP erasure was broken), a signup-breaking regression from that same
+fix briefly took down every new signup (caught and fixed same day), and this document itself
+was under-crediting a critical cross-tenant write bug found and fixed on 2026-08-20. What's
+still open: field-level boundary testing (§3/§4 — strings/numeric/dates/files categories are
+completely untouched), most scripted business-use-case passes (§7), the Mobile and
+Error-handling columns in §2 (untested as entire categories, not just a few gaps), and one
+product decision on Superadmin's cause-list read scope (§5) that needs you, not more testing.
+The next highest-value batch is §4's boundary-test catalogue — it's reusable across every
+field in §3, so starting there compounds faster than picking off individual §7 scripts.
 
 ---
 
