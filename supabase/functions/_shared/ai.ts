@@ -86,7 +86,7 @@ export async function extractTextFromImage(
         {
           role: "system",
           content:
-            "You transcribe scanned legal documents verbatim, in English or Hindi (Devanagari) as written. Output only the transcribed text, preserving line breaks and structure. Do not translate, summarise or add commentary. If the image has no legible text, output nothing.",
+            "You transcribe scanned legal documents verbatim, as written, in whichever of these scripts appears: English, Hindi (Devanagari), Tamil, Telugu, Kannada, or Malayalam. Output only the transcribed text, preserving line breaks and structure. Do not translate, summarise or add commentary. If the image has no legible text, output nothing.",
         },
         {
           role: "user",
