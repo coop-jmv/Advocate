@@ -6,6 +6,7 @@ export type Integrations = {
   ai_morning_brief_enabled?: boolean;
   cause_list_enabled?: boolean;
   ai_matter_intelligence_enabled?: boolean;
+  ai_case_intelligence_enabled?: boolean;
 };
 
 /**

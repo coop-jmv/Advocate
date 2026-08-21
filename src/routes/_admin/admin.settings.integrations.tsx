@@ -14,6 +14,7 @@ type Integrations = {
   ai_morning_brief_enabled?: boolean;
   cause_list_enabled?: boolean;
   ai_matter_intelligence_enabled?: boolean;
+  ai_case_intelligence_enabled?: boolean;
 };
 type TenantIntegrations = {
   id: string;
@@ -107,6 +108,12 @@ function AdminIntegrations() {
         itself. The Matter Timeline, hearings, cause-list history and documents keep working either
         way; turning it off only hides the AI summary.
       </p>
+      <p className="mt-2 text-sm text-muted-foreground">
+        AI Case Intelligence governs whether "Ask My Case" can answer questions about a matter at
+        all — checked here first, and enforced again server-side in the ai-ask-case edge function
+        itself, so calling it directly still gets refused. The Matter Timeline, hearings, cause-list
+        history and documents keep working either way; turning it off only hides Ask My Case.
+      </p>
 
       {error ? (
         <p className="mt-4 rounded border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
@@ -127,6 +134,7 @@ function AdminIntegrations() {
               "AI Morning Brief",
               "Cause List Intelligence",
               "AI Matter Intelligence",
+              "AI Case Intelligence",
             ]}
           >
             {rows.map((row) => (
@@ -190,6 +198,25 @@ function AdminIntegrations() {
                       className="size-4 rounded border-input"
                     />
                     {(row.integrations?.ai_matter_intelligence_enabled ?? true)
+                      ? "Enabled"
+                      : "Disabled"}
+                  </label>
+                </td>
+                <td className="px-4 py-3">
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={row.integrations?.ai_case_intelligence_enabled ?? true}
+                      onChange={(event) =>
+                        void setIntegration(
+                          row.id,
+                          "ai_case_intelligence_enabled",
+                          event.target.checked,
+                        )
+                      }
+                      className="size-4 rounded border-input"
+                    />
+                    {(row.integrations?.ai_case_intelligence_enabled ?? true)
                       ? "Enabled"
                       : "Disabled"}
                   </label>

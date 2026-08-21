@@ -6,6 +6,7 @@ import { AppShell } from "@/components/app/AppShell";
 import { Tag, type Tone } from "@/components/app/primitives";
 import { MatterTimeline } from "@/components/app/MatterTimeline";
 import { MatterAiSummary } from "@/components/app/MatterAiSummary";
+import { AskMyCase } from "@/components/app/AskMyCase";
 import { getMatterContext, type MatterContext } from "@/lib/matter-context.functions";
 import { buildMatterTimeline } from "@/lib/matter-timeline";
 import { todayIsoIST } from "@/lib/date-ist";
@@ -138,6 +139,10 @@ function MatterDetail() {
 
       <div className="mb-6">
         <MatterAiSummary context={context} />
+      </div>
+
+      <div className="mb-6">
+        <AskMyCase context={context} />
       </div>
 
       <div className="mb-6">

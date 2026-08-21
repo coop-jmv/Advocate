@@ -109,6 +109,75 @@ export function generateMatterSummary(input: MatterSummaryInput) {
   return invoke<{ summary: MatterSummary }>("ai-matter-summary", input);
 }
 
+// K4 — Ask My Case. Same trust model as generateMatterSummary above: the
+// client sends only already-authorized, already-aggregated matter facts
+// (see MatterContext / getMatterContext / getMatterDocumentTexts) plus the
+// question — the edge function has no DB access for matter facts of its
+// own, so it has no way to answer from anything the client wasn't already
+// authorized to read.
+export type AskCaseSource = {
+  sourceType: "matter" | "hearing" | "cause_list" | "document";
+  sourceId: string;
+  title: string;
+  date: string;
+  snippet: string | null;
+};
+
+export type AskCaseInput = {
+  matterId: string;
+  conversationId: string | null;
+  question: string;
+  today: string;
+  matter: {
+    title: string;
+    caseNumber: string | null;
+    court: string | null;
+    status: string;
+    clientName: string | null;
+    opposingParty: string | null;
+    filedDate: string | null;
+  };
+  hearings: {
+    id: string;
+    hearingDate: string;
+    hearingTime: string | null;
+    court: string | null;
+    purpose: string | null;
+    status: string;
+  }[];
+  causeListEvents: {
+    id: string;
+    recordId: string;
+    changeType: string;
+    fieldName: string | null;
+    oldValue: string | null;
+    newValue: string | null;
+    detectedAt: string;
+    serialNumber: string | null;
+    courtHall: string | null;
+    bench: string | null;
+    stage: string | null;
+  }[];
+  documents: {
+    id: string;
+    name: string;
+    docKind: string | null;
+    rawText: string;
+    createdAt: string;
+  }[];
+};
+
+export type AskCaseAnswer = {
+  conversationId: string;
+  answer: string;
+  status: "grounded" | "insufficient" | "unavailable";
+  sources: AskCaseSource[];
+};
+
+export function askMyCase(input: AskCaseInput) {
+  return invoke<AskCaseAnswer>("ai-ask-case", input);
+}
+
 export function transcribeDictation(input: { audioBase64: string; language?: string | undefined }) {
   return invoke<{ text: string }>("dictation-transcribe", input);
 }

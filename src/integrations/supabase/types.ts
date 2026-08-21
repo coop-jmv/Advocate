@@ -184,6 +184,7 @@ export type Database = {
           created_at: string;
           id: string;
           role: string;
+          sources: Json;
           tenant_id: string | null;
           user_id: string;
         };
@@ -193,6 +194,7 @@ export type Database = {
           created_at?: string;
           id?: string;
           role: string;
+          sources?: Json;
           tenant_id?: string | null;
           user_id: string;
         };
@@ -202,6 +204,7 @@ export type Database = {
           created_at?: string;
           id?: string;
           role?: string;
+          sources?: Json;
           tenant_id?: string | null;
           user_id?: string;
         };
