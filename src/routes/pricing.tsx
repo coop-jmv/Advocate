@@ -58,11 +58,11 @@ const plans = [
     name: "Chamber",
     price: "₹999",
     cadence: "per month, 2 users included",
-    summary: "For a chamber with juniors and a clerk. Extra seats at ₹499 per user, per month.",
+    summary: "For a chamber with more than one advocate. Extra seats at ₹499 per user, per month.",
     features: [
       "Everything in Solo Pro",
       "Two users included, add seats at ₹499 each",
-      "Roles for owners, admins, juniors and clerks",
+      "Owner, admin and member roles per user",
       "Invite teammates and manage seats yourself",
       "Chamber-wide audit log",
       "Unlimited matters and clients",
@@ -162,10 +162,6 @@ function Pricing() {
             <ArrowRight className="size-4" />
           </Link>
         </div>
-
-        <p className="mt-8 text-sm text-muted-foreground">
-          Client portal users are never charged a seat.
-        </p>
       </main>
       <SiteFooter />
     </div>
