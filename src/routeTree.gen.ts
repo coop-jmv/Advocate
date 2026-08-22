@@ -24,6 +24,7 @@ import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as AdminAdminIndexRouteImport } from './routes/_admin/admin.index'
 import { Route as AdminAdminAuditLogRouteImport } from './routes/_admin/admin.audit-log'
 import { Route as AdminAdminCauseListSourcesRouteImport } from './routes/_admin/admin.cause-list-sources'
+import { Route as AdminAdminContactRequestsRouteImport } from './routes/_admin/admin.contact-requests'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
 import { Route as AuthenticatedAppAssistantRouteImport } from './routes/_authenticated/app.assistant'
 import { Route as AuthenticatedAppAuditLogRouteImport } from './routes/_authenticated/app.audit-log'
@@ -116,6 +117,12 @@ const AdminAdminCauseListSourcesRoute =
   AdminAdminCauseListSourcesRouteImport.update({
     id: '/cause-list-sources',
     path: '/cause-list-sources',
+    getParentRoute: () => AdminAdminRoute,
+  } as any)
+const AdminAdminContactRequestsRoute =
+  AdminAdminContactRequestsRouteImport.update({
+    id: '/contact-requests',
+    path: '/contact-requests',
     getParentRoute: () => AdminAdminRoute,
   } as any)
 const AuthenticatedAppIndexRoute = AuthenticatedAppIndexRouteImport.update({
@@ -238,6 +245,7 @@ export interface FileRoutesByFullPath {
   '/invite/$token': typeof InviteTokenRoute
   '/admin/audit-log': typeof AdminAdminAuditLogRoute
   '/admin/cause-list-sources': typeof AdminAdminCauseListSourcesRoute
+  '/admin/contact-requests': typeof AdminAdminContactRequestsRoute
   '/app/assistant': typeof AuthenticatedAppAssistantRoute
   '/app/audit-log': typeof AuthenticatedAppAuditLogRoute
   '/app/billing': typeof AuthenticatedAppBillingRoute
@@ -270,6 +278,7 @@ export interface FileRoutesByTo {
   '/invite/$token': typeof InviteTokenRoute
   '/admin/audit-log': typeof AdminAdminAuditLogRoute
   '/admin/cause-list-sources': typeof AdminAdminCauseListSourcesRoute
+  '/admin/contact-requests': typeof AdminAdminContactRequestsRoute
   '/app/assistant': typeof AuthenticatedAppAssistantRoute
   '/app/audit-log': typeof AuthenticatedAppAuditLogRoute
   '/app/billing': typeof AuthenticatedAppBillingRoute
@@ -306,6 +315,7 @@ export interface FileRoutesById {
   '/invite/$token': typeof InviteTokenRoute
   '/_admin/admin/audit-log': typeof AdminAdminAuditLogRoute
   '/_admin/admin/cause-list-sources': typeof AdminAdminCauseListSourcesRoute
+  '/_admin/admin/contact-requests': typeof AdminAdminContactRequestsRoute
   '/_authenticated/app/assistant': typeof AuthenticatedAppAssistantRoute
   '/_authenticated/app/audit-log': typeof AuthenticatedAppAuditLogRoute
   '/_authenticated/app/billing': typeof AuthenticatedAppBillingRoute
@@ -342,6 +352,7 @@ export interface FileRouteTypes {
     | '/invite/$token'
     | '/admin/audit-log'
     | '/admin/cause-list-sources'
+    | '/admin/contact-requests'
     | '/app/assistant'
     | '/app/audit-log'
     | '/app/billing'
@@ -374,6 +385,7 @@ export interface FileRouteTypes {
     | '/invite/$token'
     | '/admin/audit-log'
     | '/admin/cause-list-sources'
+    | '/admin/contact-requests'
     | '/app/assistant'
     | '/app/audit-log'
     | '/app/billing'
@@ -409,6 +421,7 @@ export interface FileRouteTypes {
     | '/invite/$token'
     | '/_admin/admin/audit-log'
     | '/_admin/admin/cause-list-sources'
+    | '/_admin/admin/contact-requests'
     | '/_authenticated/app/assistant'
     | '/_authenticated/app/audit-log'
     | '/_authenticated/app/billing'
@@ -551,6 +564,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAdminCauseListSourcesRouteImport
       parentRoute: typeof AdminAdminRoute
     }
+    '/_admin/admin/contact-requests': {
+      id: '/_admin/admin/contact-requests'
+      path: '/contact-requests'
+      fullPath: '/admin/contact-requests'
+      preLoaderRoute: typeof AdminAdminContactRequestsRouteImport
+      parentRoute: typeof AdminAdminRoute
+    }
     '/_authenticated/app/': {
       id: '/_authenticated/app/'
       path: '/'
@@ -690,6 +710,7 @@ declare module '@tanstack/react-router' {
 interface AdminAdminRouteChildren {
   AdminAdminAuditLogRoute: typeof AdminAdminAuditLogRoute
   AdminAdminCauseListSourcesRoute: typeof AdminAdminCauseListSourcesRoute
+  AdminAdminContactRequestsRoute: typeof AdminAdminContactRequestsRoute
   AdminAdminIndexRoute: typeof AdminAdminIndexRoute
   AdminAdminSettingsIntegrationsRoute: typeof AdminAdminSettingsIntegrationsRoute
 }
@@ -697,6 +718,7 @@ interface AdminAdminRouteChildren {
 const AdminAdminRouteChildren: AdminAdminRouteChildren = {
   AdminAdminAuditLogRoute: AdminAdminAuditLogRoute,
   AdminAdminCauseListSourcesRoute: AdminAdminCauseListSourcesRoute,
+  AdminAdminContactRequestsRoute: AdminAdminContactRequestsRoute,
   AdminAdminIndexRoute: AdminAdminIndexRoute,
   AdminAdminSettingsIntegrationsRoute: AdminAdminSettingsIntegrationsRoute,
 }

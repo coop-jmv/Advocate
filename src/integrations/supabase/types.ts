@@ -656,6 +656,42 @@ export type Database = {
           },
         ];
       };
+      contact_requests: {
+        Row: {
+          court: string | null;
+          created_at: string;
+          email: string;
+          enrolment_no: string | null;
+          full_name: string;
+          id: string;
+          note: string | null;
+          phone: string;
+          status: string;
+        };
+        Insert: {
+          court?: string | null;
+          created_at?: string;
+          email: string;
+          enrolment_no?: string | null;
+          full_name: string;
+          id?: string;
+          note?: string | null;
+          phone: string;
+          status?: string;
+        };
+        Update: {
+          court?: string | null;
+          created_at?: string;
+          email?: string;
+          enrolment_no?: string | null;
+          full_name?: string;
+          id?: string;
+          note?: string | null;
+          phone?: string;
+          status?: string;
+        };
+        Relationships: [];
+      };
       hearings: {
         Row: {
           bench: string | null;

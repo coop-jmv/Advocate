@@ -1,9 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { SiteHeader, SiteFooter } from "@/components/site/SiteChrome";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { submitContactRequest } from "@/lib/contact.functions";
 
 export const Route = createFileRoute("/contact")({
   head: () => ({
@@ -25,6 +29,44 @@ export const Route = createFileRoute("/contact")({
 });
 
 function Contact() {
+  const submit = useServerFn(submitContactRequest);
+  const [form, setForm] = useState({
+    fullName: "",
+    enrolmentNo: "",
+    email: "",
+    phone: "",
+    court: "",
+    note: "",
+  });
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit(event: React.FormEvent) {
+    event.preventDefault();
+    setBusy(true);
+    setError(null);
+    try {
+      await submit({
+        data: {
+          fullName: form.fullName,
+          enrolmentNo: form.enrolmentNo || undefined,
+          email: form.email,
+          phone: form.phone,
+          court: form.court || undefined,
+          note: form.note || undefined,
+        },
+      });
+      toast.success("Request received", {
+        description: "We'll confirm cause-list coverage for your bench and follow up by email.",
+      });
+      setForm({ fullName: "", enrolmentNo: "", email: "", phone: "", court: "", note: "" });
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not send that request.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <div className="min-h-screen">
       <SiteHeader />
@@ -50,35 +92,59 @@ function Contact() {
           </div>
 
           <form
+            onSubmit={(event) => void handleSubmit(event)}
             className="surface-panel space-y-5 rounded p-8"
-            onSubmit={(event) => {
-              event.preventDefault();
-              toast.success("Request noted", {
-                description: "This prototype does not send messages yet.",
-              });
-            }}
           >
             <div className="grid gap-5 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="name">Full name</Label>
-                <Input id="name" required placeholder="Adv. Priya Nair" />
+                <Input
+                  id="name"
+                  required
+                  placeholder="Adv. Priya Nair"
+                  value={form.fullName}
+                  onChange={(event) => setForm((f) => ({ ...f, fullName: event.target.value }))}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="enrolment">Bar Council enrolment no.</Label>
-                <Input id="enrolment" placeholder="D/1234/2016" />
+                <Input
+                  id="enrolment"
+                  placeholder="D/1234/2016"
+                  value={form.enrolmentNo}
+                  onChange={(event) => setForm((f) => ({ ...f, enrolmentNo: event.target.value }))}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" required placeholder="you@chambers.in" />
+                <Input
+                  id="email"
+                  type="email"
+                  required
+                  placeholder="you@chambers.in"
+                  value={form.email}
+                  onChange={(event) => setForm((f) => ({ ...f, email: event.target.value }))}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="phone">Mobile</Label>
-                <Input id="phone" required placeholder="+91 98xxx xxxxx" />
+                <Input
+                  id="phone"
+                  required
+                  placeholder="+91 98xxx xxxxx"
+                  value={form.phone}
+                  onChange={(event) => setForm((f) => ({ ...f, phone: event.target.value }))}
+                />
               </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="court">Primary court / bench</Label>
-              <Input id="court" placeholder="Delhi High Court" />
+              <Input
+                id="court"
+                placeholder="Delhi High Court"
+                value={form.court}
+                onChange={(event) => setForm((f) => ({ ...f, court: event.target.value }))}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="note">Tell us about your practice</Label>
@@ -86,12 +152,23 @@ function Contact() {
                 id="note"
                 rows={4}
                 placeholder="Team size, practice areas, how you keep your diary today."
+                value={form.note}
+                onChange={(event) => setForm((f) => ({ ...f, note: event.target.value }))}
               />
             </div>
+
+            {error ? (
+              <p className="rounded border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                {error}
+              </p>
+            ) : null}
+
             <button
               type="submit"
-              className="w-full rounded bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-ink"
+              disabled={busy}
+              className="flex w-full items-center justify-center gap-2 rounded bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-ink disabled:opacity-60"
             >
+              {busy ? <Loader2 className="size-4 animate-spin" /> : null}
               Send request
             </button>
           </form>
