@@ -3,6 +3,9 @@ import {
   Scale,
   CalendarClock,
   FileSearch,
+  PenLine,
+  Mic,
+  Sparkles,
   Users,
   ReceiptIndianRupee,
   WifiOff,
@@ -18,7 +21,7 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "The practice management platform built for Indian advocates. Case and matter tracking, a hearing diary with listing-conflict detection, an Indic OCR document vault, a client portal and GST-compliant billing — in one secure workspace.",
+          "The practice management platform built for Indian advocates. Case and matter tracking, a hearing diary with automatic cause-list matching, Indic OCR with AI document review, an AI case assistant and drafting studio, a client portal and GST-compliant billing — in one secure workspace.",
       },
       {
         property: "og:title",
@@ -27,7 +30,7 @@ export const Route = createFileRoute("/")({
       {
         property: "og:description",
         content:
-          "Case tracking, hearing diary, document vault, client portal and GST billing — the complete practice management platform for Indian legal professionals.",
+          "Case tracking, hearing diary, cause-list intelligence, an AI case assistant and drafting studio, document vault, client portal and GST billing — the complete practice management platform for Indian legal professionals.",
       },
     ],
   }),
@@ -43,33 +46,51 @@ const capabilities = [
   },
   {
     icon: CalendarClock,
-    title: "Court diary with cause lists",
-    body: "Replaces cross-checking a cause list by hand. Day, week and month views flag a listing conflict before it happens, not after.",
+    title: "Court diary with cause-list intelligence",
+    body: "Replaces cross-checking a cause list by hand. Import the day's list and every listing is matched to your matters automatically — a conflict or an unmatched listing is flagged before you leave chambers.",
     tone: "amber",
   },
   {
     icon: FileSearch,
-    title: "Documents with Indic OCR",
-    body: "Replaces re-reading a whole file to find one clause. Camera scan, OCR in English and Hindi, then search across everything stored.",
+    title: "Documents with Indic OCR & AI review",
+    body: "Replaces re-reading a whole file to find one clause. Camera scan, OCR across six Indian languages, then AI extracts a summary, parties and key dates for you to approve.",
     tone: "teal",
+  },
+  {
+    icon: PenLine,
+    title: "AI case assistant & drafting studio",
+    body: "Replaces starting from a blank page or hunting through old notes for precedent. Ask a question grounded in the matter's own documents and diary, then generate and refine a first draft in the same place.",
+    tone: "rose",
+  },
+  {
+    icon: Mic,
+    title: "Voice dictation",
+    body: "Replaces typing up notes from memory after a hearing. Dictate in the corridor — transcribed, reviewable and ready to print or file, without touching a keyboard.",
+    tone: "emerald",
+  },
+  {
+    icon: Sparkles,
+    title: "Diary & risk insights",
+    body: "Replaces scrolling back through the diary yourself to remember what's overdue. A daily AI briefing built from your chamber's real matters — what needs attention, and why.",
+    tone: "violet",
   },
   {
     icon: Users,
     title: "Clients and secure portal",
     body: "Replaces the status-update phone call. Clients see their case status and approved documents themselves, and message you securely when it matters.",
-    tone: "rose",
+    tone: "sapphire",
   },
   {
     icon: ReceiptIndianRupee,
     title: "Time tracking and GST billing",
     body: "Replaces reconstructing hours at month-end. Time logged as you work, GST invoices generated automatically, UPI and Razorpay collection built in.",
-    tone: "emerald",
+    tone: "amber",
   },
   {
     icon: WifiOff,
     title: "Built for court corridors",
     body: "A fast-loading app shell built for patchy court-corridor signal, with data actions quick enough to finish before your item is called. Full offline data sync is on the roadmap.",
-    tone: "violet",
+    tone: "teal",
   },
 ] as const;
 
@@ -90,7 +111,7 @@ const toneClasses: Record<(typeof capabilities)[number]["tone"], { chip: string;
 const stats = [
   { value: "3,700+", label: "District & subordinate court complexes" },
   { value: "25", label: "High Courts and benches covered" },
-  { value: "6", label: "Core modules covering the full matter lifecycle" },
+  { value: "9", label: "Modules covering the full matter lifecycle" },
 ];
 
 function Landing() {
@@ -109,9 +130,10 @@ function Landing() {
                 A disciplined practice, run from a single workspace.
               </h1>
               <p className="mt-6 max-w-xl text-base leading-relaxed text-primary-foreground/80">
-                LexDiary brings matters, your hearing diary, documents, clients and billing together
-                in one platform, purpose-built for how litigation is practised in Indian courts —
-                accessible from your phone, wherever the day takes you.
+                LexDiary brings matters, your hearing diary, documents, AI-assisted drafting,
+                clients and billing together in one platform, purpose-built for how litigation is
+                practised in Indian courts — accessible from your phone, wherever the day takes
+                you.
               </p>
               <div className="mt-9 flex flex-wrap gap-4">
                 <Link
@@ -165,7 +187,7 @@ function Landing() {
             <p className="text-eyebrow text-accent">What it replaces</p>
             <h2 className="mt-4 text-3xl font-bold">The manual work, taken off your plate</h2>
             <p className="mt-4 text-muted-foreground">
-              Six modules designed around the working day of a solo advocate or a small firm — not a
+              Modules designed around the working day of a solo advocate or a small firm — not a
               generic CRM adapted for legal use.{" "}
               <Link
                 to="/features"
