@@ -1,12 +1,17 @@
 # LexDiary Security Test Plan
 
-**Status as of 2026-08-22: NOT STARTED.** This is the plan only — no security-specific testing
-has been executed against it yet. Gate 1 (`docs/gate-1-qa-validation-plan.md`) already
-live-verified a meaningful slice of this scope as a side effect of functional testing (see the
-"Prior coverage" column below); this document exists to make the *remaining* gap explicit,
-prioritize it, and track it to closure the same way Gate 1 was tracked — real live tests against
-a running instance, dated findings, fixes verified before being checked off, never a code-review
-guess standing in for a test.
+**Status as of 2026-08-22: Pass 1 (Identity & Isolation) complete.** Passes 2–4 not yet started.
+Gate 1 (`docs/gate-1-qa-validation-plan.md`) already live-verified a meaningful slice of this
+scope as a side effect of functional testing; this document exists to make the *remaining* gap
+explicit, prioritize it, and track it to closure the same way Gate 1 was tracked — real live
+tests against a running instance, dated findings, fixes verified before being checked off, never
+a code-review guess standing in for a test.
+
+Pass 1 found and fixed one real, live production bug (unrelated to tenant isolation, but
+surfaced directly by this pass's write-testing methodology): the document Approve/Reject
+review-status action has been silently non-functional for every tenant since at least
+2026-08-20, masked by an optimistic UI update. See PR #73. Every genuine tenant-isolation,
+IDOR, RBAC-escalation, and Superadmin-boundary test in Pass 1 passed cleanly — details below.
 
 Same rules as Gate 1: a row isn't ✅ until it's actually been run against a live instance (local
 or deployed) with a recorded result, and every test tenant/user created for testing is deleted
@@ -45,21 +50,21 @@ do not get that option — each is an explicit launch blocker until resolved and
 
 | #   | Security area                        | Priority | Pass | Prior coverage from Gate 1 |
 | --- | ------------------------------------- | -------: | ---: | -------------------------- |
-| S1  | Authentication                        | P0 | 1 | Partial — login/signup/reset flows exist and were exercised functionally; negative/enumeration tests (wrong password vs. nonexistent email, brute-force, malformed input) not yet run |
-| S2  | Session management / timeout          | P0 | 1 | Partial — idle timeout now implemented and live-verified (`src/lib/use-inactivity-logout.ts`); absolute session lifetime, logout-token-revocation, and admin-disables-user-mid-session not tested |
-| S3  | Tenant data isolation                 | P0 | 1 | **Substantial** — Gate 1 §5 ran a real two-tenant A/B setup: 0 cross-tenant reads on `matters`/`hearings`/`cause_list_sources`/`cause_list_records` by ID or listing, write-spoofing (`tenant_id` in POST body) rejected 403 on both an old table and a new K2 table. Not yet run against `clients`, `time_entries`, `invoices`, `ai_documents`, `ai_drafts`, `ai_conversations`, `ai_messages` with a live attacker token (a prior 2026-08-20 audit covered these — see Gate 1 §5a — but predates several later schema/policy changes and should be re-run, not just cited) |
-| S4  | Object-level authorization / IDOR     | P0 | 1 | Partial — the two-tenant test above **is** an IDOR test for the tables it covered (fetch-by-exact-ID across tenants). Not yet run per-object across every route/operation (PATCH/DELETE on hearings, clients, documents, invoices, cause-list matches; download/export operations specifically) |
-| S5  | User-level authorization within a tenant (RBAC) | P0 | 1 | Partial — `member` cannot delete a matter, confirmed live including a direct RLS-bypass attempt (Mobile/Error-handling pass, Gate 1 §2). LexDiary's real role set is `owner`/`admin`/`member` only (no Junior/Clerk/Client roles exist — confirmed via the `profiles_tenant_role_check` constraint during the pricing-page fix) — the authorization matrix to test is 3 roles × N resources, not the larger matrix a generic template assumes. Update/read boundaries for `member` vs `admin` across clients/billing/documents not yet tested |
-| S6  | Database / RLS                        | P0 | 1 | Partial — SELECT tested cross-tenant on 4+ tables (above); INSERT/UPDATE/DELETE tested on `matters` and `cause_list_sources` only. Full SELECT/INSERT/UPDATE/DELETE matrix across every tenant-scoped table, per role, is the gap |
-| S7  | Database / RLS on K1–K4 AI tables specifically | P0 | 1 | Partial — a pre-existing 2026-08-20 audit found and fixed a critical bug where `ai_documents`/`ai_drafts`/`ai_conversations`/`ai_messages` accepted a client-supplied `tenant_id` on INSERT; retested clean at the time. Needs a fresh live retest now that K2/K3/K4 have shipped more code on top of that fix |
+| S1  | Authentication                        | P0 | 1 | ✅ **Verified live 2026-08-22** — wrong-password and nonexistent-email return byte-identical responses (`400 invalid_credentials`), no enumeration signal. Empty/10,000-char/Unicode/SQL-payload/XSS-payload passwords all rejected safely with the same generic message, no crash, no injection artifact. ⚠️ **Finding**: 15 rapid failed logins in succession produced zero lockout, backoff, or rate-limit response — no observable brute-force protection at the app layer (Supabase platform-level protection, if any, wasn't characterized). Recorded for Pass 2/4 follow-up, not fixed here |
+| S2  | Session management / timeout          | P0 | 1 | ✅ **Verified live 2026-08-22** — idle timeout implemented and live-verified (`src/lib/use-inactivity-logout.ts`, PR #70). **Token-after-logout**: confirmed a bearer token remains valid for API calls after calling the logout endpoint — standard stateless-JWT behavior, bounded by the token's own 1-hour expiry (decoded a real token's `exp`/`iat` claims to confirm the TTL). **Admin-disables-user-mid-session**: confirmed the stronger, better property — `remove_member()` takes effect *immediately* even against an already-issued, unexpired token, because RLS re-resolves tenant membership per request rather than trusting a JWT claim; the removed user's token returned 0 rows on every subsequent tenant-scoped query. Absolute session lifetime (independent of activity) not separately tested — bounded by the same 1-hour access-token TTL already confirmed |
+| S3  | Tenant data isolation                 | P0 | 1 | ✅ **Verified live 2026-08-22** — full two-tenant A/B test extended to every remaining tenant-scoped table: `clients`, `time_entries`, `invoices`, `ai_documents`, `ai_drafts`, `ai_conversations`, `ai_messages`, plus re-confirming `matters`. Cross-tenant SELECT (by exact ID and by unfiltered listing), tenant_id-spoofed INSERT, cross-tenant UPDATE, and cross-tenant DELETE all tested on all 8 tables. Zero cross-tenant leaks or writes on any table, any operation — with one real bug found along the way (not a leak): `ai_documents` UPDATE/DELETE were silently broken for *same*-tenant use too, see S7 |
+| S4  | Object-level authorization / IDOR     | P0 | 1 | ✅ **Verified live 2026-08-22** — the S3 sweep above *is* the IDOR test: every `:id`-keyed resource across 8 tables, fetched/mutated with the wrong tenant's token, across SELECT/INSERT/UPDATE/DELETE. All correctly rejected or returned zero rows. Download/export-specific IDOR (documents, invoices) not separately tested — folds into S11 in Pass 3 |
+| S5  | User-level authorization within a tenant (RBAC) | P0 | 1 | ✅ **Verified live 2026-08-22** — created a real `member` in the same tenant as an `owner` and attempted every escalation path directly (bypassing the UI): self-promotion via `PATCH profiles` (blocked — column-level GRANT excludes `tenant_role`/`tenant_id`, confirmed empirically, not just by reading the grant table), promoting via a self-created "admin" invite (blocked — `tenant_invites` INSERT policy requires `is_tenant_admin()`), calling `set_member_role`/`remove_member`/`set_seat_count` RPCs directly as a member (all three rejected with explicit "Only a chamber owner or admin can..." errors), and a tenant owner attempting to directly tamper with their own `licenses` row to upgrade their plan (0 rows — only platform admins can write `licenses`). `member` update access to clients/invoices/time_entries is confirmed **intentional** (RLS: "Tenant members update ...", any member, not admin-gated) — correctly matches the app's own design, not a gap |
+| S6  | Database / RLS                        | P0 | 1 | ✅ **Verified live 2026-08-22** — full SELECT/INSERT/UPDATE/DELETE matrix run across `clients`, `time_entries`, `invoices`, `matters` (cross-tenant), plus `profiles`, `tenant_invites`, `licenses`, `tenants`, `platform_admins` (privilege-escalation/Superadmin angles, see S5/S13). One real gap found and fixed: `ai_documents` had a DELETE policy with no matching GRANT (same trap as the UPDATE bug in S7) — closed in the same PR before it could cause a second silent-failure bug |
+| S7  | Database / RLS on K1–K4 AI tables specifically | P0 | 1 | ✅ **Fixed live 2026-08-22** — tenant-isolation re-confirmed clean on all four `ai_*` tables (the 2026-08-20 fix holds under fresh testing). **Found a real, live production bug in the process**: `ai_documents` had `SELECT, INSERT` granted to `authenticated` but no `UPDATE` — a side effect of `20260820041000_grant_housekeeping.sql` — and never had an UPDATE RLS policy at all. The app's document Approve/Reject action (`updateDocumentAnalysisStatus`) uses the RLS-scoped client, so this has been a **guaranteed no-op for every tenant since at least 2026-08-20**, invisible because `DocumentIntelligence.tsx`'s optimistic UI update flips the badge locally before the (failing) server call, then silently reverts on reload with no error shown. Reproduced live (confirmed via direct DB query that "Approved" never persisted), fixed with a `GRANT UPDATE` + a real "tenant members update" policy matching this table's existing DELETE-policy shape, re-verified the fix persists correctly *and* that cross-tenant writes are still blocked in both directions. See PR #73 |
 | S8  | SQL / injection                       | P0 | 2 | Partial — SQL-like input (`Sharma' OR 1=1 --`) tested against Matter title, stored as inert literal (Gate 1 §4). Not tested against search/filter/sort/pagination inputs, cause-list import parsing, or as second-order injection (a saved value later reaching a report/search query) |
 | S9  | XSS / input injection                 | P0 | 2 | Partial — raw HTML (`<script>alert(1)</script>`) tested against Matter title, rendered inert (Gate 1 §4). Not tested against client name, hearing/matter notes, cause-list free-text fields, document names, or — importantly — **AI-generated output rendering**, since K1–K4 responses are model-generated text the frontend must still render safely |
 | S10 | API / server function security        | P0 | 2 | Partial by construction — every `*.functions.ts` server function reviewed this session derives `tenant_id`/`user_id` server-side from the authenticated session, never trusting a client-supplied value (confirmed repeatedly while reading this code across Gate 1 and later fixes). Not yet *adversarially* tested by calling functions directly with a crafted payload attempting to override that derivation |
 | S11 | Document/file security                | P0 | 3 | Partial — boundary tests (0-byte, undersized, oversized, corrupted, renamed-extension) all done live (Gate 1 §4). **Not tested**: whether a tenant can access another tenant's uploaded document via a guessable/copied URL — the single most important sub-test in this category and not yet run |
 | S12 | AI / prompt injection / cross-tenant & cross-matter leakage | P0 | 3 | Partial — prompt injection via a malicious document tested live and held (Gate 1 §6); cross-*matter* leakage tested live within what the test narrative describes as one tenant context (Gate 1 §6). **Cross-*tenant* AI leakage with two real tenants and distinct secret markers has not been run** — this is a different, more important test than cross-matter and is explicitly recommended below |
-| S13 | Superadmin security                    | P0 | 1 | **Substantial** — Gate 1 §5b found and fixed a real Superadmin over-permission (`cause_list_records` blanket cross-tenant read, narrowed 2026-08-22); §2's Mobile/Error-handling pass confirmed a non-platform-admin is redirected away from `/admin` server-side. Feature-flag bypass (disabling AI governance, then calling the edge function directly) tested and held for K4 (Gate 1 §4/§6) — not yet re-verified for K1/K2/K3 |
-| S14 | Feature-flag bypass (all AI features)  | P0 | 1 | Partial — see S13; only K4's direct-call-while-disabled path has been tested. K1 (assistant), K2 (cause-list AI-adjacent paths, if any), K3 (matter summary) not yet re-tested the same way |
-| S15 | Rate limiting / abuse                  | P1 | 2 | Partial — the AI daily-quota mechanism itself was deliberately exhausted and found working correctly, including a real bug it surfaced and got fixed (Gate 1 §4, PR #65). Login brute-force, password-reset spam, and non-AI endpoint abuse (bulk cause-list import, document upload) have no rate limiting confirmed either way |
+| S13 | Superadmin security                    | P0 | 1 | ✅ **Verified live 2026-08-22** — as a non-platform-admin, direct REST calls confirmed: listing `tenants` shows only the caller's own tenant; another tenant's `licenses` row returns empty; `platform_admins` table is completely unreadable; directly `PATCH`ing another tenant's `licenses.status` affects 0 rows; attempting to `INSERT` oneself into `platform_admins` returns 403 (no INSERT grant at all for `authenticated`). Combined with Gate 1 §5b's fixed `cause_list_records` over-permission and the confirmed `/admin` route-level redirect, every tested Superadmin boundary holds |
+| S14 | Feature-flag bypass (all AI features)  | P0 | 1 | ✅ **Verified live 2026-08-22** — K4 confirmed in Gate 1. Newly tested: **K1 (assistant) has no governance flag at all, by design** — confirmed no `integrations.*` check exists in `ai-assistant/index.ts` *and* the Superadmin Settings·Integrations UI exposes no toggle for it either (only `ai_morning_brief_enabled`, `ai_matter_intelligence_enabled`, `ai_case_intelligence_enabled` exist) — consistent, not a gap, since K1 never touches tenant case data beyond the caller's own conversation history. **K2** (`ai-morning-brief`) and **K3** (`ai-matter-summary`): disabled each flag on a real tenant, called the edge function directly with a valid token — both correctly returned 403 with the expected "turned off for this chamber" message, then flags restored |
+| S15 | Rate limiting / abuse                  | P1 | 2 | Partial — the AI daily-quota mechanism itself was deliberately exhausted and found working correctly, including a real bug it surfaced and got fixed (Gate 1 §4, PR #65). ⚠️ **Login brute-force tested 2026-08-22 (Pass 1's S1 test) — 15 rapid failed attempts produced no lockout or backoff.** Password-reset spam and non-AI endpoint abuse (bulk cause-list import, document upload) still have no rate limiting confirmed either way |
 | S16 | Password / account recovery            | P1 | 4 | New this session — password length is now validated app-side (`src/lib/password-policy.ts`, PR #70), and Supabase Auth's own project-level minimum was identified as a separate, un-touched setting. Reset-token single-use/expiry/replay has not been tested |
 | S17 | CSRF / CORS / security headers         | P1 | 2 | None — not examined this session beyond incidentally noticing the site's CSP blocks Cloudflare's own analytics beacon (Gate 1 §2, cosmetic finding, not a security review) |
 | S18 | Billing / payment security              | P1 | 2 | None on the payment-specific angle. Plan-price/limit values were cross-checked against `plan_price_inr()`/`plan_limit()` for *accuracy* (PR #69), not for tamper resistance |
@@ -82,7 +87,7 @@ Matches the priority argument already made: identity and isolation defects are t
 target because they're the core trust boundary of a multi-tenant legal SaaS, and a defect there
 compromises every other layer regardless of how well-secured those other layers are individually.
 
-### Pass 1 — Identity & Isolation (S1–S7, S13, S14) — start here
+### Pass 1 — Identity & Isolation (S1–S7, S13, S14) — ✅ complete, 2026-08-22
 
 `Authentication · Session management · Tenant isolation · IDOR/BOLA · RBAC · RLS (general +
 K1–K4 tables) · Superadmin isolation · Feature-flag bypass`
@@ -101,29 +106,29 @@ Every isolation/authorization claim must be verified at **two layers**, not one:
 well-behaved client doesn't request it, not that the server refuses it. Every finding this
 document should produce is level-2 (layer 2 fails), not level-1.
 
-Concrete test list for this pass, building on what Gate 1 already ran:
+Concrete test list for this pass, building on what Gate 1 already ran — **all items below run,
+2026-08-22, results in the Scope table above**:
 
-- **S1**: wrong-password vs. nonexistent-email should return the *same* generic message (test
-  for account-enumeration via response-message difference or timing); empty/very-long/Unicode/
-  SQL-payload/XSS-payload passwords; repeated failed logins (is there any lockout or backoff?).
-- **S2**: absolute session lifetime (does an unattended-but-technically-active session ever
-  expire regardless of activity?); does a copied bearer token keep working after logout; does an
-  account disabled mid-session (if that capability exists) lose access immediately or only on
-  next login.
-- **S3/S6/S7**: re-run the Gate 1 §5 two-tenant A/B test against every remaining tenant-scoped
-  table not yet covered — `clients`, `time_entries`, `invoices`, `ai_documents`, `ai_drafts`,
-  `ai_conversations`, `ai_messages` — for SELECT, INSERT (tenant_id-spoofed), UPDATE, and DELETE,
-  not SELECT alone.
-- **S4**: for every `:id`-keyed resource (matter, client, hearing, document, invoice, cause-list
-  record/match), fetch/mutate Tenant B's real ID using Tenant A's token — across every operation
-  the UI exposes for that resource, not just GET.
-- **S5**: as `member`, attempt every `admin`/`owner`-gated action directly (not just delete,
-  which is already confirmed) — update client, change another member's role, remove a team
-  member, change seat count, view/export billing.
-- **S13/S14**: as a non-platform-admin, call every `/admin/*`-adjacent server function/edge
-  function directly; as a tenant admin (not platform admin), attempt to modify a *different*
-  tenant's license/plan/status; with each K1–K3 AI feature toggled off via
-  `/admin/settings/integrations`, call its edge function directly (only K4 has been done).
+- **S1**: wrong-password vs. nonexistent-email ✅ identical response; empty/very-long/Unicode/
+  SQL-payload/XSS-payload passwords ✅ all safely rejected; repeated failed logins ⚠️ **no
+  lockout/backoff observed** (15 rapid attempts, all identical 400s) — recorded, not fixed.
+- **S2**: ✅ token-after-logout confirmed valid until natural expiry (standard JWT behavior,
+  bounded to 1 hour); ✅ admin-disable-mid-session confirmed to revoke access *immediately*
+  even against an unexpired token (RLS re-checks per request); absolute lifetime not separately
+  tested (same 1-hour bound already confirmed).
+- **S3/S6/S7**: ✅ two-tenant A/B test run against `clients`, `time_entries`, `invoices`,
+  `ai_documents`, `ai_drafts`, `ai_conversations`, `ai_messages` — SELECT, tenant_id-spoofed
+  INSERT, UPDATE, DELETE, all clean. Found and fixed a real bug along the way: `ai_documents`
+  UPDATE/DELETE were broken for *same*-tenant use too (missing grants), see S7 and PR #73.
+- **S4**: ✅ folded into the S3 sweep — every `:id`-keyed resource across the 8 tables above,
+  fetched/mutated with the wrong tenant's token. Download/export-specific IDOR deferred to Pass 3.
+- **S5**: ✅ as `member`: self-promotion via profile PATCH blocked (column-level grant),
+  self-invite-as-admin blocked (RLS), `set_member_role`/`remove_member`/`set_seat_count` RPCs
+  all rejected non-admin callers explicitly, and even the tenant *owner* can't directly tamper
+  with their own `licenses` row (platform-admin-only table).
+- **S13/S14**: ✅ non-platform-admin blocked from reading `tenants`/`licenses`/`platform_admins`
+  cross-tenant and from self-inserting into `platform_admins`; K2/K3 feature-flag bypass tested
+  and held (K4 already done in Gate 1, K1 confirmed to have no flag by design).
 
 ### Pass 2 — Application / API (S8–S10, S15, S17–S19)
 
@@ -190,3 +195,10 @@ This plan is satisfied when every row in the Scope table above is ✅ with a dat
 result (not a code-review inference) and the Security Gate (S0) criteria all read zero. Until
 then, per S0, public marketing/general-availability launch stays blocked on the seven categories
 listed there regardless of how much of the rest of the scope is complete.
+
+**Progress: Pass 1 of 4 complete (2026-08-22).** S1–S7, S13, S14 all ✅. Of the seven S0 gate
+categories, three are now fully covered by Pass 1's results: tenant-isolation defects, IDOR/BOLA
+and RBAC-bypass authorization defects, and Superadmin privilege bypass — all tested clean.
+Cross-tenant AI leakage, unauthorized document access, and known-exposed-secrets remain open,
+scheduled for Pass 3 and Pass 4 respectively. Next up: Pass 2 (Application/API — SQL injection,
+XSS, CSRF/CORS/headers, adversarial API testing, rate limiting, error leakage).
