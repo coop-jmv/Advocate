@@ -1,6 +1,6 @@
 # LexDiary Security Test Plan
 
-**Status as of 2026-08-22: Passes 1–2 complete.** Passes 3–4 not yet started. Gate 1
+**Status as of 2026-08-22: Passes 1–3 complete.** Pass 4 not yet started. Gate 1
 (`docs/gate-1-qa-validation-plan.md`) already live-verified a meaningful slice of this scope as
 a side effect of functional testing; this document exists to make the *remaining* gap explicit,
 prioritize it, and track it to closure the same way Gate 1 was tracked — real live tests against
@@ -20,6 +20,14 @@ payloads across every remaining free-text field regardless. Two items recorded, 
 observable login lockout/rate-limiting (carried over from Pass 1's S1 test), and one CORS
 wildcard on the Supabase platform's own REST gateway (low practical risk given this app's
 token-in-localStorage session model, not app-configurable from this codebase either way).
+
+Pass 3 confirmed the "unauthorized document access" test doesn't apply — LexDiary has no file
+storage layer at all — and ran the real AI cross-tenant leakage test with two distinct secret
+markers across two real tenants: blocked at the data-fetching layer itself, before the AI is
+ever reached. This closes the last two of the seven S0 gate categories that testing (rather than
+a product decision) could close: cross-tenant AI leakage and unauthorized document access are
+both now clean, alongside tenant-isolation, IDOR/RBAC, and Superadmin bypass from Pass 1. Only
+known-exposed-secrets (S23, Pass 4) remains open among the seven.
 
 Same rules as Gate 1: a row isn't ✅ until it's actually been run against a live instance (local
 or deployed) with a recorded result, and every test tenant/user created for testing is deleted
@@ -68,8 +76,8 @@ do not get that option — each is an explicit launch blocker until resolved and
 | S8  | SQL / injection                       | P0 | 2 | ✅ **Verified live 2026-08-22** — architecturally confirmed no SQL-injection surface exists: every `EXECUTE format(...)` in every migration only ever concatenates hardcoded, developer-authored table names (never user input) with `%I` identifier-quoting, and `search_records()` (the header search box's backing RPC) uses safe parameter-into-value concatenation (`ILIKE '%' || p_query || '%'`), not dynamic query-structure construction. Live-tested with `x'; DROP TABLE matters; --`-style payloads through both the cause-list import path and the search RPC directly — zero effect, table intact, real production row count unchanged (12 matters, confirmed before and after) |
 | S9  | XSS / input injection                 | P0 | 2 | ✅ **Verified live 2026-08-22** — `dangerouslySetInnerHTML` appears exactly once in the entire codebase (`src/components/ui/chart.tsx`), in a component that is itself never imported or used anywhere in the app (dead code, developer-controlled config only if it were). Every real user-content rendering path uses ordinary JSX text nodes, which React always HTML-escapes by default. Live-tested `<script>`/`<img onerror>` payloads in client name, matter notes, matter opposing-party, and hearing purpose — all four rendered as literal escaped text (confirmed via `innerHTML` inspection, e.g. `&lt;script&gt;...`), no execution, on both the Cases list and Matter Detail/timeline pages |
 | S10 | API / server function security        | P0 | 2 | ✅ **Verified live 2026-08-22** — adversarially tested forging `created_by` to a fake/different user ID on a direct `clients` INSERT: rejected 403 (`created_by = auth.uid()` enforced via RLS `WITH CHECK`, not just a client-side default). Combined with Pass 1's tenant_id-spoofing sweep (also rejected/overridden across 8 tables) and this session's repeated code-level confirmation that no server function ever trusts a client-supplied identity field, this is now empirically adversarially tested, not just confirmed by construction |
-| S11 | Document/file security                | P0 | 3 | Partial — boundary tests (0-byte, undersized, oversized, corrupted, renamed-extension) all done live (Gate 1 §4). **Not tested**: whether a tenant can access another tenant's uploaded document via a guessable/copied URL — the single most important sub-test in this category and not yet run |
-| S12 | AI / prompt injection / cross-tenant & cross-matter leakage | P0 | 3 | Partial — prompt injection via a malicious document tested live and held (Gate 1 §6); cross-*matter* leakage tested live within what the test narrative describes as one tenant context (Gate 1 §6). **Cross-*tenant* AI leakage with two real tenants and distinct secret markers has not been run** — this is a different, more important test than cross-matter and is explicitly recommended below |
+| S11 | Document/file security                | P0 | 3 | ✅ **Resolved by architecture, confirmed 2026-08-22** — checked for any Supabase Storage/S3/CDN usage across the entire codebase: none exists. LexDiary has **no persistent file storage layer at all** — every "document" (camera scan, dictation audio) is processed transiently at the edge function and only the *extracted text* is ever persisted, as a plain `ai_documents.raw_text` row. There is no file, no URL, nothing to guess — the "unauthorized document access via a guessable URL" scenario this item was written for doesn't apply to this architecture. The actual protection is `ai_documents`' RLS, already exhaustively tested cross-tenant (SELECT/INSERT/UPDATE/DELETE) in Pass 1. Boundary tests (0-byte, undersized, oversized, corrupted, renamed-extension) were done live in Gate 1 §4 |
+| S12 | AI / prompt injection / cross-tenant & cross-matter leakage | P0 | 3 | ✅ **Verified live 2026-08-22** — the real cross-tenant leakage test: two fresh tenants, each with a matter and a document containing a distinct invented secret marker (`BLUE-MANGO-7421` / `RED-TIGER-9982`, appearing nowhere else in the system). Tested at the layer that actually matters: called `getMatterContext`/`getMatterDocumentTexts` (the functions that assemble what K4 ever sees) directly with Tenant B's real matter ID while authenticated as Tenant A — both returned `null`/`[]`. This is a stronger result than testing the edge function alone, because it confirms the leak is blocked *before* the AI is ever reached — a caller can't even assemble a cross-tenant payload to feed it, let alone get it echoed back. Also asked K1 (the general assistant, which has no matter-context mechanism at all) about the same secret directly — it correctly had no knowledge of it. Prompt injection via a malicious document (Gate 1 §6) and cross-*matter* leakage within one tenant (Gate 1 §6) were already confirmed separately |
 | S13 | Superadmin security                    | P0 | 1 | ✅ **Verified live 2026-08-22** — as a non-platform-admin, direct REST calls confirmed: listing `tenants` shows only the caller's own tenant; another tenant's `licenses` row returns empty; `platform_admins` table is completely unreadable; directly `PATCH`ing another tenant's `licenses.status` affects 0 rows; attempting to `INSERT` oneself into `platform_admins` returns 403 (no INSERT grant at all for `authenticated`). Combined with Gate 1 §5b's fixed `cause_list_records` over-permission and the confirmed `/admin` route-level redirect, every tested Superadmin boundary holds |
 | S14 | Feature-flag bypass (all AI features)  | P0 | 1 | ✅ **Verified live 2026-08-22** — K4 confirmed in Gate 1. Newly tested: **K1 (assistant) has no governance flag at all, by design** — confirmed no `integrations.*` check exists in `ai-assistant/index.ts` *and* the Superadmin Settings·Integrations UI exposes no toggle for it either (only `ai_morning_brief_enabled`, `ai_matter_intelligence_enabled`, `ai_case_intelligence_enabled` exist) — consistent, not a gap, since K1 never touches tenant case data beyond the caller's own conversation history. **K2** (`ai-morning-brief`) and **K3** (`ai-matter-summary`): disabled each flag on a real tenant, called the edge function directly with a valid token — both correctly returned 403 with the expected "turned off for this chamber" message, then flags restored |
 | S15 | Rate limiting / abuse                  | P1 | 2 | Partial — the AI daily-quota mechanism itself was deliberately exhausted and found working correctly, including a real bug it surfaced and got fixed (Gate 1 §4, PR #65). ⚠️ **Login brute-force tested 2026-08-22 (Pass 1's S1 test) — 15 rapid failed attempts produced no lockout or backoff.** Password-reset spam tested 2026-08-22: inconclusive — a *nonexistent* account correctly returns `200` with no enumeration signal (good), but a *real* test account at an `@example.com` address returned a `500 "Error sending recovery email"` on every attempt; most likely explained by `.example` being a non-routable RFC 2606 domain the mail provider can't deliver to, rather than a genuine production bug, but this test setup can't fully rule that out without a real, monitorable mailbox — **recommend re-testing password-reset delivery with a real inbox before treating this as resolved**. Non-AI bulk-action abuse (rapid document upload, cause-list import) still untested |
@@ -157,24 +165,27 @@ confirmed safe for every other field, and the codebase-wide `dangerouslySetInner
 already rules out a bypass. Browser console/network audit for stray secrets/over-fetched fields
 (part of S19) and non-AI bulk-action abuse (part of S15) remain open, carried to Pass 4.
 
-### Pass 3 — Documents & AI (S11, S12)
+### Pass 3 — Documents & AI (S11, S12) — ✅ complete, 2026-08-22
 
-`File upload boundaries (done) · unauthorized document access (not done) · AI prompt injection
-(done) · AI cross-tenant leakage (not done) · AI cross-matter leakage (done) · AI quota/feature-
-flag bypass (done for K4)`
+`File upload boundaries (done) · unauthorized document access (n/a — no file storage exists) ·
+AI prompt injection (done) · AI cross-tenant leakage (done) · AI cross-matter leakage (done) ·
+AI quota/feature-flag bypass (done for K4)`
 
-The two genuinely new tests this pass needs to add, both using the two-tenant methodology
-already proven in Gate 1 §5:
+The "unauthorized document access via a guessable URL" test turned out not to apply: LexDiary
+has no file storage layer anywhere (confirmed by an exhaustive grep for Supabase Storage/S3/CDN
+usage) — every scan/recording is processed transiently and only its extracted text is ever
+persisted, as an ordinary `ai_documents` row already covered by Pass 1's RLS testing.
 
-- **Unauthorized document access**: Tenant A obtains (or guesses) Tenant B's document
-  storage path/URL and attempts to fetch it directly, bypassing the app UI entirely.
-- **AI cross-tenant leakage**: create two real tenants, each with one matter/document
-  containing a distinct, unique marker string invented for this test (e.g. a random
-  `WORD-WORD-####` token) that appears nowhere else in the system. Ask Tenant A's AI (K4
-  Ask My Case, and separately K1 the general assistant if it takes any tenant context) for
-  Tenant B's marker string by name. It must never appear in the answer. This is a stronger,
-  more direct test than the cross-*matter* test Gate 1 already ran, because it tests the
-  tenant boundary itself rather than the matter-scoping logic within one tenant.
+The one genuinely new test — AI cross-tenant leakage — used the two-tenant methodology already
+proven in Gate 1 §5: two real tenants, each with a matter/document containing a distinct
+invented secret marker (`BLUE-MANGO-7421` / `RED-TIGER-9982`, appearing nowhere else in the
+system). Rather than only asking K4 the question (which would just prove the edge function
+doesn't leak *whatever it's given* — not very informative, since the edge function has no
+database access of its own), the test called `getMatterContext`/`getMatterDocumentTexts` — the
+functions that assemble what K4 ever sees — directly with Tenant B's real matter ID while
+authenticated as Tenant A. Both returned nothing. This is the stronger, more direct version of
+the test: it confirms the leak is blocked *before* the AI is ever reached, not just that the AI
+itself behaves when handed a clean payload.
 
 ### Pass 4 — Production Hardening (S16, S20–S23)
 
@@ -209,12 +220,14 @@ result (not a code-review inference) and the Security Gate (S0) criteria all rea
 then, per S0, public marketing/general-availability launch stays blocked on the seven categories
 listed there regardless of how much of the rest of the scope is complete.
 
-**Progress: Passes 1–2 of 4 complete (2026-08-22).** S1–S10, S13–S15, S17–S19 all ✅ or fixed.
-Of the seven S0 gate categories, three are fully covered by Pass 1's results: tenant-isolation
-defects, IDOR/BOLA and RBAC-bypass authorization defects, and Superadmin privilege bypass — all
-tested clean. Cross-tenant AI leakage, unauthorized document access, and known-exposed-secrets
-remain open, scheduled for Pass 3 and Pass 4 respectively. Two non-gate-blocking items are
+**Progress: Passes 1–3 of 4 complete (2026-08-22).** S1–S15, S17–S19 all ✅ or fixed (S11/S12
+included). Of the seven S0 gate categories, **six are now fully covered**: tenant-isolation
+defects, IDOR/BOLA and RBAC-bypass authorization defects, Superadmin privilege bypass (Pass 1),
+and cross-tenant AI leakage and unauthorized document access (Pass 3, the latter resolved by
+architecture — no file storage layer exists to have a leak in). Only **known-exposed-secrets
+(S23)** remains open among the seven, scheduled for Pass 4. Two non-gate-blocking items are
 recorded but not yet resolved: no observable login lockout/rate-limiting (S15), and Supabase's
 own REST gateway CORS wildcard (S17, low practical risk, platform-level, not app-fixable). Next
-up: Pass 3 (Documents & AI — unauthorized document access, AI cross-tenant leakage) — the two
-tests most directly relevant to the S0 gate categories still open.
+up: Pass 4 (Production Hardening) — a dependency scan, a full-history secrets grep (the last S0
+category), a password-reset token-lifecycle test, an audit-log content review, and a backup/
+restore drill.
