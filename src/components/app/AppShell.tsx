@@ -1,11 +1,12 @@
 import { Link, Outlet, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { LayoutDashboard, LayoutGrid, Scale, Bell, LogOut } from "lucide-react";
+import { LayoutDashboard, LayoutGrid, Scale, LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { logAuthEvent } from "@/lib/edge-functions";
 import { APP_DESTINATIONS, GROUP_TONE } from "@/lib/navigation";
 import { useInactivityLogout } from "@/lib/use-inactivity-logout";
 import { HeaderSearch } from "@/components/app/HeaderSearch";
+import { NotificationBell } from "@/components/app/NotificationBell";
 import { cn } from "@/lib/utils";
 
 const navIconToneClasses = {
@@ -165,14 +166,7 @@ export function AppShell({
             >
               <LayoutDashboard className="size-4" />
             </Link>
-            <button
-              type="button"
-              className="relative rounded border border-docket-amber/30 bg-docket-amber/10 p-2 text-docket-amber transition-colors hover:bg-docket-amber/20"
-              aria-label="Notifications"
-            >
-              <Bell className="size-4" />
-              <span className="absolute top-1.5 right-1.5 size-1.5 rounded-full bg-destructive" />
-            </button>
+            <NotificationBell />
             <Link
               to="/app/menu"
               title="Menu"

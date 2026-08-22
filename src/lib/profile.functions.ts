@@ -71,7 +71,9 @@ export const listMyConsents = createServerFn({ method: "GET" })
 export const withdrawMyConsent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>
-    z.object({ purpose: z.enum(["ai_processing", "product_updates"]) }).parse(data),
+    z.object({ purpose: z.enum(["ai_processing", "product_updates", "whatsapp_notifications"]) }).parse(
+      data,
+    ),
   )
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase.rpc("withdraw_consent", { p_purpose: data.purpose });
@@ -82,7 +84,9 @@ export const withdrawMyConsent = createServerFn({ method: "POST" })
 export const grantMyConsent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>
-    z.object({ purpose: z.enum(["ai_processing", "product_updates"]) }).parse(data),
+    z.object({ purpose: z.enum(["ai_processing", "product_updates", "whatsapp_notifications"]) }).parse(
+      data,
+    ),
   )
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase.rpc("grant_consent", { p_purpose: data.purpose });

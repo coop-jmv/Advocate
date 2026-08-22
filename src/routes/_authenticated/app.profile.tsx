@@ -49,6 +49,7 @@ const purposeLabel: Record<string, string> = {
   service_provision: "Providing the service",
   ai_processing: "AI-assisted drafting, OCR and dictation",
   product_updates: "Product updates and announcements",
+  whatsapp_notifications: "WhatsApp diary reminders",
 };
 
 function downloadJson(filename: string, data: unknown) {
@@ -134,7 +135,7 @@ function Profile() {
   }
 
   async function handleConsentToggle(
-    purpose: "ai_processing" | "product_updates",
+    purpose: "ai_processing" | "product_updates" | "whatsapp_notifications",
     grantIt: boolean,
   ) {
     setConsentBusy(purpose);
@@ -204,6 +205,9 @@ function Profile() {
   }
 
   const aiConsent = consents.find((c) => c.purpose === "ai_processing" && !c.withdrawn_at);
+  const whatsappConsent = consents.find(
+    (c) => c.purpose === "whatsapp_notifications" && !c.withdrawn_at,
+  );
   const serviceConsent = consents.find((c) => c.purpose === "service_provision");
 
   return (
@@ -327,6 +331,33 @@ function Profile() {
                   >
                     <Tag tone={aiConsent ? "success" : "neutral"}>
                       {consentBusy === "ai_processing" ? "…" : aiConsent ? "Granted" : "Withdrawn"}
+                    </Tag>
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-between rounded border border-border p-3">
+                  <div>
+                    <p className="text-sm font-medium">
+                      {purposeLabel["whatsapp_notifications"]}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Sent to the mobile number above — update it there if it's wrong.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={consentBusy === "whatsapp_notifications"}
+                    onClick={() =>
+                      void handleConsentToggle("whatsapp_notifications", !whatsappConsent)
+                    }
+                    className="shrink-0"
+                  >
+                    <Tag tone={whatsappConsent ? "success" : "neutral"}>
+                      {consentBusy === "whatsapp_notifications"
+                        ? "…"
+                        : whatsappConsent
+                          ? "Granted"
+                          : "Withdrawn"}
                     </Tag>
                   </button>
                 </div>

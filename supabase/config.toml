@@ -8,3 +8,14 @@ enabled = false
 [auth.email]
 # Skip the Mailpit confirmation round-trip when signing up locally.
 enable_confirmations = false
+
+# Neither function below is ever called by a LexDiary user — the digest is
+# invoked only by pg_cron/pg_net (a shared secret it checks itself, see
+# whatsapp-diary-digest/index.ts), and the webhook only by the WhatsApp
+# provider. Every other function in this project keeps the default (require
+# a real user JWT).
+[functions.whatsapp-diary-digest]
+verify_jwt = false
+
+[functions.whatsapp-webhook]
+verify_jwt = false
