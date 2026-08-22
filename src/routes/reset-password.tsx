@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Scale, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { MIN_PASSWORD_LENGTH, passwordLengthError } from "@/lib/password-policy";
 
 export const Route = createFileRoute("/reset-password")({
   ssr: false,
@@ -41,6 +42,11 @@ function ResetPasswordPage() {
     event.preventDefault();
     if (password !== confirmPassword) {
       setError("Those passwords don't match.");
+      return;
+    }
+    const lengthError = passwordLengthError(password);
+    if (lengthError) {
+      setError(lengthError);
       return;
     }
     setBusy(true);
@@ -109,9 +115,12 @@ function ResetPasswordPage() {
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
                     required
-                    minLength={6}
+                    minLength={MIN_PASSWORD_LENGTH}
                     className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
                   />
+                  <span className="mt-1 block text-xs text-muted-foreground">
+                    At least {MIN_PASSWORD_LENGTH} characters.
+                  </span>
                 </label>
                 <label className="block text-sm">
                   <span className="text-eyebrow">Confirm password</span>
@@ -120,7 +129,7 @@ function ResetPasswordPage() {
                     value={confirmPassword}
                     onChange={(event) => setConfirmPassword(event.target.value)}
                     required
-                    minLength={6}
+                    minLength={MIN_PASSWORD_LENGTH}
                     className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
                   />
                 </label>

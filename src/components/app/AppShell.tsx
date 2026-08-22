@@ -4,6 +4,7 @@ import { LayoutDashboard, LayoutGrid, Scale, Bell, LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { logAuthEvent } from "@/lib/edge-functions";
 import { APP_DESTINATIONS, GROUP_TONE } from "@/lib/navigation";
+import { useInactivityLogout } from "@/lib/use-inactivity-logout";
 import { HeaderSearch } from "@/components/app/HeaderSearch";
 import { cn } from "@/lib/utils";
 
@@ -26,6 +27,7 @@ export function AppShell({
   children: React.ReactNode;
 }) {
   const navigate = useNavigate();
+  useInactivityLogout();
   const [profile, setProfile] = useState<{ full_name: string | null; firm_name: string | null }>({
     full_name: null,
     firm_name: null,
