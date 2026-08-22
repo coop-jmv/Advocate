@@ -3,9 +3,13 @@ import {
   UserPlus,
   Scale,
   FileSearch,
+  PenLine,
+  Bot,
   CalendarClock,
+  Mic,
   Users,
   ReceiptIndianRupee,
+  Sparkles,
   ShieldCheck,
   Lock,
   ArrowRight,
@@ -19,13 +23,13 @@ export const Route = createFileRoute("/features")({
       {
         name: "description",
         content:
-          "What each part of LexDiary replaces: the paper register, the WhatsApp status update, the month-end billing scramble. See the manual work it removes, module by module.",
+          "What each part of LexDiary replaces: the paper register, the blank-page first draft, the WhatsApp status update, the month-end billing scramble. See the manual work it removes, module by module.",
       },
       { property: "og:title", content: "Features — LexDiary" },
       {
         property: "og:description",
         content:
-          "Case & matter management, hearing diary, Indic OCR, client portal, GST billing and audit logs — and the manual work each one removes.",
+          "Case & matter management, cause-list intelligence, an AI case assistant and drafting studio, Indic OCR with AI document review, client portal, GST billing and audit logs — and the manual work each one removes.",
       },
     ],
   }),
@@ -47,7 +51,7 @@ const modules = [
     name: "Tracking a matter",
     manual: "A paper case diary or a spreadsheet, updated whenever someone remembers to.",
     automatic:
-      "Case number, court, stage, party details, opposing counsel and case notes stay in one file, current the moment anything changes. e-Courts (CNR) linking and automated conflict checks are on the roadmap.",
+      "Case number, court, stage, party details, opposing counsel and case notes stay in one file, current the moment anything changes. e-Courts (CNR) linking is on the roadmap.",
     tone: "amber",
   },
   {
@@ -56,16 +60,40 @@ const modules = [
     manual:
       'Scanning to a folder named "final_v2", then re-reading the whole thing later to find one clause.',
     automatic:
-      "Camera scanning with auto-crop, OCR in English and Hindi, and full-text search across everything stored — so a clause is a search, not a re-read. Redact privileged content before you share.",
+      "Camera scanning with auto-crop, OCR across six Indian languages, and full-text search across everything stored — so a clause is a search, not a re-read. AI extracts a summary, parties, key dates and drafting risks for you to approve or reject before anything is saved. Redact privileged content before you share.",
     tone: "teal",
+  },
+  {
+    icon: PenLine,
+    name: "Getting a first draft done",
+    manual: "Starting from a blank page, or digging out an old precedent and adapting it by hand.",
+    automatic:
+      "Generate a first draft grounded in the matter's own documents, refine it in place in the drafting studio, then print or save it straight to the matter.",
+    tone: "rose",
+  },
+  {
+    icon: Bot,
+    name: "Answering a case question fast",
+    manual: "Re-reading your own notes and old orders under time pressure, or phoning a colleague.",
+    automatic:
+      "Ask the AI case assistant — procedure, limitation, strategy, next steps — answered from this matter's own documents and diary, not the open internet.",
+    tone: "emerald",
   },
   {
     icon: CalendarClock,
     name: "Keeping the diary",
     manual: "Cross-checking a cause list by hand to make sure you haven't double-booked a hearing.",
     automatic:
-      "Day, week and month views flag a listing conflict before it happens. WhatsApp is licensed on Solo Pro and Chamber; automated sending, and cause-list sync, are on the roadmap.",
-    tone: "rose",
+      "Import the day's published cause list and every listing is matched to your matters automatically — what's changed since it was last published, and anything unmatched, is flagged before you leave chambers. WhatsApp reminders are licensed on Solo Pro and Chamber; automated sending is on the roadmap.",
+    tone: "violet",
+  },
+  {
+    icon: Mic,
+    name: "Capturing notes without typing",
+    manual: "Typing up notes from memory after a hearing or client call, or not getting to it at all.",
+    automatic:
+      "Dictate on the way out of court — transcribed, reviewable and ready to print or save to the matter, without touching a keyboard.",
+    tone: "sapphire",
   },
   {
     icon: Users,
@@ -74,7 +102,7 @@ const modules = [
       "A phone call or a WhatsApp message, every time — often more than once a week, per client.",
     automatic:
       "Clients check status and approved documents themselves in a permission-controlled portal, and message you securely when they actually need to.",
-    tone: "emerald",
+    tone: "amber",
   },
   {
     icon: ReceiptIndianRupee,
@@ -83,7 +111,16 @@ const modules = [
       "Reconstructing hours from memory at month-end, then working out the CGST/SGST split by hand.",
     automatic:
       "Time logs by timer or manual entry against a matter, expenses attached automatically, and a GST-compliant invoice generated with UPI and Razorpay collection built in.",
-    tone: "violet",
+    tone: "teal",
+  },
+  {
+    icon: Sparkles,
+    name: "Staying ahead of the week",
+    manual:
+      "Scrolling back through the diary and case notes yourself to remember what's overdue or at risk.",
+    automatic:
+      "A daily AI briefing built from your chamber's real matters and diary — what's overdue, what's coming up, and where the actual risk sits.",
+    tone: "rose",
   },
   {
     icon: ShieldCheck,
@@ -91,8 +128,8 @@ const modules = [
     manual:
       "No real record — if a document goes missing or a hearing outcome changes, it's someone's word.",
     automatic:
-      "Every access, download and change is logged and searchable, with annual independent penetration testing and a 99.5% uptime target.",
-    tone: "sapphire",
+      "Every access, download and change is logged to an in-app audit log any owner or admin can search, with annual independent penetration testing and a 99.5% uptime target.",
+    tone: "emerald",
   },
   {
     icon: Lock,
@@ -101,7 +138,7 @@ const modules = [
       "Manually pulling someone's data together across systems whenever they ask — and hoping you got all of it.",
     automatic:
       "Self-service access, correction and erasure for the person asking, consent capture and withdrawal logged automatically, and a documented breach-notification commitment under the DPDP Act.",
-    tone: "amber",
+    tone: "violet",
   },
 ] as const;
 
