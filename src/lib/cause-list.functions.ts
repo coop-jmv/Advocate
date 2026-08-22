@@ -116,6 +116,17 @@ export const setCauseListSourceEnabled = createServerFn({ method: "POST" })
 // touching only source-derived fields. matter_title/purpose/status are set
 // on create only — an advocate's own edits to those on an existing hearing
 // are never overwritten by a later re-ingestion of the same listing.
+//
+// Product decision (Gate 1 §2/§7, 2026-08-22): a matched cause-list entry
+// updates the matter's existing hearing for that date rather than creating
+// a second one. Live testing found this duplicating "hearings today" and
+// inflating the Morning Brief's own hearing/critical counts for what was
+// genuinely one court appearance — an advocate trusts that count every
+// morning, so a duplicate is actively misleading, not a cosmetic quirk. A
+// matter having two *distinct* real hearings on the same calendar date is
+// rare enough (and the existing re-ingestion path already overwrites a
+// hearing's source-derived fields outright with no merge) that matching on
+// (matter, date) as a fallback is the right default.
 async function reconcileHearing(
   supabase: SupabaseClient<Database>,
   userId: string,
@@ -130,13 +141,26 @@ async function reconcileHearing(
     .eq("source_reference", record.source_reference);
   const versionIds = (priorVersionIds ?? []).map((r) => r.id);
 
-  const { data: existingHearing } = await supabase
+  const { data: linkedHearing } = await supabase
     .from("hearings")
     .select("id")
     .in("cause_list_record_id", versionIds.length > 0 ? versionIds : [record.id])
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
+
+  const { data: sameDateHearing } = linkedHearing
+    ? { data: null }
+    : await supabase
+        .from("hearings")
+        .select("id")
+        .eq("matter_id", matterId)
+        .eq("hearing_date", record.list_date)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+  const existingHearing = linkedHearing ?? sameDateHearing;
 
   if (existingHearing) {
     await supabase
