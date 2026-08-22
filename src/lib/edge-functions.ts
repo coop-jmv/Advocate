@@ -219,6 +219,24 @@ export function ocrExtract(input: { imageBase64: string; mimeType?: string | und
   return invoke<{ text: string }>("ocr-extract", input);
 }
 
+// Phase 1 of the e-Courts integration: on-demand CNR verify + auto-fill.
+// Gated server-side by licenses.integrations.ecourts_enabled (default off —
+// ask your workspace administrator) and a per-tenant daily quota.
+export type EcourtsCaseSnapshot = {
+  cnr: string;
+  caseNumber: string | null;
+  court: string | null;
+  bench: string | null;
+  parties: { petitioner: string | null; respondent: string | null };
+  status: string | null;
+  nextHearingDate: string | null;
+  orders: { date: string; title: string; pdfUrl: string | null }[];
+};
+
+export function lookupEcourtsCase(input: { cnr: string }) {
+  return invoke<EcourtsCaseSnapshot>("ecourts-lookup", input);
+}
+
 export function logAuthEvent(input: {
   event: "login_success" | "login_failed" | "logout" | "signup";
   email?: string | undefined;

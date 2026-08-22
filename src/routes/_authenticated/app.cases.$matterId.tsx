@@ -49,6 +49,7 @@ function MatterDetail() {
     title: "",
     clientName: "",
     caseNumber: "",
+    cnr: "",
     court: "",
     opposingParty: "",
     filedDate: "",
@@ -86,6 +87,7 @@ function MatterDetail() {
       title: context.matter.title,
       clientName: context.matter.clientName ?? "",
       caseNumber: context.matter.caseNumber ?? "",
+      cnr: context.matter.cnr ?? "",
       court: context.matter.court ?? "",
       opposingParty: context.matter.opposingParty ?? "",
       filedDate: context.matter.filedDate ?? "",
@@ -108,6 +110,7 @@ function MatterDetail() {
           title: editForm.title.trim(),
           clientName: editForm.clientName.trim() || undefined,
           caseNumber: editForm.caseNumber.trim() || undefined,
+          cnr: editForm.cnr.trim() || undefined,
           court: editForm.court.trim() || undefined,
           opposingParty: editForm.opposingParty.trim() || undefined,
           filedDate: editForm.filedDate || undefined,
@@ -124,6 +127,7 @@ function MatterDetail() {
                 title: saved.title,
                 clientName: saved.client_name,
                 caseNumber: saved.case_number,
+                cnr: saved.cnr,
                 court: saved.court,
                 opposingParty: saved.opposing_party,
                 filedDate: saved.filed_date,
@@ -272,6 +276,17 @@ function MatterDetail() {
               value={editForm.caseNumber}
               onChange={(event) => setEditForm((f) => ({ ...f, caseNumber: event.target.value }))}
               className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
+            />
+          </label>
+          <label className="text-sm">
+            <span className="text-eyebrow">CNR</span>
+            <input
+              value={editForm.cnr}
+              onChange={(event) =>
+                setEditForm((f) => ({ ...f, cnr: event.target.value.toUpperCase() }))
+              }
+              maxLength={16}
+              className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm uppercase"
             />
           </label>
           <label className="text-sm">
