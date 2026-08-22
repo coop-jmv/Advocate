@@ -27,38 +27,63 @@ function normalizeCnr(cnr: string): string {
   return cnr.trim().toUpperCase();
 }
 
+// Confirmed live against a real account and a real CNR (2026-08-22) — this
+// shape is not a guess. The frontend at ecourtsindia.com is a separate
+// static site; the actual API lives on webapi.ecourtsindia.com under
+// /api/partner/*, and the case payload is deeply nested under
+// data.courtCaseData. A not-found CNR returns 404 with
+// {"error":{"code":"CASE_NOT_FOUND","message":"...","details":null}}.
+type EcourtsIndiaCaseResponse = {
+  data?: {
+    courtCaseData?: {
+      caseNumber?: string;
+      courtName?: string;
+      judges?: string[];
+      petitioners?: string[];
+      respondents?: string[];
+      caseStatus?: string;
+      stageOfCase?: string;
+      nextHearingDate?: string;
+      judgmentOrders?: { date?: string; title?: string; pdfUrl?: string; url?: string }[];
+    };
+  };
+  error?: { code?: string; message?: string };
+};
+
 async function lookupViaEcourtsIndia(cnr: string): Promise<CaseSnapshot> {
   const apiKey = Deno.env.get("ECOURTSINDIA_API_KEY");
   if (!apiKey) throw new Error("e-Courts lookup is not configured (missing eCourtsIndia API key).");
 
-  // NOTE: exact endpoint path/shape not independently confirmed — their own
-  // /api/docs page blocks automated fetching. This targets their documented
-  // CNR-lookup capability; adjust once a real account confirms the contract.
-  const response = await fetch(`https://ecourtsindia.com/api/v1/case-status/${encodeURIComponent(normalizeCnr(cnr))}`, {
-    method: "GET",
-    headers: { Authorization: `Bearer ${apiKey}` },
-  });
-  const payload = await response.json().catch(() => null);
+  const response = await fetch(
+    `https://webapi.ecourtsindia.com/api/partner/case/${encodeURIComponent(normalizeCnr(cnr))}`,
+    { method: "GET", headers: { Authorization: `Bearer ${apiKey}` } },
+  );
+  const payload = (await response.json().catch(() => null)) as EcourtsIndiaCaseResponse | null;
   if (!response.ok) {
-    const detail = payload && typeof payload === "object" ? JSON.stringify(payload) : response.statusText;
+    if (response.status === 404 && payload?.error?.code === "CASE_NOT_FOUND") {
+      throw new Error(`No case found for CNR ${normalizeCnr(cnr)}.`);
+    }
+    const detail = payload?.error?.message ?? response.statusText;
     throw new Error(`eCourtsIndia lookup failed (${response.status}): ${detail}`);
   }
+
+  const caseData = payload?.data?.courtCaseData;
   return {
     cnr: normalizeCnr(cnr),
-    caseNumber: payload?.case_number ?? null,
-    court: payload?.court_name ?? null,
-    bench: payload?.bench ?? null,
+    caseNumber: caseData?.caseNumber ?? null,
+    court: caseData?.courtName ?? null,
+    bench: caseData?.judges?.length ? caseData.judges.join(", ") : null,
     parties: {
-      petitioner: payload?.petitioner ?? null,
-      respondent: payload?.respondent ?? null,
+      petitioner: caseData?.petitioners?.length ? caseData.petitioners.join(", ") : null,
+      respondent: caseData?.respondents?.length ? caseData.respondents.join(", ") : null,
     },
-    status: payload?.case_status ?? null,
-    nextHearingDate: payload?.next_hearing_date ?? null,
-    orders: Array.isArray(payload?.orders)
-      ? payload.orders.map((o: { date?: string; title?: string; pdf_url?: string }) => ({
+    status: caseData?.caseStatus ?? caseData?.stageOfCase ?? null,
+    nextHearingDate: caseData?.nextHearingDate ?? null,
+    orders: Array.isArray(caseData?.judgmentOrders)
+      ? caseData.judgmentOrders.map((o) => ({
           date: o.date ?? "",
           title: o.title ?? "Order",
-          pdfUrl: o.pdf_url ?? null,
+          pdfUrl: o.pdfUrl ?? o.url ?? null,
         }))
       : [],
   };
