@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Check, Scale, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { logAuthEvent } from "@/lib/edge-functions";
+import { MIN_PASSWORD_LENGTH, passwordLengthError } from "@/lib/password-policy";
 import { cn } from "@/lib/utils";
 import heroSignIn from "@/assets/hero-signin-courthouse.jpg";
 import heroSignUp from "@/assets/hero-signup-signing.jpg";
@@ -104,6 +105,13 @@ function AuthPage() {
         "Enter a valid mobile number — 10 digits for an Indian number, or +<country code> for an overseas one.",
       );
       return;
+    }
+    if (mode === "signup") {
+      const lengthError = passwordLengthError(password);
+      if (lengthError) {
+        setError(lengthError);
+        return;
+      }
     }
     setBusy(true);
     setError(null);
@@ -299,9 +307,14 @@ function AuthPage() {
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
                     required
-                    minLength={6}
+                    minLength={mode === "signup" ? MIN_PASSWORD_LENGTH : undefined}
                     className="mt-1 w-full rounded border border-input bg-background px-3 py-1.5 text-sm"
                   />
+                  {mode === "signup" ? (
+                    <span className="mt-1 block text-xs text-muted-foreground">
+                      At least {MIN_PASSWORD_LENGTH} characters.
+                    </span>
+                  ) : null}
                 </label>
               ) : null}
 

@@ -1,11 +1,13 @@
 import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
 import { ShieldCheck, Building2, Inbox, ListChecks, Puzzle, ScrollText } from "lucide-react";
+import { useInactivityLogout } from "@/lib/use-inactivity-logout";
 
 export const Route = createFileRoute("/_admin/admin")({
   component: AdminLayout,
 });
 
 function AdminLayout() {
+  useInactivityLogout();
   return (
     <div className="min-h-screen bg-secondary/30">
       <header className="border-b border-border bg-background">
