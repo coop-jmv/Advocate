@@ -1,11 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Plus } from "lucide-react";
+import { Loader2, Plus, ShieldCheck } from "lucide-react";
 import { AppShell } from "@/components/app/AppShell";
 import { DataTable, Tag, type Tone } from "@/components/app/primitives";
 import { createMatter, listMatters } from "@/lib/matters.functions";
 import { friendlyErrorMessage } from "@/lib/friendly-error";
+import { lookupEcourtsCase } from "@/lib/edge-functions";
 
 export const Route = createFileRoute("/_authenticated/app/cases/")({
   head: () => ({
@@ -30,6 +31,7 @@ type Matter = {
   title: string;
   client_name: string | null;
   case_number: string | null;
+  cnr: string | null;
   court: string | null;
   status: string;
   opposing_party: string | null;
@@ -58,10 +60,13 @@ function Cases() {
     title: "",
     clientName: "",
     caseNumber: "",
+    cnr: "",
     court: "",
     opposingParty: "",
     filedDate: "",
   });
+  const [verifying, setVerifying] = useState(false);
+  const [verifyNotice, setVerifyNotice] = useState<string | null>(null);
 
   async function reload() {
     setLoading(true);
@@ -92,6 +97,7 @@ function Cases() {
           title: form.title.trim(),
           clientName: form.clientName.trim() || undefined,
           caseNumber: form.caseNumber.trim() || undefined,
+          cnr: form.cnr.trim() || undefined,
           court: form.court.trim() || undefined,
           opposingParty: form.opposingParty.trim() || undefined,
           filedDate: form.filedDate || undefined,
@@ -101,15 +107,42 @@ function Cases() {
         title: "",
         clientName: "",
         caseNumber: "",
+        cnr: "",
         court: "",
         opposingParty: "",
         filedDate: "",
       });
+      setVerifyNotice(null);
       await reload();
     } catch (cause) {
       setError(friendlyErrorMessage(cause, "Failed to create matter."));
     } finally {
       setCreating(false);
+    }
+  }
+
+  async function handleVerifyCnr() {
+    const cnr = form.cnr.trim().toUpperCase();
+    if (!/^[A-Z0-9]{16}$/.test(cnr)) {
+      setVerifyNotice("Enter the full 16-character CNR first.");
+      return;
+    }
+    setVerifying(true);
+    setVerifyNotice(null);
+    try {
+      const snapshot = await lookupEcourtsCase({ cnr });
+      setForm((f) => ({
+        ...f,
+        cnr,
+        caseNumber: snapshot.caseNumber ?? f.caseNumber,
+        court: snapshot.court ?? f.court,
+        opposingParty: snapshot.parties.respondent ?? f.opposingParty,
+      }));
+      setVerifyNotice("Case found — details filled in below. Review before saving.");
+    } catch (cause) {
+      setVerifyNotice(friendlyErrorMessage(cause, "Could not verify that CNR."));
+    } finally {
+      setVerifying(false);
     }
   }
 
@@ -151,6 +184,37 @@ function Cases() {
             onChange={(event) => setForm((f) => ({ ...f, clientName: event.target.value }))}
             className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
           />
+        </label>
+        <label className="text-sm">
+          <span className="text-eyebrow">CNR (optional)</span>
+          <div className="mt-1.5 flex gap-1.5">
+            <input
+              value={form.cnr}
+              onChange={(event) =>
+                setForm((f) => ({ ...f, cnr: event.target.value.toUpperCase() }))
+              }
+              placeholder="MHCC010012342024"
+              maxLength={16}
+              className="w-full rounded border border-input bg-background px-3 py-2 text-sm uppercase"
+            />
+            <button
+              type="button"
+              onClick={() => void handleVerifyCnr()}
+              disabled={verifying}
+              title="Verify & auto-fill from e-Courts"
+              className="flex shrink-0 items-center gap-1.5 rounded border border-input px-3 py-2 text-xs font-semibold transition-colors hover:bg-secondary disabled:opacity-60"
+            >
+              {verifying ? (
+                <Loader2 className="size-3.5 animate-spin" />
+              ) : (
+                <ShieldCheck className="size-3.5" />
+              )}
+              Verify
+            </button>
+          </div>
+          {verifyNotice ? (
+            <span className="mt-1 block text-xs text-muted-foreground">{verifyNotice}</span>
+          ) : null}
         </label>
         <label className="text-sm">
           <span className="text-eyebrow">Case number</span>

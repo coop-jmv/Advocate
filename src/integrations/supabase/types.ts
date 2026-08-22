@@ -698,6 +698,83 @@ export type Database = {
         }
         Relationships: []
       }
+      ecourts_sync_log: {
+        Row: {
+          cnr: string
+          created_at: string
+          id: string
+          matter_id: string | null
+          provider: string
+          snapshot: Json | null
+          status: string
+          status_detail: string | null
+          tenant_id: string
+        }
+        Insert: {
+          cnr: string
+          created_at?: string
+          id?: string
+          matter_id?: string | null
+          provider: string
+          snapshot?: Json | null
+          status: string
+          status_detail?: string | null
+          tenant_id: string
+        }
+        Update: {
+          cnr?: string
+          created_at?: string
+          id?: string
+          matter_id?: string | null
+          provider?: string
+          snapshot?: Json | null
+          status?: string
+          status_detail?: string | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ecourts_sync_log_matter_id_fkey"
+            columns: ["matter_id"]
+            isOneToOne: false
+            referencedRelation: "matters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ecourts_sync_log_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ecourts_usage_daily: {
+        Row: {
+          lookup_count: number
+          tenant_id: string
+          usage_date: string
+        }
+        Insert: {
+          lookup_count?: number
+          tenant_id: string
+          usage_date: string
+        }
+        Update: {
+          lookup_count?: number
+          tenant_id?: string
+          usage_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ecourts_usage_daily_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       hearings: {
         Row: {
           bench: string | null
@@ -904,6 +981,7 @@ export type Database = {
         Row: {
           case_number: string | null
           client_name: string | null
+          cnr: string | null
           court: string | null
           created_at: string
           created_by: string
@@ -919,6 +997,7 @@ export type Database = {
         Insert: {
           case_number?: string | null
           client_name?: string | null
+          cnr?: string | null
           court?: string | null
           created_at?: string
           created_by: string
@@ -934,6 +1013,7 @@ export type Database = {
         Update: {
           case_number?: string | null
           client_name?: string | null
+          cnr?: string | null
           court?: string | null
           created_at?: string
           created_by?: string
@@ -1297,6 +1377,7 @@ export type Database = {
       }
       grant_consent: { Args: { p_purpose: string }; Returns: undefined }
       increment_ai_usage: { Args: never; Returns: number }
+      increment_ecourts_usage: { Args: never; Returns: number }
       increment_whatsapp_usage: {
         Args: { p_count: number; p_ist_date: string; p_tenant_id: string }
         Returns: number

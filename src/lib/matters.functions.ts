@@ -13,7 +13,7 @@ export const listMatters = createServerFn({ method: "GET" })
     const { data, error } = await context.supabase
       .from("matters")
       .select(
-        "id, title, client_name, case_number, court, status, opposing_party, filed_date, created_at",
+        "id, title, client_name, case_number, cnr, court, status, opposing_party, filed_date, created_at",
       )
       .order("created_at", { ascending: false })
       .limit(100);
@@ -31,7 +31,7 @@ export const getMatter = createServerFn({ method: "GET" })
     const { data: matter, error } = await context.supabase
       .from("matters")
       .select(
-        "id, title, client_name, case_number, court, status, opposing_party, filed_date, notes, created_at",
+        "id, title, client_name, case_number, cnr, court, status, opposing_party, filed_date, notes, created_at",
       )
       .eq("id", data.matterId)
       .maybeSingle();
@@ -53,6 +53,12 @@ export const updateMatter = createServerFn({ method: "POST" })
         title: z.string().min(2),
         clientName: z.string().optional(),
         caseNumber: z.string().optional(),
+        cnr: z
+          .string()
+          .trim()
+          .regex(/^[A-Za-z0-9]{16}$/, "CNR must be 16 letters/numbers.")
+          .optional()
+          .or(z.literal("")),
         court: z.string().optional(),
         opposingParty: z.string().optional(),
         filedDate: z.string().optional(),
@@ -68,6 +74,7 @@ export const updateMatter = createServerFn({ method: "POST" })
         title: data.title,
         client_name: data.clientName ?? null,
         case_number: data.caseNumber ?? null,
+        cnr: data.cnr ? data.cnr.toUpperCase() : null,
         court: data.court ?? null,
         opposing_party: data.opposingParty ?? null,
         filed_date: data.filedDate ?? null,
@@ -76,7 +83,7 @@ export const updateMatter = createServerFn({ method: "POST" })
       })
       .eq("id", data.matterId)
       .select(
-        "id, title, client_name, case_number, court, status, opposing_party, filed_date, notes, created_at",
+        "id, title, client_name, case_number, cnr, court, status, opposing_party, filed_date, notes, created_at",
       )
       .single();
     if (error) throw new Error(error.message);
@@ -109,6 +116,12 @@ export const createMatter = createServerFn({ method: "POST" })
         title: z.string().min(2),
         clientName: z.string().optional(),
         caseNumber: z.string().optional(),
+        cnr: z
+          .string()
+          .trim()
+          .regex(/^[A-Za-z0-9]{16}$/, "CNR must be 16 letters/numbers.")
+          .optional()
+          .or(z.literal("")),
         court: z.string().optional(),
         opposingParty: z.string().optional(),
         filedDate: z.string().optional(),
@@ -122,13 +135,14 @@ export const createMatter = createServerFn({ method: "POST" })
         title: data.title,
         client_name: data.clientName ?? null,
         case_number: data.caseNumber ?? null,
+        cnr: data.cnr ? data.cnr.toUpperCase() : null,
         court: data.court ?? null,
         opposing_party: data.opposingParty ?? null,
         filed_date: data.filedDate ?? null,
         created_by: context.userId,
       })
       .select(
-        "id, title, client_name, case_number, court, status, opposing_party, filed_date, created_at",
+        "id, title, client_name, case_number, cnr, court, status, opposing_party, filed_date, created_at",
       )
       .single();
     if (error) throw new Error(error.message);
