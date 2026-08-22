@@ -1,0 +1,14 @@
+-- Product decision (Gate 1 §5): platform admins should NOT have blanket
+-- cross-tenant read access to cause_list_records' case content (petitioner,
+-- respondent, CNR, advocate names). The original "platform admins retain
+-- their existing cross-tenant read access pattern for the superadmin
+-- monitoring page" rationale in 20260821090000_cause_list_intelligence.sql
+-- turned out not to hold once live-tested: /admin/cause-list-sources only
+-- ever selects source-level health fields (sync_status, last_sync_at,
+-- error_message) from cause_list_sources — it never reads a single row of
+-- cause_list_records. There is no current operational need for platform
+-- admins to read another chamber's case party names, so the grant is
+-- narrowed to match what's actually used rather than what RLS happens to
+-- allow. cause_list_sources' platform-admin policies are untouched — those
+-- ARE what the monitoring page reads.
+DROP POLICY "Platform admins view all cause_list_records" ON public.cause_list_records;
