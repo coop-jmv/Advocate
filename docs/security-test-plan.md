@@ -1,17 +1,25 @@
 # LexDiary Security Test Plan
 
-**Status as of 2026-08-22: Pass 1 (Identity & Isolation) complete.** Passes 2–4 not yet started.
-Gate 1 (`docs/gate-1-qa-validation-plan.md`) already live-verified a meaningful slice of this
-scope as a side effect of functional testing; this document exists to make the *remaining* gap
-explicit, prioritize it, and track it to closure the same way Gate 1 was tracked — real live
-tests against a running instance, dated findings, fixes verified before being checked off, never
-a code-review guess standing in for a test.
+**Status as of 2026-08-22: Passes 1–2 complete.** Passes 3–4 not yet started. Gate 1
+(`docs/gate-1-qa-validation-plan.md`) already live-verified a meaningful slice of this scope as
+a side effect of functional testing; this document exists to make the *remaining* gap explicit,
+prioritize it, and track it to closure the same way Gate 1 was tracked — real live tests against
+a running instance, dated findings, fixes verified before being checked off, never a code-review
+guess standing in for a test.
 
 Pass 1 found and fixed one real, live production bug (unrelated to tenant isolation, but
 surfaced directly by this pass's write-testing methodology): the document Approve/Reject
 review-status action has been silently non-functional for every tenant since at least
 2026-08-20, masked by an optimistic UI update. See PR #73. Every genuine tenant-isolation,
-IDOR, RBAC-escalation, and Superadmin-boundary test in Pass 1 passed cleanly — details below.
+IDOR, RBAC-escalation, and Superadmin-boundary test in Pass 1 passed cleanly.
+
+Pass 2 found and fixed one real information-disclosure gap (raw RLS/permission-denied Postgres
+errors could reach the UI verbatim in an edge case, PR #74) and confirmed SQL injection and XSS
+are both structurally very hard in this codebase's current architecture — live-tested with real
+payloads across every remaining free-text field regardless. Two items recorded, not fixed: no
+observable login lockout/rate-limiting (carried over from Pass 1's S1 test), and one CORS
+wildcard on the Supabase platform's own REST gateway (low practical risk given this app's
+token-in-localStorage session model, not app-configurable from this codebase either way).
 
 Same rules as Gate 1: a row isn't ✅ until it's actually been run against a live instance (local
 or deployed) with a recorded result, and every test tenant/user created for testing is deleted
@@ -57,18 +65,18 @@ do not get that option — each is an explicit launch blocker until resolved and
 | S5  | User-level authorization within a tenant (RBAC) | P0 | 1 | ✅ **Verified live 2026-08-22** — created a real `member` in the same tenant as an `owner` and attempted every escalation path directly (bypassing the UI): self-promotion via `PATCH profiles` (blocked — column-level GRANT excludes `tenant_role`/`tenant_id`, confirmed empirically, not just by reading the grant table), promoting via a self-created "admin" invite (blocked — `tenant_invites` INSERT policy requires `is_tenant_admin()`), calling `set_member_role`/`remove_member`/`set_seat_count` RPCs directly as a member (all three rejected with explicit "Only a chamber owner or admin can..." errors), and a tenant owner attempting to directly tamper with their own `licenses` row to upgrade their plan (0 rows — only platform admins can write `licenses`). `member` update access to clients/invoices/time_entries is confirmed **intentional** (RLS: "Tenant members update ...", any member, not admin-gated) — correctly matches the app's own design, not a gap |
 | S6  | Database / RLS                        | P0 | 1 | ✅ **Verified live 2026-08-22** — full SELECT/INSERT/UPDATE/DELETE matrix run across `clients`, `time_entries`, `invoices`, `matters` (cross-tenant), plus `profiles`, `tenant_invites`, `licenses`, `tenants`, `platform_admins` (privilege-escalation/Superadmin angles, see S5/S13). One real gap found and fixed: `ai_documents` had a DELETE policy with no matching GRANT (same trap as the UPDATE bug in S7) — closed in the same PR before it could cause a second silent-failure bug |
 | S7  | Database / RLS on K1–K4 AI tables specifically | P0 | 1 | ✅ **Fixed live 2026-08-22** — tenant-isolation re-confirmed clean on all four `ai_*` tables (the 2026-08-20 fix holds under fresh testing). **Found a real, live production bug in the process**: `ai_documents` had `SELECT, INSERT` granted to `authenticated` but no `UPDATE` — a side effect of `20260820041000_grant_housekeeping.sql` — and never had an UPDATE RLS policy at all. The app's document Approve/Reject action (`updateDocumentAnalysisStatus`) uses the RLS-scoped client, so this has been a **guaranteed no-op for every tenant since at least 2026-08-20**, invisible because `DocumentIntelligence.tsx`'s optimistic UI update flips the badge locally before the (failing) server call, then silently reverts on reload with no error shown. Reproduced live (confirmed via direct DB query that "Approved" never persisted), fixed with a `GRANT UPDATE` + a real "tenant members update" policy matching this table's existing DELETE-policy shape, re-verified the fix persists correctly *and* that cross-tenant writes are still blocked in both directions. See PR #73 |
-| S8  | SQL / injection                       | P0 | 2 | Partial — SQL-like input (`Sharma' OR 1=1 --`) tested against Matter title, stored as inert literal (Gate 1 §4). Not tested against search/filter/sort/pagination inputs, cause-list import parsing, or as second-order injection (a saved value later reaching a report/search query) |
-| S9  | XSS / input injection                 | P0 | 2 | Partial — raw HTML (`<script>alert(1)</script>`) tested against Matter title, rendered inert (Gate 1 §4). Not tested against client name, hearing/matter notes, cause-list free-text fields, document names, or — importantly — **AI-generated output rendering**, since K1–K4 responses are model-generated text the frontend must still render safely |
-| S10 | API / server function security        | P0 | 2 | Partial by construction — every `*.functions.ts` server function reviewed this session derives `tenant_id`/`user_id` server-side from the authenticated session, never trusting a client-supplied value (confirmed repeatedly while reading this code across Gate 1 and later fixes). Not yet *adversarially* tested by calling functions directly with a crafted payload attempting to override that derivation |
+| S8  | SQL / injection                       | P0 | 2 | ✅ **Verified live 2026-08-22** — architecturally confirmed no SQL-injection surface exists: every `EXECUTE format(...)` in every migration only ever concatenates hardcoded, developer-authored table names (never user input) with `%I` identifier-quoting, and `search_records()` (the header search box's backing RPC) uses safe parameter-into-value concatenation (`ILIKE '%' || p_query || '%'`), not dynamic query-structure construction. Live-tested with `x'; DROP TABLE matters; --`-style payloads through both the cause-list import path and the search RPC directly — zero effect, table intact, real production row count unchanged (12 matters, confirmed before and after) |
+| S9  | XSS / input injection                 | P0 | 2 | ✅ **Verified live 2026-08-22** — `dangerouslySetInnerHTML` appears exactly once in the entire codebase (`src/components/ui/chart.tsx`), in a component that is itself never imported or used anywhere in the app (dead code, developer-controlled config only if it were). Every real user-content rendering path uses ordinary JSX text nodes, which React always HTML-escapes by default. Live-tested `<script>`/`<img onerror>` payloads in client name, matter notes, matter opposing-party, and hearing purpose — all four rendered as literal escaped text (confirmed via `innerHTML` inspection, e.g. `&lt;script&gt;...`), no execution, on both the Cases list and Matter Detail/timeline pages |
+| S10 | API / server function security        | P0 | 2 | ✅ **Verified live 2026-08-22** — adversarially tested forging `created_by` to a fake/different user ID on a direct `clients` INSERT: rejected 403 (`created_by = auth.uid()` enforced via RLS `WITH CHECK`, not just a client-side default). Combined with Pass 1's tenant_id-spoofing sweep (also rejected/overridden across 8 tables) and this session's repeated code-level confirmation that no server function ever trusts a client-supplied identity field, this is now empirically adversarially tested, not just confirmed by construction |
 | S11 | Document/file security                | P0 | 3 | Partial — boundary tests (0-byte, undersized, oversized, corrupted, renamed-extension) all done live (Gate 1 §4). **Not tested**: whether a tenant can access another tenant's uploaded document via a guessable/copied URL — the single most important sub-test in this category and not yet run |
 | S12 | AI / prompt injection / cross-tenant & cross-matter leakage | P0 | 3 | Partial — prompt injection via a malicious document tested live and held (Gate 1 §6); cross-*matter* leakage tested live within what the test narrative describes as one tenant context (Gate 1 §6). **Cross-*tenant* AI leakage with two real tenants and distinct secret markers has not been run** — this is a different, more important test than cross-matter and is explicitly recommended below |
 | S13 | Superadmin security                    | P0 | 1 | ✅ **Verified live 2026-08-22** — as a non-platform-admin, direct REST calls confirmed: listing `tenants` shows only the caller's own tenant; another tenant's `licenses` row returns empty; `platform_admins` table is completely unreadable; directly `PATCH`ing another tenant's `licenses.status` affects 0 rows; attempting to `INSERT` oneself into `platform_admins` returns 403 (no INSERT grant at all for `authenticated`). Combined with Gate 1 §5b's fixed `cause_list_records` over-permission and the confirmed `/admin` route-level redirect, every tested Superadmin boundary holds |
 | S14 | Feature-flag bypass (all AI features)  | P0 | 1 | ✅ **Verified live 2026-08-22** — K4 confirmed in Gate 1. Newly tested: **K1 (assistant) has no governance flag at all, by design** — confirmed no `integrations.*` check exists in `ai-assistant/index.ts` *and* the Superadmin Settings·Integrations UI exposes no toggle for it either (only `ai_morning_brief_enabled`, `ai_matter_intelligence_enabled`, `ai_case_intelligence_enabled` exist) — consistent, not a gap, since K1 never touches tenant case data beyond the caller's own conversation history. **K2** (`ai-morning-brief`) and **K3** (`ai-matter-summary`): disabled each flag on a real tenant, called the edge function directly with a valid token — both correctly returned 403 with the expected "turned off for this chamber" message, then flags restored |
-| S15 | Rate limiting / abuse                  | P1 | 2 | Partial — the AI daily-quota mechanism itself was deliberately exhausted and found working correctly, including a real bug it surfaced and got fixed (Gate 1 §4, PR #65). ⚠️ **Login brute-force tested 2026-08-22 (Pass 1's S1 test) — 15 rapid failed attempts produced no lockout or backoff.** Password-reset spam and non-AI endpoint abuse (bulk cause-list import, document upload) still have no rate limiting confirmed either way |
+| S15 | Rate limiting / abuse                  | P1 | 2 | Partial — the AI daily-quota mechanism itself was deliberately exhausted and found working correctly, including a real bug it surfaced and got fixed (Gate 1 §4, PR #65). ⚠️ **Login brute-force tested 2026-08-22 (Pass 1's S1 test) — 15 rapid failed attempts produced no lockout or backoff.** Password-reset spam tested 2026-08-22: inconclusive — a *nonexistent* account correctly returns `200` with no enumeration signal (good), but a *real* test account at an `@example.com` address returned a `500 "Error sending recovery email"` on every attempt; most likely explained by `.example` being a non-routable RFC 2606 domain the mail provider can't deliver to, rather than a genuine production bug, but this test setup can't fully rule that out without a real, monitorable mailbox — **recommend re-testing password-reset delivery with a real inbox before treating this as resolved**. Non-AI bulk-action abuse (rapid document upload, cause-list import) still untested |
 | S16 | Password / account recovery            | P1 | 4 | New this session — password length is now validated app-side (`src/lib/password-policy.ts`, PR #70), and Supabase Auth's own project-level minimum was identified as a separate, un-touched setting. Reset-token single-use/expiry/replay has not been tested |
-| S17 | CSRF / CORS / security headers         | P1 | 2 | None — not examined this session beyond incidentally noticing the site's CSP blocks Cloudflare's own analytics beacon (Gate 1 §2, cosmetic finding, not a security review) |
-| S18 | Billing / payment security              | P1 | 2 | None on the payment-specific angle. Plan-price/limit values were cross-checked against `plan_price_inr()`/`plan_limit()` for *accuracy* (PR #69), not for tamper resistance |
-| S19 | Error / information leakage             | P1 | 2 | Partial, indirectly — raw Zod/Postgres errors reaching the UI were found and fixed as a *UX* issue (Gate 1 §4, PR #60/#61), which happens to also close some information-leakage surface (stack traces, internal field names). Not reviewed systematically as a security pass, and browser console/network tabs have not been audited for stray secrets or over-fetched fields |
+| S17 | CSRF / CORS / security headers         | P1 | 2 | ✅ **Verified live 2026-08-22** — production response headers are genuinely well-configured: HSTS (`max-age=63072000; includeSubDomains; preload`), a real CSP (`default-src 'self'`, `frame-ancestors 'none'`, `base-uri 'self'`, `form-action 'self'`, scoped `connect-src`), `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, and a restrictive `Permissions-Policy`. ⚠️ Two findings: (1) CSP's `script-src` includes `'unsafe-inline'`, which meaningfully weakens CSP's own XSS protection (low urgency given S9's finding that XSS is structurally very hard here anyway, but worth tightening eventually — would need auditing/removing any inline `<script>`/`onclick` usage first). (2) The edge functions' own CORS (`supabase/functions/_shared/cors.ts`) is a real origin allowlist, live-verified — an evil origin gets `Access-Control-Allow-Origin: null`, the real origin gets its own origin back. But the underlying **Supabase PostgREST gateway itself returns a wildcard `Access-Control-Allow-Origin: *`** on every table, confirmed live — this is a Supabase platform default, not something this codebase configures, and its practical exploitability is low because Supabase sessions live in `localStorage` (not auto-sent cross-origin like cookies), so an attacker's page can't attach a victim's real bearer token to a cross-origin request just because CORS allows it — but it's a real, current platform-level fact worth being aware of, not fixable from this repo. CSRF itself is structurally not very applicable to this app's auth model (no ambient cookie-based session to forge a request with) |
+| S18 | Billing / payment security              | P1 | 2 | Partial — Pass 1 already confirmed a tenant (even the owner) cannot directly modify their own `licenses` plan/status via REST (0 rows — platform-admin-only table). Plan-price/limit values were separately cross-checked against `plan_price_inr()`/`plan_limit()` for *accuracy* (PR #69). Not yet tested: invoice/time-entry amount tampering after creation, or any Razorpay-specific webhook/signature-verification surface (no live payment integration exists yet per Gate 1's baseline, so this is not yet a real attack surface) |
+| S19 | Error / information leakage             | P1 | 2 | ✅ **Fixed live 2026-08-22** — found a real gap: `friendlyErrorMessage()` only handled two error shapes (Zod validation, numeric overflow); any other Postgres error — including a raw `new row violates row-level security policy for table "clients"` or `permission denied for table ai_documents`, both reproduced live this session — fell through to the user unchanged. No secrets/credentials were ever exposed this way, but internal table/schema names with no actionable next step for the user is a real, low-severity information-disclosure and UX gap, reachable by a legitimate user hitting a stale-permission edge case, not just an adversarial one. Fixed with a generic catch-all mapping both shapes to "You don't have permission to do that." (PR #74), verified directly against the exact strings reproduced live. Browser console/network audit for stray secrets or over-fetched fields not yet done as its own pass |
 | S20 | Dependency / supply chain               | P1 | 4 | None — no `npm audit`/equivalent run this session |
 | S21 | Audit / security logging                | P1 | 4 | Partial — `audit_log` table exists and was spot-checked once for correct actor attribution (Gate 1 §2 click-through). Not reviewed for *what* it captures across security-sensitive events, or for accidental sensitive-data leakage into log rows |
 | S22 | Backup / recovery / deletion            | P1 | 4 | Partial — `delete_my_account()`'s cascade behavior was tested and a real bug fixed (Gate 1 §5b, PR #48); matter-delete's downstream effect on hearings/documents/timeline was *not* re-verified after that fix. Actual DB backup/restore has never been tested — "daily backups" is a pricing-page claim (verified accurate as a Supabase platform feature) but restoration has not been drilled |
@@ -130,19 +138,24 @@ Concrete test list for this pass, building on what Gate 1 already ran — **all 
   cross-tenant and from self-inserting into `platform_admins`; K2/K3 feature-flag bypass tested
   and held (K4 already done in Gate 1, K1 confirmed to have no flag by design).
 
-### Pass 2 — Application / API (S8–S10, S15, S17–S19)
+### Pass 2 — Application / API (S8–S10, S15, S17–S19) — ✅ complete, 2026-08-22
 
 `SQL injection · XSS · CSRF/CORS/headers · API authorization · input validation · rate limiting ·
 error leakage`
 
-Builds on Gate 1 §4's boundary-test catalogue (which already exercised SQL-like and raw-HTML
-input against Matter title) by extending the same payloads to every remaining free-text field —
-client name, hearing/matter notes, cause-list free-text, document names — plus AI-generated
-output rendering specifically, since that's model-produced text with no upstream sanitization
-guarantee. Adds a genuine security-headers/CORS review (CSP, HSTS, `X-Content-Type-Options`,
-`Referrer-Policy`, `frame-ancestors`, and confirming no sensitive endpoint answers with a
-wildcard `Access-Control-Allow-Origin`) and a console/network audit for stray secrets or
-over-fetched fields — neither has been done at all yet.
+Extended Gate 1 §4's boundary-test payloads (SQL-like and raw-HTML, previously only run against
+Matter title) to client name, matter notes, opposing-party, hearing purpose, and a cause-list
+source field — plus checked the one `dangerouslySetInnerHTML` call site in the entire codebase
+(an unused component) to settle whether stored/DOM XSS is even structurally possible anywhere,
+rather than checking field-by-field forever. Ran a real security-headers/CORS review against
+production and the Supabase edge functions' own CORS allowlist. Found and fixed one real
+information-disclosure gap (S19, PR #74). Two things recorded, not fixed: no login
+lockout/rate-limiting (S15, carried from Pass 1), and a CORS wildcard on Supabase's own REST
+gateway (S17, low practical risk, not app-configurable). AI-generated output rendering
+specifically wasn't separately re-tested — it renders through the same plain-JSX path already
+confirmed safe for every other field, and the codebase-wide `dangerouslySetInnerHTML` check
+already rules out a bypass. Browser console/network audit for stray secrets/over-fetched fields
+(part of S19) and non-AI bulk-action abuse (part of S15) remain open, carried to Pass 4.
 
 ### Pass 3 — Documents & AI (S11, S12)
 
@@ -196,9 +209,12 @@ result (not a code-review inference) and the Security Gate (S0) criteria all rea
 then, per S0, public marketing/general-availability launch stays blocked on the seven categories
 listed there regardless of how much of the rest of the scope is complete.
 
-**Progress: Pass 1 of 4 complete (2026-08-22).** S1–S7, S13, S14 all ✅. Of the seven S0 gate
-categories, three are now fully covered by Pass 1's results: tenant-isolation defects, IDOR/BOLA
-and RBAC-bypass authorization defects, and Superadmin privilege bypass — all tested clean.
-Cross-tenant AI leakage, unauthorized document access, and known-exposed-secrets remain open,
-scheduled for Pass 3 and Pass 4 respectively. Next up: Pass 2 (Application/API — SQL injection,
-XSS, CSRF/CORS/headers, adversarial API testing, rate limiting, error leakage).
+**Progress: Passes 1–2 of 4 complete (2026-08-22).** S1–S10, S13–S15, S17–S19 all ✅ or fixed.
+Of the seven S0 gate categories, three are fully covered by Pass 1's results: tenant-isolation
+defects, IDOR/BOLA and RBAC-bypass authorization defects, and Superadmin privilege bypass — all
+tested clean. Cross-tenant AI leakage, unauthorized document access, and known-exposed-secrets
+remain open, scheduled for Pass 3 and Pass 4 respectively. Two non-gate-blocking items are
+recorded but not yet resolved: no observable login lockout/rate-limiting (S15), and Supabase's
+own REST gateway CORS wildcard (S17, low practical risk, platform-level, not app-fixable). Next
+up: Pass 3 (Documents & AI — unauthorized document access, AI cross-tenant leakage) — the two
+tests most directly relevant to the S0 gate categories still open.
