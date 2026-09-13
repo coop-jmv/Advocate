@@ -5,6 +5,35 @@ project_id = "cjcjfdwdlsdgyvshuncn"
 [analytics]
 enabled = false
 
+[auth]
+# LOCAL STACK ONLY. The hosted project's Site URL and redirect allowlist are set
+# in the Supabase dashboard (Auth -> URL Configuration). Do NOT run
+# `supabase config push` with this block in place: it would copy these
+# localhost values to production and break every production auth redirect.
+#
+# The CLI's defaults here are site_url http://127.0.0.1:3000 with an allowlist
+# of only https://127.0.0.1:3000 (read from the running auth container).
+#
+# Tested against the local stack on 2026-09-13: Supabase Auth keeps a
+# redirect_to whose hostname matches site_url (any port or path) or that is on
+# the allowlist, and silently replaces anything else with site_url. A reset
+# requested for http://example.test:5173/reset-password produced an email whose
+# link landed on http://localhost:5173/ - the home page, holding a recovery
+# session but showing no reset form.
+#
+# Under the defaults, site_url's host is 127.0.0.1 while the dev server runs at
+# http://localhost:5173 (.claude/launch.json): a different hostname, not on the
+# allowlist. So the redirects this app requests locally - /reset-password from
+# resetPasswordForEmail(), /app from signUp(), the /invite flow - fall into that
+# same case and would be sent to 127.0.0.1:3000, where nothing listens.
+# 127.0.0.1:5173 is allowlisted explicitly because, by that same rule, it is a
+# different hostname from site_url's localhost.
+site_url = "http://localhost:5173"
+additional_redirect_urls = [
+  "http://localhost:5173/**",
+  "http://127.0.0.1:5173/**",
+]
+
 [auth.email]
 # Skip the Mailpit confirmation round-trip when signing up locally.
 enable_confirmations = false
