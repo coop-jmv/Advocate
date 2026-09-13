@@ -12,12 +12,41 @@ export const Route = createFileRoute("/reset-password")({
   component: ResetPasswordPage,
 });
 
+// Supabase redirects a failed recovery link back here with the reason in the URL
+// (#error=access_denied&error_code=otp_expired&error_description=…). auth-js
+// detects that during initialize() but only returns it internally: it emits no
+// auth event and does not clear the hash, so without reading it ourselves the
+// page could only say "Reset link required" — which tells someone holding a
+// link from their inbox nothing about why it didn't work.
+//
+// The most common real cause is otp_expired on a link the person has never
+// clicked: some mail providers and corporate link-scanners open every URL in an
+// incoming email to check it, which spends the one-time token before a human
+// ever sees it. Saying so is the difference between "try again" and "the reset
+// feature is broken".
+function recoveryLinkError(): string | null {
+  if (typeof window === "undefined") return null;
+  const params = new URLSearchParams(window.location.hash.slice(1));
+  // PKCE-style redirects put the error in the query string instead.
+  for (const [key, value] of new URLSearchParams(window.location.search)) {
+    if (!params.has(key)) params.set(key, value);
+  }
+  const code = params.get("error_code");
+  if (!code && !params.get("error") && !params.get("error_description")) return null;
+
+  if (code === "otp_expired") {
+    return "This reset link has expired or has already been used. Some email providers open links automatically to scan them, which uses the link up — request a new one and open it straight away.";
+  }
+  return "This reset link isn't valid. Request a new one from the sign-in page.";
+}
+
 // Landing here from the recovery email link, the Supabase client (detectSessionInUrl
 // is on by default) parses the recovery token in the URL and fires PASSWORD_RECOVERY
 // once it has established a temporary session — only then is updateUser() valid.
 function ResetPasswordPage() {
   const navigate = useNavigate();
   const [ready, setReady] = useState(false);
+  const [linkError, setLinkError] = useState<string | null>(null);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -25,6 +54,14 @@ function ResetPasswordPage() {
   const [done, setDone] = useState(false);
 
   useEffect(() => {
+    // A failed link takes precedence over any session already in storage, so an
+    // expired link is never masked by an unrelated earlier sign-in.
+    const failure = recoveryLinkError();
+    if (failure) {
+      setLinkError(failure);
+      return;
+    }
+
     let active = true;
     supabase.auth.getSession().then(({ data }) => {
       if (active && data.session) setReady(true);
@@ -86,6 +123,17 @@ function ResetPasswordPage() {
               >
                 Go to your chamber
               </button>
+            </>
+          ) : linkError ? (
+            <>
+              <h1 className="font-display text-xl font-bold">This reset link didn't work</h1>
+              <p className="mt-1.5 text-sm text-muted-foreground">{linkError}</p>
+              <Link
+                to="/auth"
+                className="mt-5 block w-full rounded bg-primary px-4 py-2.5 text-center text-sm font-semibold text-primary-foreground transition-colors hover:bg-ink"
+              >
+                Request a new link
+              </Link>
             </>
           ) : !ready ? (
             <>

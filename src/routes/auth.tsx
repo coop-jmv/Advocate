@@ -149,7 +149,19 @@ function AuthPage() {
       void navigate({ to: "/app" });
     } catch (cause) {
       if (mode === "signin") void logAuthEvent({ event: "login_failed", email });
-      setError(cause instanceof Error ? cause.message : "Could not complete that request.");
+      // A network-level failure — sign-in service unreachable, DNS not resolving,
+      // device offline — arrives as AuthRetryableFetchError carrying the browser's
+      // own text ("Failed to fetch" in Chromium, "Load failed" in Safari), which
+      // reads as if this button were broken. Matched on name rather than
+      // instanceof: auth-js sets the name as a string literal in the constructor,
+      // so it survives bundling and doesn't rely on supabase-js re-exporting it.
+      setError(
+        cause instanceof Error && cause.name === "AuthRetryableFetchError"
+          ? "We can't reach the sign-in service right now. Check your connection and try again in a few minutes."
+          : cause instanceof Error
+            ? cause.message
+            : "Could not complete that request.",
+      );
     } finally {
       setBusy(false);
     }
