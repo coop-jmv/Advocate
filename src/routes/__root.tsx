@@ -145,8 +145,36 @@ function RootShell({ children }: { children: ReactNode }) {
 // re-running across re-renders/HMR without needing a ref.
 let lastLoggedLoginToken: string | undefined;
 
+// A password-recovery link can land somewhere other than /reset-password: when
+// the redirect a reset asked for isn't accepted, Supabase Auth silently sends the
+// person to the Site URL instead (reproduced on the local stack — the link landed
+// on the home page). They then hold a valid recovery session but never see the
+// "set a new password" form, which reads exactly like "reset doesn't work".
+//
+// Captured here, at module evaluation, rather than inside an effect: the session
+// travels in the URL fragment, and the Supabase client consumes and strips that
+// fragment as soon as anything first touches it — which can happen in a child
+// route's effect before RootComponent's own effects run. Reading it now is before
+// any of that. Only a genuine session-bearing recovery callback qualifies.
+const initialRecoveryHash =
+  typeof window !== "undefined" &&
+  /(?:^#|&)type=recovery(?:&|$)/.test(window.location.hash) &&
+  /(?:^#|&)access_token=/.test(window.location.hash)
+    ? window.location.hash
+    : null;
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+
+  useEffect(() => {
+    // Full-page replace rather than a client-side navigate: the reset page
+    // establishes the session from the fragment on load, and a router navigation
+    // could drop the fragment before the Supabase client has read it. The target
+    // is fixed, so this can't be turned into an open redirect, and replace keeps
+    // the token-bearing URL out of the back-button history.
+    if (!initialRecoveryHash || window.location.pathname === "/reset-password") return;
+    window.location.replace(`/reset-password${initialRecoveryHash}`);
+  }, []);
 
   useEffect(() => {
     if (import.meta.env.DEV) return;
