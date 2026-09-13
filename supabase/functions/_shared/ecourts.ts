@@ -100,7 +100,8 @@ async function lookupViaVakeel360(cnr: string): Promise<CaseSnapshot> {
   });
   const payload = await response.json().catch(() => null);
   if (!response.ok) {
-    const detail = payload && typeof payload === "object" ? JSON.stringify(payload) : response.statusText;
+    const detail =
+      payload && typeof payload === "object" ? JSON.stringify(payload) : response.statusText;
     throw new Error(`Vakeel360 lookup failed (${response.status}): ${detail}`);
   }
   return {

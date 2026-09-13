@@ -78,7 +78,9 @@ export function NotificationBell() {
   }, [refresh]);
 
   async function markRead(id: string) {
-    setItems((prev) => prev.map((n) => (n.id === id ? { ...n, read_at: new Date().toISOString() } : n)));
+    setItems((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, read_at: new Date().toISOString() } : n)),
+    );
     setUnreadCount((prev) => Math.max(0, prev - 1));
     await supabase.from("notifications").update({ read_at: new Date().toISOString() }).eq("id", id);
   }
@@ -119,9 +121,7 @@ export function NotificationBell() {
         </div>
         <DropdownMenuSeparator />
         {items.length === 0 ? (
-          <p className="px-2 py-6 text-center text-sm text-muted-foreground">
-            Nothing here yet.
-          </p>
+          <p className="px-2 py-6 text-center text-sm text-muted-foreground">Nothing here yet.</p>
         ) : (
           <div className="max-h-96 overflow-y-auto">
             {items.map((item) => (

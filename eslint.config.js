@@ -10,7 +10,23 @@ export default tseslint.config(
   // deploy-*/index.js is a generated bundle that alone accounted for ~5.9k
   // phantom lint errors. Already gitignored; ignore it here too so `bun run
   // lint` reflects source, not leftover deploy artifacts.
-  { ignores: ["dist", ".output", ".vinxi", "android", "ios", "**/.wrangler"] },
+  // src/integrations/supabase/types.ts is Supabase's generated database types
+  // (`supabase gen types typescript` output: Row/Insert/Update per table). It
+  // was the source of 1,277 of CI's 1,285 lint errors, all prettier formatting,
+  // and has kept the Lint step red on main. Reformatting it would be undone the
+  // next time the types are regenerated, so it's excluded instead — it is still
+  // fully type-checked, just not style-checked.
+  {
+    ignores: [
+      "dist",
+      ".output",
+      ".vinxi",
+      "android",
+      "ios",
+      "**/.wrangler",
+      "src/integrations/supabase/types.ts",
+    ],
+  },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ["**/*.{ts,tsx}"],
