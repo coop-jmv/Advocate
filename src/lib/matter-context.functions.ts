@@ -20,6 +20,7 @@ export type MatterContextMatter = {
   title: string;
   clientName: string | null;
   caseNumber: string | null;
+  cnr: string | null;
   court: string | null;
   status: string;
   opposingParty: string | null;
@@ -95,7 +96,7 @@ export const getMatterContext = createServerFn({ method: "GET" })
     const { data: matterRow, error: matterError } = await supabase
       .from("matters")
       .select(
-        "id, title, client_name, case_number, court, status, opposing_party, filed_date, notes, created_at",
+        "id, title, client_name, case_number, cnr, court, status, opposing_party, filed_date, notes, created_at",
       )
       .eq("id", data.matterId)
       .maybeSingle();
@@ -228,6 +229,7 @@ export const getMatterContext = createServerFn({ method: "GET" })
         title: matterRow.title,
         clientName: matterRow.client_name,
         caseNumber: matterRow.case_number,
+        cnr: matterRow.cnr,
         court: matterRow.court,
         status: matterRow.status,
         opposingParty: matterRow.opposing_party,

@@ -16,6 +16,7 @@ export type MatterRecord = {
   title: string;
   client_name: string | null;
   case_number: string | null;
+  cnr: string | null;
   court: string | null;
   status: string;
   opposing_party: string | null;
@@ -62,6 +63,7 @@ export async function createMatter(input: {
   title: string;
   clientName?: string;
   caseNumber?: string;
+  cnr?: string;
   court?: string;
   opposingParty?: string;
   filedDate?: string;
@@ -78,6 +80,7 @@ export async function updateMatter(input: {
   title: string;
   clientName?: string;
   caseNumber?: string;
+  cnr?: string;
   court?: string;
   opposingParty?: string;
   filedDate?: string;

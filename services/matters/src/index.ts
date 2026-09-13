@@ -25,14 +25,15 @@ import { encryptField } from "./field-encryption";
 // just to have it would mean maintaining decrypt logic nothing exercises.
 
 const LIST_COLUMNS =
-  "id, title, client_name, case_number, court, status, opposing_party, filed_date, created_at";
+  "id, title, client_name, case_number, cnr, court, status, opposing_party, filed_date, created_at";
 const WRITE_COLUMNS =
-  "id, title, client_name, case_number, court, status, opposing_party, filed_date, notes, created_at";
+  "id, title, client_name, case_number, cnr, court, status, opposing_party, filed_date, notes, created_at";
 
 type MatterInput = {
   title?: string;
   clientName?: string;
   caseNumber?: string;
+  cnr?: string;
   court?: string;
   opposingParty?: string;
   filedDate?: string;
@@ -41,6 +42,22 @@ type MatterInput = {
 };
 
 const VALID_STATUSES = new Set(["active", "closed", "archived"]);
+
+// CNR (e-Courts case number) arrived with e-Courts integration Phase 1 (#78),
+// which added it to the old matters.functions.ts after Matters had already been
+// extracted here — so it's ported rather than inherited. Same contract as that
+// version: optional, blank clears it, otherwise 16 letters/numbers stored
+// uppercased. The pattern mirrors the matters_cnr_format_check constraint, so a
+// bad value gets a readable 400 here instead of a raw constraint error.
+const CNR_PATTERN = /^[A-Za-z0-9]{16}$/;
+
+function normalizeCnr(value: unknown): { ok: true; cnr: string | null } | { ok: false } {
+  if (value === undefined || value === null) return { ok: true, cnr: null };
+  if (typeof value !== "string") return { ok: false };
+  const trimmed = value.trim();
+  if (trimmed === "") return { ok: true, cnr: null };
+  return CNR_PATTERN.test(trimmed) ? { ok: true, cnr: trimmed.toUpperCase() } : { ok: false };
+}
 
 function isUuid(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
@@ -66,6 +83,8 @@ async function createMatter(req: Request, supabase: SupabaseClient, userId: stri
   if (!body.title || body.title.trim().length < 2) {
     return errorResponse(req, "title must be at least 2 characters");
   }
+  const cnr = normalizeCnr(body.cnr);
+  if (!cnr.ok) return errorResponse(req, "CNR must be 16 letters/numbers.");
 
   const { data: saved, error } = await supabase
     .from("matters")
@@ -73,6 +92,7 @@ async function createMatter(req: Request, supabase: SupabaseClient, userId: stri
       title: body.title,
       client_name: body.clientName ?? null,
       case_number: body.caseNumber ?? null,
+      cnr: cnr.cnr,
       court: body.court ?? null,
       opposing_party: body.opposingParty ?? null,
       filed_date: body.filedDate ?? null,
@@ -98,6 +118,8 @@ async function updateMatter(req: Request, supabase: SupabaseClient, matterId: st
   if (!body.status || !VALID_STATUSES.has(body.status)) {
     return errorResponse(req, "status must be one of active, closed, archived");
   }
+  const cnr = normalizeCnr(body.cnr);
+  if (!cnr.ok) return errorResponse(req, "CNR must be 16 letters/numbers.");
 
   const { data: saved, error } = await supabase
     .from("matters")
@@ -105,6 +127,7 @@ async function updateMatter(req: Request, supabase: SupabaseClient, matterId: st
       title: body.title,
       client_name: body.clientName ?? null,
       case_number: body.caseNumber ?? null,
+      cnr: cnr.cnr,
       court: body.court ?? null,
       opposing_party: body.opposingParty ?? null,
       filed_date: body.filedDate ?? null,
