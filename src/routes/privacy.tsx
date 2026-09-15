@@ -136,9 +136,9 @@ function Privacy() {
           <section>
             <h2 className="font-display text-lg font-bold">Retention</h2>
             <p className="mt-2 text-muted-foreground">
-              Account and matter data is retained while your account is open. A trial account left
-              inactive for more than 90 days after the trial ends, and a cancelled subscription left
-              inactive for more than 180 days, becomes eligible for deletion.
+              Account and matter data is retained while your account is open, including on the Free
+              plan. A cancelled subscription left inactive for more than 180 days becomes eligible
+              for deletion.
             </p>
           </section>
 

@@ -22,6 +22,7 @@ const SUPPORT_PHONE = "+91 70100 61822";
 // activateSubscription, /admin/settings/integrations) is unaffected — only
 // this display is hidden.
 const planLabel: Record<string, string> = {
+  free: "Free",
   trial: "Trial",
   solo_basic: "Solo Basic",
   solo_pro: "Solo Pro",
@@ -32,7 +33,6 @@ type Entitlements = {
   plan: string;
   status: string;
   trial_days_left: number | null;
-  trial_expired: boolean;
   monthly_total_inr: number;
   billing_cadence: string | null;
   current_period_end: string | null;
@@ -64,6 +64,7 @@ function Subscription() {
     entitlements &&
     !entitlements.subscription_expired &&
     entitlements.plan !== "trial" &&
+    entitlements.plan !== "free" &&
     entitlements.subscription_grace_days_left !== null &&
     entitlements.current_period_end !== null &&
     new Date(entitlements.current_period_end) <= new Date();
@@ -75,14 +76,6 @@ function Subscription() {
         <p className="flex items-center gap-2 text-sm text-muted-foreground">
           <Loader2 className="size-4 animate-spin" /> Loading your plan…
         </p>
-      ) : entitlements?.trial_expired ? (
-        <div className="surface-panel rounded border-l-4 border-destructive p-5">
-          <h2 className="font-display text-base font-bold">Your free trial has ended</h2>
-          <p className="mt-1.5 text-sm text-muted-foreground">
-            Your matters, diary, documents and clients are all still here and fully readable — you
-            just can't add anything new until you pick a plan below.
-          </p>
-        </div>
       ) : entitlements?.subscription_expired ? (
         <div className="surface-panel rounded border-l-4 border-destructive p-5">
           <h2 className="font-display text-base font-bold">Your subscription has lapsed</h2>
@@ -111,8 +104,20 @@ function Subscription() {
             {entitlements.trial_days_left === 1 ? "" : "s"} left on your free trial
           </h2>
           <p className="mt-1.5 text-sm text-muted-foreground">
-            Everything is unlocked during the trial. Pick a plan any time to keep it that way once
-            the trial ends.
+            Everything is unlocked during the trial. When it ends you move to the Free plan
+            automatically — nothing is locked or lost — and can add paid modules any time.
+          </p>
+        </div>
+      ) : entitlements && entitlements.plan === "free" ? (
+        <div className="surface-panel rounded border-l-4 border-accent p-5">
+          <h2 className="font-display text-base font-bold">
+            You're on the Free plan — free forever
+          </h2>
+          <p className="mt-1.5 text-sm text-muted-foreground">
+            One advocate login, up to 25 matters and 25 clients, the court diary with cause-list
+            matching and e-Courts lookups, and AI case analysis (5 AI requests a day). Documents and
+            OCR, billing, AI drafting, WhatsApp and team seats are paid add-ons — contact us below
+            to add them.
           </p>
         </div>
       ) : entitlements ? (

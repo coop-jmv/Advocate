@@ -16,11 +16,13 @@ export async function requireAssistantModule(
 
   const { data: license } = await supabase
     .from("licenses")
-    .select("plan, integrations")
+    .select("plan, trial_ends_at, integrations")
     .eq("tenant_id", profile.tenant_id)
     .maybeSingle();
   if (!license) throw new Error("No license found for this chamber.");
-  if (license.plan === "trial") return;
+  // Included on Free (free_plan_module() in the database), and an active or
+  // ended trial is either everything or Free, so both pass.
+  if (license.plan === "free" || license.plan === "trial") return;
 
   const integrations = (license.integrations ?? {}) as Record<string, boolean | undefined>;
   if (integrations["ai_assistant_enabled"] === true) return;

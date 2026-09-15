@@ -219,8 +219,9 @@ function Features() {
           <div>
             <h2 className="text-2xl font-bold">See it against your own week</h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              Every feature above is unlocked for 15 days, no card required — the fastest way to
-              know is to run one real matter through it.
+              Matters, clients, the court diary and AI case analysis are free forever for one
+              advocate, no card required — the fastest way to know is to run one real matter through
+              it.
             </p>
           </div>
           <Link
@@ -228,7 +229,7 @@ function Features() {
             search={{ mode: "signup" }}
             className="inline-flex shrink-0 items-center gap-2 rounded bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-ink"
           >
-            Start free trial
+            Start free
             <ArrowRight className="size-4" />
           </Link>
         </div>

@@ -28,6 +28,30 @@ const MODULE_LABELS: Record<ModuleKey, string> = {
   billing: "time tracking and billing",
 };
 
+// Modules the Free plan includes at no charge. Keep in sync with
+// free_plan_module() in supabase/migrations/20260915090000_free_forever_plan.sql.
+const FREE_PLAN_MODULES: ReadonlySet<ModuleKey> = new Set<ModuleKey>([
+  "matters",
+  "clients",
+  "diary",
+  "matter_intelligence",
+  "ai_assistant",
+]);
+
+// Mirrors effective_plan() + module_enabled() in the database: an active trial
+// unlocks everything, an ended trial is treated as Free, and Free includes
+// FREE_PLAN_MODULES. Anything else needs its "{module}_enabled" flag.
+function includedByPlan(
+  license: { plan: string; trial_ends_at: string | null },
+  moduleKey: ModuleKey,
+): boolean {
+  if (license.plan === "trial") {
+    const trialActive = !license.trial_ends_at || new Date(license.trial_ends_at) > new Date();
+    return trialActive || FREE_PLAN_MODULES.has(moduleKey);
+  }
+  return license.plan === "free" && FREE_PLAN_MODULES.has(moduleKey);
+}
+
 export async function requireModule(
   supabase: SupabaseClient<Database>,
   userId: string,
@@ -42,11 +66,11 @@ export async function requireModule(
 
   const { data: license } = await supabase
     .from("licenses")
-    .select("plan, integrations")
+    .select("plan, trial_ends_at, integrations")
     .eq("tenant_id", profile.tenant_id)
     .maybeSingle();
   if (!license) throw new Error("No license found for this chamber.");
-  if (license.plan === "trial") return;
+  if (includedByPlan(license, moduleKey)) return;
 
   const integrations = (license.integrations ?? {}) as Record<string, boolean | undefined>;
   if (integrations[`${moduleKey}_enabled`] === true) return;
@@ -96,15 +120,17 @@ export async function getEnabledModules(
 
   const { data: license } = await supabase
     .from("licenses")
-    .select("plan, integrations")
+    .select("plan, trial_ends_at, integrations")
     .eq("tenant_id", profile.tenant_id)
     .maybeSingle();
   if (!license) return allDisabled();
 
-  const isTrial = license.plan === "trial";
   const integrations = (license.integrations ?? {}) as Record<string, boolean | undefined>;
   const enabled = Object.fromEntries(
-    moduleKeys.map((key) => [key, isTrial || integrations[`${key}_enabled`] === true]),
+    moduleKeys.map((key) => [
+      key,
+      includedByPlan(license, key) || integrations[`${key}_enabled`] === true,
+    ]),
   ) as Record<ModuleKey, boolean>;
   return { enabled, integrations };
 }

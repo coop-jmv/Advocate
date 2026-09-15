@@ -158,15 +158,31 @@ Deno.serve(async (req) => {
 
   const { data: licenses, error: licensesError } = await admin
     .from("licenses")
-    .select("tenant_id, plan, status, integrations")
+    .select("tenant_id, plan, status, trial_ends_at, integrations")
     .in("status", ACTIVE_LICENSE_STATUSES)
-    .returns<Array<TenantRow & { status: string; integrations: Record<string, unknown> }>>();
+    .returns<
+      Array<
+        TenantRow & {
+          status: string;
+          trial_ends_at: string | null;
+          integrations: Record<string, unknown>;
+        }
+      >
+    >();
 
   if (licensesError) {
     return errorResponse(req, `Could not list tenants: ${licensesError.message}`, 500);
   }
 
-  const eligibleTenants = (licenses ?? []).filter((l) => l.integrations?.whatsapp_enabled === true);
+  // WhatsApp is not part of the Free plan, and an ended trial is on Free
+  // (effective_plan() in the database) even if its old whatsapp_enabled flag
+  // is still set.
+  const onFreeTier = (l: { plan: string; trial_ends_at: string | null }) =>
+    l.plan === "free" ||
+    (l.plan === "trial" && l.trial_ends_at !== null && new Date(l.trial_ends_at) <= new Date());
+  const eligibleTenants = (licenses ?? []).filter(
+    (l) => l.integrations?.whatsapp_enabled === true && !onFreeTier(l),
+  );
 
   let tenantsProcessed = 0;
   let notified = 0;
