@@ -34,6 +34,6 @@ export async function requireDocumentsModule(
   if (integrations["documents_enabled"] === true) return;
 
   throw new Error(
-    "Document intake isn't included on this chamber's plan yet — contact chambers@lexdiary.online to add it.",
+    "Document intake isn't included on this chamber's plan yet — contact lexdiary.online@gmail.com to add it.",
   );
 }

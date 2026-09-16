@@ -35,6 +35,6 @@ export async function requireDraftingModule(
   if (integrations["ai_drafting_enabled"] === true) return;
 
   throw new Error(
-    "AI drafting (including dictation) isn't included on this chamber's plan yet — contact chambers@lexdiary.online to add it.",
+    "AI drafting (including dictation) isn't included on this chamber's plan yet — contact lexdiary.online@gmail.com to add it.",
   );
 }

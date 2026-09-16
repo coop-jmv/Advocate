@@ -76,7 +76,7 @@ export async function requireModule(
   if (integrations[`${moduleKey}_enabled`] === true) return;
 
   throw new Error(
-    `${MODULE_LABELS[moduleKey]} isn't included on this chamber's plan yet — contact chambers@lexdiary.online to add it.`,
+    `${MODULE_LABELS[moduleKey]} isn't included on this chamber's plan yet — contact lexdiary.online@gmail.com to add it.`,
   );
 }
 

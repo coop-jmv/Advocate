@@ -28,6 +28,6 @@ export async function requireAssistantModule(
   if (integrations["ai_assistant_enabled"] === true) return;
 
   throw new Error(
-    "The AI case assistant isn't included on this chamber's plan yet — contact chambers@lexdiary.online to add it.",
+    "The AI case assistant isn't included on this chamber's plan yet — contact lexdiary.online@gmail.com to add it.",
   );
 }

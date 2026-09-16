@@ -11,7 +11,7 @@ export const Route = createFileRoute("/_authenticated/app/subscription")({
   component: Subscription,
 });
 
-const BILLING_EMAIL = "chambers@lexdiary.online";
+const BILLING_EMAIL = "lexdiary.online@gmail.com";
 const SUPPORT_PHONE = "+91 70100 61822";
 
 // Fixed-tier pricing (Solo Basic/Pro, Chamber) is being replaced by

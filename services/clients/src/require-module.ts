@@ -29,6 +29,6 @@ export async function requireClientsModule(
   if (integrations["clients_enabled"] === true) return;
 
   throw new Error(
-    "Client management isn't included on this chamber's plan yet — contact chambers@lexdiary.online to add it.",
+    "Client management isn't included on this chamber's plan yet — contact lexdiary.online@gmail.com to add it.",
   );
 }

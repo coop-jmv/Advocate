@@ -27,6 +27,6 @@ export async function requireDiaryModule(supabase: SupabaseClient, userId: strin
   if (integrations["diary_enabled"] === true) return;
 
   throw new Error(
-    "The court diary isn't included on this chamber's plan yet — contact chambers@lexdiary.online to add it.",
+    "The court diary isn't included on this chamber's plan yet — contact lexdiary.online@gmail.com to add it.",
   );
 }

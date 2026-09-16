@@ -29,6 +29,6 @@ export async function requireMattersModule(
   if (integrations["matters_enabled"] === true) return;
 
   throw new Error(
-    "Case/matter tracking isn't included on this chamber's plan yet — contact chambers@lexdiary.online to add it.",
+    "Case/matter tracking isn't included on this chamber's plan yet — contact lexdiary.online@gmail.com to add it.",
   );
 }
