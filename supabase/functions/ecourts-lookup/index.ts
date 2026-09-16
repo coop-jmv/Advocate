@@ -6,8 +6,15 @@ import { lookupByCnr, currentProviderName } from "../_shared/ecourts.ts";
 // the matter-creation form. A normal user-JWT function (not a background
 // job) — every lookup is a live user action, gated by
 // licenses.integrations.ecourts_enabled (default false, unlike
-// whatsapp_enabled — see the migration header for why) and a per-tenant
-// daily quota.
+// whatsapp_enabled — see the migration header for why), by the plan
+// (plan_feature 'ecourts', so never on Free) and a per-tenant daily quota.
+//
+// Every miss is a billed vendor call, so a snapshot already fetched for this
+// chamber and CNR within CACHE_TTL_HOURS is served from ecourts_sync_log
+// instead: no vendor call, no quota spent. Pass {"refresh": true} to force a
+// fresh fetch (that one does cost a call and a quota unit).
+
+const CACHE_TTL_HOURS = 24;
 
 Deno.serve(async (req) => {
   const preflight = handleOptions(req);
@@ -43,7 +50,15 @@ Deno.serve(async (req) => {
     );
   }
 
-  let body: { cnr?: string };
+  // Plan gate, separate from the switch above: assert_feature() refuses Free
+  // outright, so a chamber can never be switched on into a billed call its
+  // plan doesn't cover. Both must pass.
+  const { error: featureError } = await auth.supabase.rpc("assert_feature", {
+    p_feature: "ecourts",
+  });
+  if (featureError) return errorResponse(req, featureError.message, 403);
+
+  let body: { cnr?: string; refresh?: boolean };
   try {
     body = await req.json();
   } catch {
@@ -52,6 +67,33 @@ Deno.serve(async (req) => {
   const cnr = body.cnr?.trim();
   if (!cnr || !/^[A-Za-z0-9]{16}$/.test(cnr)) {
     return errorResponse(req, "cnr must be a 16-character alphanumeric CNR.");
+  }
+  const normalizedCnr = cnr.toUpperCase();
+
+  // Cache read before anything is spent. Scoped to this tenant (RLS allows
+  // no other), newest first. A cache hit is not logged again: the log is a
+  // record of vendor calls, and logging hits would make it useless for
+  // reconciling the vendor's bill.
+  if (body.refresh !== true) {
+    const since = new Date(Date.now() - CACHE_TTL_HOURS * 60 * 60 * 1000).toISOString();
+    const { data: cached } = await auth.supabase
+      .from("ecourts_sync_log")
+      .select("snapshot, created_at")
+      .eq("tenant_id", profile!.tenant_id)
+      .eq("cnr", normalizedCnr)
+      .eq("status", "success")
+      .gte("created_at", since)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (cached?.snapshot) {
+      return jsonResponse(req, {
+        ...(cached.snapshot as Record<string, unknown>),
+        cached: true,
+        fetchedAt: cached.created_at,
+      });
+    }
   }
 
   try {
@@ -62,20 +104,28 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const snapshot = await lookupByCnr(cnr);
-    await auth.supabase.from("ecourts_sync_log").insert({
-      tenant_id: profile!.tenant_id,
-      cnr,
-      provider: currentProviderName(),
-      status: "success",
-      snapshot,
+    const snapshot = await lookupByCnr(normalizedCnr);
+    const { data: logged } = await auth.supabase
+      .from("ecourts_sync_log")
+      .insert({
+        tenant_id: profile!.tenant_id,
+        cnr: normalizedCnr,
+        provider: currentProviderName(),
+        status: "success",
+        snapshot,
+      })
+      .select("created_at")
+      .maybeSingle();
+    return jsonResponse(req, {
+      ...snapshot,
+      cached: false,
+      fetchedAt: logged?.created_at ?? new Date().toISOString(),
     });
-    return jsonResponse(req, snapshot);
   } catch (cause) {
     const message = cause instanceof Error ? cause.message : "e-Courts lookup failed.";
     await auth.supabase.from("ecourts_sync_log").insert({
       tenant_id: profile!.tenant_id,
-      cnr,
+      cnr: normalizedCnr,
       provider: currentProviderName(),
       status: "failed",
       status_detail: message,

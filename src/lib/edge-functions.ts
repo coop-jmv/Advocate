@@ -231,9 +231,15 @@ export type EcourtsCaseSnapshot = {
   status: string | null;
   nextHearingDate: string | null;
   orders: { date: string; title: string; pdfUrl: string | null }[];
+  // Served from the chamber's own last successful lookup of this CNR (under
+  // 24 hours old) rather than a fresh — and billed — vendor call. Show
+  // fetchedAt next to the result so nobody mistakes a cached snapshot for
+  // this morning's position.
+  cached: boolean;
+  fetchedAt: string;
 };
 
-export function lookupEcourtsCase(input: { cnr: string }) {
+export function lookupEcourtsCase(input: { cnr: string; refresh?: boolean }) {
   return invoke<EcourtsCaseSnapshot>("ecourts-lookup", input);
 }
 

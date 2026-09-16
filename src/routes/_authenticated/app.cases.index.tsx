@@ -139,7 +139,13 @@ function Cases() {
         court: snapshot.court ?? f.court,
         opposingParty: snapshot.parties.respondent ?? f.opposingParty,
       }));
-      setVerifyNotice("Case found — details filled in below. Review before saving.");
+      // A cached snapshot can be up to 24 hours old, so say so rather than
+      // let a stale next-hearing date read as this morning's position.
+      setVerifyNotice(
+        snapshot.cached
+          ? `Case found — from your chamber's lookup on ${new Date(snapshot.fetchedAt).toLocaleString("en-IN")}. Details filled in below; review before saving.`
+          : "Case found — details filled in below. Review before saving.",
+      );
     } catch (cause) {
       setVerifyNotice(friendlyErrorMessage(cause, "Could not verify that CNR."));
     } finally {
