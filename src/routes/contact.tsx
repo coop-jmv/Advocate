@@ -82,7 +82,7 @@ function Contact() {
             <dl className="mt-9 space-y-4 text-sm">
               <div>
                 <dt className="font-semibold">Email</dt>
-                <dd className="text-muted-foreground">chambers@lexdiary.online</dd>
+                <dd className="text-muted-foreground">lexdiary.online@gmail.com</dd>
               </div>
               <div>
                 <dt className="font-semibold">Phone — help and other enquiries</dt>

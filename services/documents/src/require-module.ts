@@ -17,16 +17,23 @@ export async function requireDocumentsModule(
 
   const { data: license } = await supabase
     .from("licenses")
-    .select("plan, integrations")
+    .select("plan, trial_ends_at, integrations")
     .eq("tenant_id", profile.tenant_id)
     .maybeSingle();
   if (!license) throw new Error("No license found for this chamber.");
-  if (license.plan === "trial") return;
+  // An active trial unlocks everything; an ended trial is on Free, which does
+  // not include this module (effective_plan() in the database).
+  if (
+    license.plan === "trial" &&
+    (!license.trial_ends_at || new Date(license.trial_ends_at) > new Date())
+  ) {
+    return;
+  }
 
   const integrations = (license.integrations ?? {}) as Record<string, boolean | undefined>;
   if (integrations["documents_enabled"] === true) return;
 
   throw new Error(
-    "Document intake isn't included on this chamber's plan yet — contact chambers@lexdiary.online to add it.",
+    "Document intake isn't included on this chamber's plan yet — contact lexdiary.online@gmail.com to add it.",
   );
 }

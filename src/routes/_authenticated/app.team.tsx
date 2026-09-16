@@ -69,6 +69,7 @@ const inviteStatusTone: Record<string, Tone> = {
 };
 
 const planLabel: Record<string, string> = {
+  free: "Free",
   trial: "Trial",
   solo_basic: "Solo Basic",
   solo_pro: "Solo Pro",
@@ -252,25 +253,10 @@ function Team() {
       ) : null}
 
       {ent && ent.plan === "trial" ? (
-        <p
-          className={
-            ent.trial_expired
-              ? "mb-4 rounded border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-              : "mb-4 rounded border border-accent/30 bg-accent/10 px-3 py-2 text-sm"
-          }
-        >
-          {ent.trial_expired ? (
-            <>
-              Your {ent.trial_period_days}-day free trial has ended. Everything you entered is still
-              readable and exportable — choose a plan to start adding to it again.
-            </>
-          ) : (
-            <>
-              Free trial — {ent.trial_days_left} {ent.trial_days_left === 1 ? "day" : "days"} left
-              of {ent.trial_period_days}. No card on file; nothing is charged unless you choose a
-              plan.
-            </>
-          )}
+        <p className="mb-4 rounded border border-accent/30 bg-accent/10 px-3 py-2 text-sm">
+          Free trial — {ent.trial_days_left} {ent.trial_days_left === 1 ? "day" : "days"} left of{" "}
+          {ent.trial_period_days}. When it ends your chamber moves to the Free plan; nothing is
+          charged unless you choose a plan.
         </p>
       ) : null}
 
@@ -343,7 +329,7 @@ function Team() {
             <div className="surface-panel mt-6 rounded p-5">
               <h3 className="font-display text-sm font-bold">Add a teammate</h3>
               <p className="mt-2 text-sm text-muted-foreground">
-                Your {planLabel[ent?.plan ?? "trial"] ?? ent?.plan} plan covers a single advocate.
+                Your {planLabel[ent?.plan ?? "free"] ?? ent?.plan} plan covers a single advocate.
                 The Chamber plan starts at {rupees(7999)} a month for two users, with extra seats at{" "}
                 {rupees(1999)} each — ask the platform admin to move your chamber onto it and this
                 screen will let you invite and manage teammates here.

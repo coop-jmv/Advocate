@@ -227,31 +227,31 @@ function AuthPage() {
               {mode === "signin"
                 ? "Sign in"
                 : mode === "signup"
-                  ? "15-day free trial"
+                  ? "Free forever"
                   : "Reset password"}
             </span>
             <h1 className="mt-2 font-display text-xl font-bold">
               {mode === "signin"
                 ? "Sign in to your chamber"
                 : mode === "signup"
-                  ? "Start your 15-day free trial"
+                  ? "Create your free chamber"
                   : "Reset your password"}
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
               {mode === "signin"
                 ? "Your matters, diary, documents and AI drafts stay private to your login."
                 : mode === "signup"
-                  ? "Every feature included — OCR, WhatsApp, drafting and a 3-seat chamber. No card required."
+                  ? "The Free plan never expires. Add paid modules only when you need them."
                   : "Enter the email on your account and we'll send you a link to set a new password."}
             </p>
 
             {mode === "signup" ? (
               <ul className="mt-2 space-y-0.5 rounded border border-accent/30 bg-accent/10 p-2 text-sm">
                 {[
-                  "All features unlocked for 15 days",
+                  "One advocate login, up to 25 matters and clients",
+                  "Court diary with daily cause-list matching and e-Courts lookups",
+                  "AI case analysis — 5 AI requests a day",
                   "No card, no payment details, nothing to cancel",
-                  "Invite up to 2 teammates and try roles and seats",
-                  "When it ends your data stays readable and exportable",
                 ].map((line) => (
                   <li key={line} className="flex gap-2">
                     <Check className="mt-0.5 size-3.5 shrink-0 text-accent" />

@@ -23,10 +23,35 @@ const MODULE_LABELS: Record<ModuleKey, string> = {
   billing: "time tracking and billing",
 };
 
+// Modules the Free plan includes at no charge. Keep in sync with
+// free_plan_module() in supabase/migrations/20260915090000_free_forever_plan.sql.
+const FREE_PLAN_MODULES: ReadonlySet<ModuleKey> = new Set<ModuleKey>([
+  "matters",
+  "clients",
+  "diary",
+  "matter_intelligence",
+  "ai_assistant",
+]);
+
+// Mirrors effective_plan() + module_enabled() in the database: an active trial
+// unlocks everything, an ended trial is treated as Free, and Free includes
+// FREE_PLAN_MODULES. Anything else needs its "{module}_enabled" flag.
+function includedByPlan(
+  license: { plan: string; trial_ends_at: string | null },
+  moduleKey: ModuleKey,
+): boolean {
+  if (license.plan === "trial") {
+    const trialActive = !license.trial_ends_at || new Date(license.trial_ends_at) > new Date();
+    return trialActive || FREE_PLAN_MODULES.has(moduleKey);
+  }
+  return license.plan === "free" && FREE_PLAN_MODULES.has(moduleKey);
+}
+
 /**
- * Per-tenant paid-module gate. Trial tenants get every module unlocked to
- * evaluate — same policy as the rest of the app (see
- * 20260820020000_trial_unlocks_all_features.sql). Once on a paid plan, a
+ * Per-tenant paid-module gate. An active trial gets every module unlocked to
+ * evaluate, and the Free plan (including an ended trial) gets
+ * FREE_PLAN_MODULES — see includedByPlan() and
+ * 20260915090000_free_forever_plan.sql. Otherwise a
  * module is available only once licenses.integrations has
  * "{module}_enabled": true set for it — opt-in, unlike the older governance
  * kill-switches (ai_morning_brief_enabled, ai_matter_intelligence_enabled,
@@ -50,16 +75,16 @@ export async function requireModule(
 
   const { data: license } = await supabase
     .from("licenses")
-    .select("plan, integrations")
+    .select("plan, trial_ends_at, integrations")
     .eq("tenant_id", profile.tenant_id)
     .maybeSingle();
   if (!license) throw new Error("No license found for this chamber.");
-  if (license.plan === "trial") return;
+  if (includedByPlan(license, moduleKey)) return;
 
   const integrations = (license.integrations ?? {}) as Record<string, boolean | undefined>;
   if (integrations[`${moduleKey}_enabled`] === true) return;
 
   throw new Error(
-    `${MODULE_LABELS[moduleKey]} isn't included on this chamber's plan yet — contact chambers@lexdiary.online to add it.`,
+    `${MODULE_LABELS[moduleKey]} isn't included on this chamber's plan yet — contact lexdiary.online@gmail.com to add it.`,
   );
 }

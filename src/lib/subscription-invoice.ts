@@ -95,7 +95,7 @@ function invoiceHtml(input: {
         <tr style="border-top:1px solid #E2E1DC"><td style="padding:10px 0;font-weight:bold">Total paid</td><td style="padding:10px 0;text-align:right;font-weight:bold">${rupees(input.total)}</td></tr>
       </table>
       <p style="margin:20px 0 0;color:#5B5F72;font-size:12px">Covers your subscription through ${input.periodEnd}.</p>
-      <p style="margin:8px 0 0;color:#5B5F72;font-size:12px">Payment received via Razorpay. Questions about this invoice? Reply to this email or write to chambers@lexdiary.online.</p>
+      <p style="margin:8px 0 0;color:#5B5F72;font-size:12px">Payment received via Razorpay. Questions about this invoice? Reply to this email or write to lexdiary.online@gmail.com.</p>
     </div>
   `;
 }

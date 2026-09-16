@@ -263,10 +263,11 @@ function AdminIntegrations() {
       </div>
       <p className="mt-1 text-sm text-muted-foreground">
         Opposite default from the toggles above: these are OFF unless a chamber has actually bought
-        the module (a trial tenant gets every module unlocked to evaluate, so this table only
-        matters once a chamber is on a paid plan). Enforced server-side in each module's edge
-        functions via requireModule() — flipping a switch off here refuses the underlying AI call
-        directly, not just the UI button.
+        the module (an active trial unlocks every module, and the Free plan already includes
+        matters, clients, diary, AI matter intelligence and the AI case assistant — so this table
+        matters for the other modules, and for any chamber on a paid plan). Enforced server-side in
+        each module's edge functions via requireModule() — flipping a switch off here refuses the
+        underlying AI call directly, not just the UI button.
       </p>
       <p className="mt-2 rounded border border-warning/40 bg-warning/10 px-3 py-2 text-xs text-warning-foreground">
         Prices shown (₹499/month each) are placeholders, not final pricing — the calculation

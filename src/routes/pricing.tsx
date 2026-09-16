@@ -15,7 +15,7 @@ export const Route = createFileRoute("/pricing")({
       {
         name: "description",
         content:
-          "Start with a 15-day free trial — no card required. Solo plans from ₹2999 a month, Chamber from ₹7999 for two users with extra seats at ₹1999.",
+          "Start on the Free plan — free forever, no card required. Solo plans from ₹2999 a month, Chamber from ₹7999 for two users with extra seats at ₹1999.",
       },
       { property: "og:title", content: "Pricing — LexDiary" },
       {
@@ -86,9 +86,9 @@ function Pricing() {
         <p className="text-eyebrow text-accent">Subscriptions</p>
         <h1 className="mt-4 text-4xl font-bold">Priced for how Indian advocates actually work</h1>
         <p className="mt-4 max-w-2xl text-muted-foreground">
-          Every plan starts with a{" "}
+          Every chamber starts on the{" "}
           <strong className="font-semibold text-foreground">
-            15-day free trial — no card required
+            Free plan — free forever, no card required
           </strong>
           . Two plans for a solo practice, and a Chamber plan that starts at two users and grows a
           seat at a time. Every plan includes GST-compliant invoicing, Indian data residency and
@@ -128,7 +128,7 @@ function Pricing() {
                     : "mt-8 block rounded border border-input px-4 py-2.5 text-center text-sm font-semibold transition-colors hover:bg-secondary"
                 }
               >
-                Start free trial
+                Start free
               </Link>
               <Link
                 to="/contact"
@@ -151,20 +151,20 @@ function Pricing() {
         </div>
 
         <div className="surface-panel mt-6 rounded p-7">
-          <h2 className="font-display text-lg font-bold">The 15-day trial</h2>
+          <h2 className="font-display text-lg font-bold">The Free plan</h2>
           <p className="mt-3 max-w-3xl text-sm leading-relaxed text-muted-foreground">
-            Sign up and the trial starts immediately — no card, no payment details, nothing to
-            cancel. It includes Indic OCR and WhatsApp so both can be evaluated properly, and runs
-            for 15 days. When it ends your chamber stays readable and exportable; you simply cannot
-            add new records until you pick a plan, so nothing you entered during the trial is ever
-            lost.
+            Sign up and your chamber is on the Free plan straight away — no card, no payment
+            details, nothing to cancel, and it never expires. It covers one advocate with up to 25
+            matters and 25 clients, the court diary with daily cause-list matching and e-Courts
+            lookups, and AI case analysis with 5 AI requests a day. Documents and OCR, billing, AI
+            drafting, WhatsApp and team seats come with a paid plan.
           </p>
           <Link
             to="/auth"
             search={{ mode: "signup" }}
             className="mt-5 inline-flex items-center gap-2 rounded bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-ink"
           >
-            Start your 15-day free trial
+            Create your free chamber
             <ArrowRight className="size-4" />
           </Link>
         </div>

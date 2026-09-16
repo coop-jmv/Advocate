@@ -140,7 +140,7 @@ function Landing() {
                   search={{ mode: "signup" }}
                   className="inline-flex items-center gap-2 rounded border border-primary-foreground/25 bg-background px-5 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
                 >
-                  Start 15-day free trial
+                  Start free — no card needed
                   <ArrowRight className="size-4" />
                 </Link>
                 <Link
@@ -152,7 +152,8 @@ function Landing() {
               </div>
 
               <p className="mt-4 text-xs text-primary-foreground/70">
-                All features included. No card required.
+                Free forever for one advocate: court diary with daily cause-list matching and
+                e-Courts lookups, and AI case analysis. No card required.
               </p>
 
               <dl className="mt-14 grid gap-6 border-t border-primary-foreground/15 pt-8 sm:grid-cols-3">

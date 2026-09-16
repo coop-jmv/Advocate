@@ -38,7 +38,7 @@ async function notifyChambers(data: z.infer<typeof inputSchema>): Promise<void> 
       },
       body: JSON.stringify({
         from: "LexDiary Onboarding <onboarding@lexdiary.online>",
-        to: ["chambers@lexdiary.online"],
+        to: ["lexdiary.online@gmail.com"],
         subject: `New access request — ${data.fullName}`,
         html: `
           <p><strong>${escapeHtml(data.fullName)}</strong>${data.enrolmentNo ? ` (${escapeHtml(data.enrolmentNo)})` : ""} requested access.</p>

@@ -46,7 +46,8 @@ type PayablePlan = (typeof PAYABLE_PLANS)[number];
 
 function subscriptionState(
   license: License,
-): "trial" | "cancelled" | "active" | "grace" | "lapsed" {
+): "free" | "trial" | "cancelled" | "active" | "grace" | "lapsed" {
+  if (license.plan === "free") return "free";
   if (license.plan === "trial") return "trial";
   if (license.status === "cancelled") return "cancelled";
   if (!license.current_period_end) return "active";
@@ -58,6 +59,7 @@ function subscriptionState(
 }
 
 const subscriptionStateTone: Record<ReturnType<typeof subscriptionState>, Tone> = {
+  free: "neutral",
   trial: "accent",
   cancelled: "danger",
   active: "success",
@@ -150,7 +152,7 @@ function AdminTenants() {
       if (tenantError) throw tenantError;
       const { error: licenseError } = await supabase
         .from("licenses")
-        .insert({ tenant_id: tenant.id, plan: "trial", status: "trialing" });
+        .insert({ tenant_id: tenant.id, plan: "free", status: "active" });
       if (licenseError) throw licenseError;
       setNewName("");
       await reload();
@@ -174,13 +176,13 @@ function AdminTenants() {
     await reload();
   }
 
-  // Reverting a chamber to trial (a correction, not a payment) skips billing
-  // entirely — this only ever runs for an actual paid-plan pick.
-  async function handleRevertToTrial(licenseId: string) {
+  // Moving a chamber back to Free (a correction, not a payment) skips billing
+  // entirely — billing only ever runs for an actual paid-plan pick.
+  async function handleMoveToFree(licenseId: string) {
     setError(null);
     const { error: updateError } = await supabase
       .from("licenses")
-      .update({ plan: "trial" })
+      .update({ plan: "free", status: "active" })
       .eq("id", licenseId);
     if (updateError) {
       setError(updateError.message);
@@ -360,11 +362,11 @@ function AdminTenants() {
                     {tenant.license ? (
                       <div className="flex items-center gap-2">
                         <Tag tone="neutral">{tenant.license.plan}</Tag>
-                        {tenant.license.plan !== "trial" ? (
+                        {tenant.license.plan !== "free" ? (
                           <button
                             type="button"
-                            title="Revert to trial"
-                            onClick={() => handleRevertToTrial(tenant.license!.id)}
+                            title="Move to Free plan"
+                            onClick={() => handleMoveToFree(tenant.license!.id)}
                             className="flex size-6 items-center justify-center rounded text-muted-foreground hover:bg-secondary hover:text-foreground"
                           >
                             <RotateCcw className="size-3.5" />
@@ -402,7 +404,9 @@ function AdminTenants() {
                           onActivate={(plan, cadence) => handleActivate(tenant.id, plan, cadence)}
                         />
                       ) : null}
-                      {tenant.license && tenant.license.plan !== "trial" ? (
+                      {tenant.license &&
+                      tenant.license.plan !== "trial" &&
+                      tenant.license.plan !== "free" ? (
                         tenant.license.status === "cancelled" ? (
                           <button
                             type="button"
@@ -498,7 +502,7 @@ function BillingActivation({
         ) : (
           <ReceiptIndianRupee className="size-3" />
         )}
-        {currentPlan === "trial" ? "Activate" : "Renew"}
+        {currentPlan === "trial" || currentPlan === "free" ? "Activate" : "Renew"}
       </button>
     </div>
   );
