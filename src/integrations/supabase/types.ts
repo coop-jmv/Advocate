@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.15"
+    PostgrestVersion: "14.5"
   }
   graphql_public: {
     Tables: {
@@ -934,6 +934,8 @@ export type Database = {
           current_period_end: string | null
           id: string
           integrations: Json
+          legacy_base_price_inr: number | null
+          legacy_extra_seat_price_inr: number | null
           plan: string
           seats: number
           status: string
@@ -947,6 +949,8 @@ export type Database = {
           current_period_end?: string | null
           id?: string
           integrations?: Json
+          legacy_base_price_inr?: number | null
+          legacy_extra_seat_price_inr?: number | null
           plan?: string
           seats?: number
           status?: string
@@ -960,6 +964,8 @@ export type Database = {
           current_period_end?: string | null
           id?: string
           integrations?: Json
+          legacy_base_price_inr?: number | null
+          legacy_extra_seat_price_inr?: number | null
           plan?: string
           seats?: number
           status?: string
@@ -1364,8 +1370,13 @@ export type Database = {
       current_notice_version: { Args: never; Returns: string }
       current_tenant_id: { Args: never; Returns: string }
       delete_my_account: { Args: never; Returns: Json }
+      effective_plan: {
+        Args: { p_plan: string; p_trial_ends_at: string }
+        Returns: string
+      }
       export_chamber_data: { Args: never; Returns: Json }
       export_my_personal_data: { Args: never; Returns: Json }
+      free_plan_module: { Args: { p_module: string }; Returns: boolean }
       get_invite_info: {
         Args: { p_token: string }
         Returns: {
@@ -1382,6 +1393,37 @@ export type Database = {
         Args: { p_count: number; p_ist_date: string; p_tenant_id: string }
         Returns: number
       }
+      ingest_cause_list_row: {
+        Args: {
+          p_advocate_names: string
+          p_bench: string
+          p_carry_reviewed_at: string
+          p_carry_reviewed_by: string
+          p_case_number: string
+          p_changes: Json
+          p_cnr: string
+          p_court: string
+          p_court_hall: string
+          p_created_by: string
+          p_list_date: string
+          p_list_type: string
+          p_match_confidence: number
+          p_match_matter_id: string
+          p_match_method: string
+          p_match_status: string
+          p_petitioner: string
+          p_previous_id: string
+          p_raw_payload: Json
+          p_reconcile_matter_title: string
+          p_reconcile_purpose_encrypted: string
+          p_respondent: string
+          p_serial_number: string
+          p_source_id: string
+          p_source_reference: string
+          p_stage: string
+        }
+        Returns: string
+      }
       is_platform_admin: { Args: { uid: string }; Returns: boolean }
       is_tenant_admin: { Args: { target_tenant: string }; Returns: boolean }
       log_auth_event: {
@@ -1395,16 +1437,33 @@ export type Database = {
         }
         Returns: undefined
       }
+      module_denied_message: { Args: { p_module: string }; Returns: string }
+      module_enabled: {
+        Args: { p_module: string; p_tenant_id: string }
+        Returns: boolean
+      }
+      module_price_inr: { Args: { p_module: string }; Returns: number }
       my_entitlements: {
         Args: never
         Returns: {
+          ai_assistant_enabled: boolean
+          ai_drafting_enabled: boolean
           base_price_inr: number
           billing_cadence: string
+          billing_enabled: boolean
+          clients_enabled: boolean
           clients_limit: number
           current_period_end: string
+          diary_enabled: boolean
+          documents_enabled: boolean
+          ecourts_enabled: boolean
+          ecourts_lookups_per_day: number
           extra_seat_price_inr: number
           extra_seats: number
+          matter_intelligence_enabled: boolean
+          matters_enabled: boolean
           matters_limit: number
+          modules_total_inr: number
           monthly_total_inr: number
           ocr_enabled: boolean
           plan: string
@@ -1488,12 +1547,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1517,11 +1576,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1542,11 +1601,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1567,11 +1626,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1584,11 +1643,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
