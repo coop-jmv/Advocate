@@ -1,12 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
 import { AppShell } from "@/components/app/AppShell";
 import { CourtMorningBrief } from "@/components/app/CourtMorningBrief";
 import { DataTable, StatCard, Tag, type Tone } from "@/components/app/primitives";
-import { listHearings } from "@/lib/diary.functions";
-import { listMatters } from "@/lib/matters.functions";
-import { listInvoices, listTimeEntries } from "@/lib/billing.functions";
+// Calls the Diary microservice (services/diary/) directly — not a
+// TanStack server function, so no useServerFn wrapping.
+import { listHearings } from "@/lib/diary-service";
+// Calls the Matters microservice (services/matters/) directly — not a
+// TanStack server function, so no useServerFn wrapping.
+import { listMatters } from "@/lib/matters-service";
+// Calls the Billing microservice (services/billing/) directly — not a
+// TanStack server function, so no useServerFn wrapping.
+import { listInvoices, listTimeEntries } from "@/lib/billing-service";
 import { addDaysIso, isoWeekday, todayIsoIST } from "@/lib/date-ist";
 
 export const Route = createFileRoute("/_authenticated/app/")({
@@ -82,10 +87,10 @@ function rupees(value: number): string {
 }
 
 function Dashboard() {
-  const loadMatters = useServerFn(listMatters);
-  const loadHearings = useServerFn(listHearings);
-  const loadTimeEntries = useServerFn(listTimeEntries);
-  const loadInvoices = useServerFn(listInvoices);
+  const loadMatters = listMatters;
+  const loadHearings = listHearings;
+  const loadTimeEntries = listTimeEntries;
+  const loadInvoices = listInvoices;
 
   const [matters, setMatters] = useState<Matter[]>([]);
   const [hearings, setHearings] = useState<Hearing[]>([]);

@@ -1,7 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { getOwnIntegrations } from "@/lib/tenant-integrations";
+import { decryptField } from "@/lib/field-encryption";
+import { requireModule, getEnabledModules } from "@/lib/require-module";
 
 // MatterContextService (K3) — the single, reusable place that assembles
 // everything LexDiary actually knows about one matter, tenant-scoped and
@@ -78,6 +79,19 @@ export const getMatterContext = createServerFn({ method: "GET" })
   .inputValidator((data: unknown) => z.object({ matterId: z.string().uuid() }).parse(data))
   .handler(async ({ data, context }): Promise<MatterContext | null> => {
     const { supabase } = context;
+    // Primary-module gate: no matter, no context — unchanged since Phase 0.
+    // Phase 7 adds per-section feature-detection below: a tenant missing
+    // Diary or Documents gets that section quietly omitted rather than the
+    // whole context erroring or reading tables it hasn't purchased access to.
+    await requireModule(supabase, context.userId, "matters");
+    // getEnabledModules also returns the license's raw integrations object,
+    // so the governance flags below reuse that instead of a separate
+    // getOwnIntegrations() call re-fetching the same profile+license row.
+    const { enabled: enabledModules, integrations: moduleIntegrations } = await getEnabledModules(
+      supabase,
+      context.userId,
+      ["diary", "documents"],
+    );
 
     const { data: matterRow, error: matterError } = await supabase
       .from("matters")
@@ -92,22 +106,29 @@ export const getMatterContext = createServerFn({ method: "GET" })
     const hearingColumns =
       "id, matter_id, matter_title, court, hearing_date, hearing_time, purpose, status, court_hall, bench, cause_list_record_id";
 
-    const [hearingsByIdRes, hearingsByTitleRes, matchesRes, documentsRes, integrations] =
-      await Promise.all([
-        supabase.from("hearings").select(hearingColumns).eq("matter_id", matterRow.id),
-        supabase.from("hearings").select(hearingColumns).eq("matter_title", matterRow.title),
-        supabase.from("cause_list_matches").select("record_id").eq("matter_id", matterRow.id),
-        // Best-effort, exact-string match only — ai_documents.matter_ref is
-        // free text, not a foreign key (see morning-brief.functions.ts for the
-        // same rationale). A document whose matter_ref doesn't exactly equal
-        // this matter's title is never attributed here, by design.
-        supabase
-          .from("ai_documents")
-          .select("id, name, doc_kind, status, summary, matter_ref, created_at")
-          .eq("matter_ref", matterRow.title)
-          .order("created_at", { ascending: false }),
-        getOwnIntegrations(supabase, context.userId),
-      ]);
+    const [hearingsByIdRes, hearingsByTitleRes, matchesRes, documentsRes] = await Promise.all([
+      enabledModules.diary
+        ? supabase.from("hearings").select(hearingColumns).eq("matter_id", matterRow.id)
+        : Promise.resolve({ data: [], error: null }),
+      enabledModules.diary
+        ? supabase.from("hearings").select(hearingColumns).eq("matter_title", matterRow.title)
+        : Promise.resolve({ data: [], error: null }),
+      enabledModules.diary
+        ? supabase.from("cause_list_matches").select("record_id").eq("matter_id", matterRow.id)
+        : Promise.resolve({ data: [], error: null }),
+      // Best-effort, exact-string match only — ai_documents.matter_ref is
+      // free text, not a foreign key (see morning-brief.functions.ts for the
+      // same rationale). A document whose matter_ref doesn't exactly equal
+      // this matter's title is never attributed here, by design. Skipped
+      // entirely when Documents isn't purchased — see enabledModules above.
+      enabledModules.documents
+        ? supabase
+            .from("ai_documents")
+            .select("id, name, doc_kind, status, summary, matter_ref, created_at")
+            .eq("matter_ref", matterRow.title)
+            .order("created_at", { ascending: false })
+        : Promise.resolve({ data: [], error: null }),
+    ]);
     if (hearingsByIdRes.error) throw new Error(hearingsByIdRes.error.message);
     if (hearingsByTitleRes.error) throw new Error(hearingsByTitleRes.error.message);
     if (matchesRes.error) throw new Error(matchesRes.error.message);
@@ -116,19 +137,21 @@ export const getMatterContext = createServerFn({ method: "GET" })
     const hearingById = new Map(
       [...(hearingsByIdRes.data ?? []), ...(hearingsByTitleRes.data ?? [])].map((h) => [h.id, h]),
     );
-    const hearings: MatterContextHearing[] = [...hearingById.values()]
-      .sort((a, b) => a.hearing_date.localeCompare(b.hearing_date))
-      .map((h) => ({
-        id: h.id,
-        hearingDate: h.hearing_date,
-        hearingTime: h.hearing_time,
-        court: h.court,
-        purpose: h.purpose,
-        status: h.status,
-        courtHall: h.court_hall,
-        bench: h.bench,
-        causeListRecordId: h.cause_list_record_id,
-      }));
+    const hearings: MatterContextHearing[] = await Promise.all(
+      [...hearingById.values()]
+        .sort((a, b) => a.hearing_date.localeCompare(b.hearing_date))
+        .map(async (h) => ({
+          id: h.id,
+          hearingDate: h.hearing_date,
+          hearingTime: h.hearing_time,
+          court: h.court,
+          purpose: await decryptField(h.purpose),
+          status: h.status,
+          courtHall: h.court_hall,
+          bench: h.bench,
+          causeListRecordId: h.cause_list_record_id,
+        })),
+    );
 
     const matchedRecordIds = (matchesRes.data ?? []).map((m) => m.record_id);
     let causeListEvents: MatterContextCauseListEvent[] = [];
@@ -211,14 +234,14 @@ export const getMatterContext = createServerFn({ method: "GET" })
         status: matterRow.status,
         opposingParty: matterRow.opposing_party,
         filedDate: matterRow.filed_date,
-        notes: matterRow.notes,
+        notes: await decryptField(matterRow.notes),
         createdAt: matterRow.created_at,
       },
       hearings,
       causeListEvents,
       documents,
-      aiEnabled: integrations.ai_matter_intelligence_enabled ?? true,
-      askCaseEnabled: integrations.ai_case_intelligence_enabled ?? true,
+      aiEnabled: moduleIntegrations.ai_matter_intelligence_enabled ?? true,
+      askCaseEnabled: moduleIntegrations.ai_case_intelligence_enabled ?? true,
     };
   });
 
@@ -233,6 +256,7 @@ export const getMatterDocumentTexts = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => z.object({ matterId: z.string().uuid() }).parse(data))
   .handler(async ({ data, context }) => {
+    await requireModule(context.supabase, context.userId, "matters");
     const { data: matterRow, error: matterError } = await context.supabase
       .from("matters")
       .select("title")
@@ -248,13 +272,15 @@ export const getMatterDocumentTexts = createServerFn({ method: "GET" })
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
 
-    return (documents ?? []).map((d) => ({
-      id: d.id,
-      name: d.name,
-      docKind: d.doc_kind,
-      rawText: d.raw_text,
-      createdAt: d.created_at,
-    }));
+    return Promise.all(
+      (documents ?? []).map(async (d) => ({
+        id: d.id,
+        name: d.name,
+        docKind: d.doc_kind,
+        rawText: await decryptField(d.raw_text),
+        createdAt: d.created_at,
+      })),
+    );
   });
 
 // K4 Ask My Case — conversations scoped to one matter, unlike the general
@@ -264,6 +290,7 @@ export const listMatterConversations = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => z.object({ matterId: z.string().uuid() }).parse(data))
   .handler(async ({ data, context }) => {
+    await requireModule(context.supabase, context.userId, "matters");
     const { data: matterRow, error: matterError } = await context.supabase
       .from("matters")
       .select("title")

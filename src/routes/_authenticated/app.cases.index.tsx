@@ -1,10 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
 import { Loader2, Plus, ShieldCheck } from "lucide-react";
 import { AppShell } from "@/components/app/AppShell";
 import { DataTable, Tag, type Tone } from "@/components/app/primitives";
-import { createMatter, listMatters } from "@/lib/matters.functions";
+// Calls the Matters microservice (services/matters/) directly from the
+// browser — not a TanStack server function, so no useServerFn wrapping.
+import { createMatter, listMatters } from "@/lib/matters-service";
 import { friendlyErrorMessage } from "@/lib/friendly-error";
 import { lookupEcourtsCase } from "@/lib/edge-functions";
 
@@ -46,8 +47,8 @@ const statusTone: Record<string, Tone> = {
 };
 
 function Cases() {
-  const loadMatters = useServerFn(listMatters);
-  const addMatter = useServerFn(createMatter);
+  const loadMatters = listMatters;
+  const addMatter = createMatter;
 
   const [matters, setMatters] = useState<Matter[]>([]);
   const [loading, setLoading] = useState(true);
@@ -93,15 +94,13 @@ function Cases() {
     setError(null);
     try {
       await addMatter({
-        data: {
-          title: form.title.trim(),
-          clientName: form.clientName.trim() || undefined,
-          caseNumber: form.caseNumber.trim() || undefined,
-          cnr: form.cnr.trim() || undefined,
-          court: form.court.trim() || undefined,
-          opposingParty: form.opposingParty.trim() || undefined,
-          filedDate: form.filedDate || undefined,
-        },
+        title: form.title.trim(),
+        clientName: form.clientName.trim() || undefined,
+        caseNumber: form.caseNumber.trim() || undefined,
+        cnr: form.cnr.trim() || undefined,
+        court: form.court.trim() || undefined,
+        opposingParty: form.opposingParty.trim() || undefined,
+        filedDate: form.filedDate || undefined,
       });
       setForm({
         title: "",
@@ -121,6 +120,8 @@ function Cases() {
     }
   }
 
+  // e-Courts integration Phase 1 (#78): look the CNR up and pre-fill what the
+  // lookup returns. Nothing is saved until the advocate reviews and submits.
   async function handleVerifyCnr() {
     const cnr = form.cnr.trim().toUpperCase();
     if (!/^[A-Z0-9]{16}$/.test(cnr)) {

@@ -1,6 +1,7 @@
-import { handleOptions, jsonResponse, errorResponse } from "../_shared/cors.ts";
+import { handleOptions, jsonResponse, errorResponse, dbError } from "../_shared/cors.ts";
 import { authedClient, requireUserId } from "../_shared/auth.ts";
 import { chatComplete, enforceUsageQuota, LEGAL_SYSTEM_PROMPT } from "../_shared/ai.ts";
+import { requireModule } from "../_shared/modules.ts";
 
 Deno.serve(async (req) => {
   const preflight = handleOptions(req);
@@ -11,6 +12,12 @@ Deno.serve(async (req) => {
   const userId = await requireUserId(auth.supabase);
   if (!userId) return errorResponse(req, "Unauthorized", 401);
   const { supabase } = auth;
+
+  try {
+    await requireModule(supabase, userId, "ai_assistant");
+  } catch (cause) {
+    return errorResponse(req, cause instanceof Error ? cause.message : "Module check failed.", 403);
+  }
 
   try {
     await enforceUsageQuota(supabase);
@@ -37,7 +44,7 @@ Deno.serve(async (req) => {
       })
       .select("id")
       .single();
-    if (error) return errorResponse(req, error.message, 500);
+    if (error) return dbError(req, error, "Could not start that conversation.");
     conversationId = created.id;
   } else {
     // RLS (tenant_id = current_tenant_id()) already scopes this to the
@@ -84,7 +91,7 @@ Deno.serve(async (req) => {
       content: answer || "No answer was generated. Please rephrase the question.",
     },
   ]);
-  if (insertError) return errorResponse(req, insertError.message, 500);
+  if (insertError) return dbError(req, insertError, "Could not save that message.");
 
   await supabase
     .from("ai_conversations")

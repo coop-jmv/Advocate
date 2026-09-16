@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
 import { Link } from "@tanstack/react-router";
 import { Brain, Camera, Check, Loader2, PenLine, Upload, X } from "lucide-react";
 import { Tag, type Tone } from "@/components/app/primitives";
-import { listDocumentAnalyses, updateDocumentAnalysisStatus } from "@/lib/ai.functions";
 import { analyzeDocument, ocrExtract } from "@/lib/edge-functions";
-import { listMatters } from "@/lib/matters.functions";
+// Calls the Matters/Documents microservices (services/matters/,
+// services/documents/) directly — not TanStack server functions, so no
+// useServerFn wrapping.
+import { listMatters } from "@/lib/matters-service";
+import { listDocumentAnalyses, updateDocumentAnalysisStatus } from "@/lib/documents-service";
 
 function fileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -59,9 +61,9 @@ function asKeyDates(value: unknown): { date?: string; what?: string }[] {
 }
 
 export function DocumentIntelligence() {
-  const load = useServerFn(listDocumentAnalyses);
-  const loadMatters = useServerFn(listMatters);
-  const setReviewStatus = useServerFn(updateDocumentAnalysisStatus);
+  const load = listDocumentAnalyses;
+  const loadMatters = listMatters;
+  const setReviewStatus = updateDocumentAnalysisStatus;
 
   const [items, setItems] = useState<Analysis[]>([]);
   const [matters, setMatters] = useState<MatterOption[]>([]);
@@ -89,7 +91,7 @@ export function DocumentIntelligence() {
   async function reviewItem(id: string, status: "approved" | "rejected") {
     setItems((prev) => prev.map((item) => (item.id === id ? { ...item, status } : item)));
     try {
-      await setReviewStatus({ data: { id, status } });
+      await setReviewStatus({ id, status });
     } catch {
       void load()
         .then((rows) => setItems(rows as Analysis[]))
@@ -157,9 +159,8 @@ export function DocumentIntelligence() {
       </div>
       <p className="mt-1.5 text-sm text-muted-foreground">
         Scan a document with your camera (English, Hindi, Tamil, Telugu, Kannada or Malayalam),
-        upload a text extract, or paste
-        document text — AI returns a summary, parties, key dates, tags and drafting risks, saved to
-        your account.
+        upload a text extract, or paste document text — AI returns a summary, parties, key dates,
+        tags and drafting risks, saved to your account.
       </p>
 
       <div className="mt-4 grid gap-4 lg:grid-cols-[280px_1fr] [&>*]:min-w-0">

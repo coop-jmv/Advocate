@@ -337,9 +337,7 @@ function Profile() {
 
                 <div className="flex items-center justify-between rounded border border-border p-3">
                   <div>
-                    <p className="text-sm font-medium">
-                      {purposeLabel["whatsapp_notifications"]}
-                    </p>
+                    <p className="text-sm font-medium">{purposeLabel["whatsapp_notifications"]}</p>
                     <p className="text-xs text-muted-foreground">
                       Sent to the mobile number above — update it there if it's wrong.
                     </p>

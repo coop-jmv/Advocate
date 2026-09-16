@@ -1,4 +1,4 @@
-import { handleOptions, jsonResponse, errorResponse } from "../_shared/cors.ts";
+import { handleOptions, jsonResponse, errorResponse, dbError } from "../_shared/cors.ts";
 import { authedClient, requireUserId } from "../_shared/auth.ts";
 import {
   chatComplete,
@@ -6,6 +6,7 @@ import {
   extractJson,
   LEGAL_SYSTEM_PROMPT,
 } from "../_shared/ai.ts";
+import { requireModule } from "../_shared/modules.ts";
 
 // K4 — Ask My Case. Matter-grounded Q&A with structured, non-fabricatable
 // citations. Reuses K3's MatterContextService (the client calls
@@ -291,6 +292,16 @@ Deno.serve(async (req) => {
     );
   }
 
+  // Commercial gate, distinct from the governance kill-switch above: Ask My
+  // Case is part of the ai_assistant module (same as the general /app
+  // assistant) — a paid-plan tenant needs it purchased, not just left
+  // enabled by the platform admin.
+  try {
+    await requireModule(supabase, userId, "ai_assistant");
+  } catch (cause) {
+    return errorResponse(req, cause instanceof Error ? cause.message : "Module check failed.", 403);
+  }
+
   try {
     await enforceUsageQuota(supabase);
   } catch (cause) {
@@ -322,7 +333,7 @@ Deno.serve(async (req) => {
       })
       .select("id")
       .single();
-    if (error) return errorResponse(req, error.message, 500);
+    if (error) return dbError(req, error, "Could not start that conversation.");
     conversationId = created.id;
   } else {
     const { data: visible } = await supabase

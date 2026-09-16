@@ -3,7 +3,9 @@ import { useServerFn } from "@tanstack/react-start";
 import { Loader2, Send, Sparkles } from "lucide-react";
 import { askMyCase, type AskCaseSource } from "@/lib/edge-functions";
 import { getMatterDocumentTexts, listMatterConversations } from "@/lib/matter-context.functions";
-import { listMessages } from "@/lib/ai.functions";
+// Calls the AI Assistant microservice (services/assistant/) directly —
+// not a TanStack server function, so no useServerFn wrapping.
+import { listMessages } from "@/lib/assistant-service";
 import type { MatterContext } from "@/lib/matter-context.functions";
 import { todayIsoIST } from "@/lib/date-ist";
 
@@ -37,7 +39,7 @@ function sourceLabel(source: AskCaseSource): string {
 export function AskMyCase({ context }: { context: MatterContext }) {
   const loadDocumentTexts = useServerFn(getMatterDocumentTexts);
   const loadConversations = useServerFn(listMatterConversations);
-  const loadMessages = useServerFn(listMessages);
+  const loadMessages = listMessages;
 
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -49,27 +51,34 @@ export function AskMyCase({ context }: { context: MatterContext }) {
   useEffect(() => {
     if (!context.askCaseEnabled) return;
     let cancelled = false;
-    void loadConversations({ data: { matterId: context.matter.id } }).then(async (rows) => {
-      if (cancelled) return;
-      const latest = (rows as { id: string }[])[0];
-      if (!latest) return;
-      setConversationId(latest.id);
-      const rows2 = (await loadMessages({ data: { conversationId: latest.id } })) as {
-        id: string;
-        role: string;
-        content: string;
-        sources: AskCaseSource[] | null;
-      }[];
-      if (cancelled) return;
-      setMessages(
-        rows2.map((m) => ({
-          id: m.id,
-          role: m.role === "assistant" ? "assistant" : "user",
-          content: m.content,
-          sources: m.sources ?? [],
-        })),
-      );
-    });
+    void loadConversations({ data: { matterId: context.matter.id } })
+      .then(async (rows) => {
+        if (cancelled) return;
+        const latest = (rows as { id: string }[])[0];
+        if (!latest) return;
+        setConversationId(latest.id);
+        const rows2 = (await loadMessages({ conversationId: latest.id })) as {
+          id: string;
+          role: string;
+          content: string;
+          sources: AskCaseSource[] | null;
+        }[];
+        if (cancelled) return;
+        setMessages(
+          rows2.map((m) => ({
+            id: m.id,
+            role: m.role === "assistant" ? "assistant" : "user",
+            content: m.content,
+            sources: m.sources ?? [],
+          })),
+        );
+      })
+      .catch((cause) => {
+        if (cancelled) return;
+        setError(
+          cause instanceof Error ? cause.message : "Could not load this conversation's history.",
+        );
+      });
     return () => {
       cancelled = true;
     };
