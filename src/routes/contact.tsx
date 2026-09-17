@@ -105,7 +105,7 @@ function Contact() {
                 <Input
                   id="name"
                   required
-                  placeholder="Adv. Priya Nair"
+                  placeholder="Your full name"
                   value={form.fullName}
                   onChange={(event) => setForm((f) => ({ ...f, fullName: event.target.value }))}
                 />
@@ -114,7 +114,7 @@ function Contact() {
                 <Label htmlFor="enrolment">Bar Council enrolment no.</Label>
                 <Input
                   id="enrolment"
-                  placeholder="D/1234/2016"
+                  placeholder="Your enrolment number"
                   value={form.enrolmentNo}
                   onChange={(event) => setForm((f) => ({ ...f, enrolmentNo: event.target.value }))}
                 />
@@ -125,7 +125,7 @@ function Contact() {
                   id="email"
                   type="email"
                   required
-                  placeholder="you@chambers.in"
+                  placeholder="Your email address"
                   value={form.email}
                   onChange={(event) => setForm((f) => ({ ...f, email: event.target.value }))}
                 />
@@ -135,7 +135,7 @@ function Contact() {
                 <Input
                   id="phone"
                   required
-                  placeholder="+91 98xxx xxxxx"
+                  placeholder="10-digit mobile number"
                   value={form.phone}
                   onChange={(event) => setForm((f) => ({ ...f, phone: event.target.value }))}
                 />
@@ -145,7 +145,7 @@ function Contact() {
               <Label htmlFor="court">Primary court / bench</Label>
               <Input
                 id="court"
-                placeholder="Delhi High Court"
+                placeholder="Court or bench where you mainly practise"
                 value={form.court}
                 onChange={(event) => setForm((f) => ({ ...f, court: event.target.value }))}
               />
@@ -155,7 +155,7 @@ function Contact() {
               <Textarea
                 id="note"
                 rows={4}
-                placeholder="Team size, practice areas, how you keep your diary today."
+                placeholder="A few lines about your practice"
                 value={form.note}
                 onChange={(event) => setForm((f) => ({ ...f, note: event.target.value }))}
               />
