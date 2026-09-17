@@ -23,6 +23,14 @@ BEGIN
           now(), now());
   SELECT tenant_id INTO t_id FROM public.profiles WHERE id = uid;
 
+  -- Signup creates a Free chamber since 20260915090000, and Free excludes
+  -- billing — so pin this fixture to a running trial explicitly, or the
+  -- invoice and time_entry inserts below would be refused before the
+  -- regression is ever reached.
+  UPDATE public.licenses
+     SET plan = 'trial', status = 'trialing', trial_ends_at = now() + interval '15 days'
+   WHERE tenant_id = t_id;
+
   -- Build real content while still on trial (every module unlocked).
   INSERT INTO public.matters (tenant_id, title, created_by)
     VALUES (t_id, 'Regression matter', uid) RETURNING id INTO m_id;
