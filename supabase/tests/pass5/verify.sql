@@ -57,11 +57,18 @@ BEGIN
   SELECT tenant_id INTO t_id FROM public.profiles WHERE id = uid;
   IF t_id IS NULL THEN RAISE EXCEPTION 'FAIL P5-2: fixture tenant was not created'; END IF;
 
+  -- Signup creates a Free chamber since 20260915090000, and Free happens to
+  -- include matters — so without pinning the plan, this check would pass
+  -- without testing trial at all. Pin it, and check a module Free excludes.
+  UPDATE public.licenses
+     SET plan = 'trial', status = 'trialing', trial_ends_at = now() + interval '15 days'
+   WHERE tenant_id = t_id;
+
   -- (a) trial unlocks everything
-  IF NOT public.module_enabled(t_id, 'matters') THEN
+  IF NOT public.module_enabled(t_id, 'matters') OR NOT public.module_enabled(t_id, 'billing') THEN
     RAISE EXCEPTION 'FAIL P5-2b: trial licence should unlock every module';
   END IF;
-  RAISE NOTICE 'PASS P5-2b module_enabled(trial, matters) = true';
+  RAISE NOTICE 'PASS P5-2b module_enabled(trial, matters and billing) = true';
 
   -- (b) paid plan with no module flags set -> denied
   UPDATE public.licenses

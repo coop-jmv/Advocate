@@ -28,9 +28,12 @@ function escapeHtml(value: string): string {
 // whoever's on point sooner than a next admin-panel check would.
 async function notifyChambers(data: z.infer<typeof inputSchema>): Promise<void> {
   const RESEND_API_KEY = process.env["RESEND_API_KEY"];
-  if (!RESEND_API_KEY) return;
+  if (!RESEND_API_KEY) {
+    console.error("contact request email not sent: RESEND_API_KEY is not configured");
+    return;
+  }
   try {
-    await fetch("https://api.resend.com/emails", {
+    const response = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${RESEND_API_KEY}`,
@@ -47,8 +50,19 @@ async function notifyChambers(data: z.infer<typeof inputSchema>): Promise<void> 
         `,
       }),
     });
-  } catch {
-    // Swallowed deliberately — see the comment above this function.
+    // Still best-effort — the request is already saved — but a rejection used
+    // to vanish silently (e.g. an unverified sending domain), leaving nobody
+    // any the wiser that notifications had stopped. Log it so it shows in the
+    // Worker's logs.
+    if (!response.ok) {
+      const detail = await response.text().catch(() => "");
+      console.error(
+        `contact request email rejected by Resend (${response.status}): ${detail.slice(0, 500)}`,
+      );
+    }
+  } catch (cause) {
+    // Not rethrown — see the comment above this function.
+    console.error("contact request email failed to send:", cause);
   }
 }
 
