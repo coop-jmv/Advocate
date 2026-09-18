@@ -46,5 +46,10 @@ enable_confirmations = false
 [functions.whatsapp-diary-digest]
 verify_jwt = false
 
+[functions.notify-new-signup]
+# Called only by the AFTER INSERT trigger on public.profiles (via pg_net), with
+# the same shared secret as whatsapp-diary-digest.
+verify_jwt = false
+
 [functions.whatsapp-webhook]
 verify_jwt = false
