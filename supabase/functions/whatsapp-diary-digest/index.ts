@@ -13,10 +13,11 @@ import { secretMatches } from "../_shared/timing-safe.ts";
 //
 // Invoked only by pg_cron -> pg_net (see the migration that schedules it) —
 // never by a real user, so this function has `verify_jwt = false` in
-// config.toml and checks its own shared secret instead (below). It is the
-// only function in this codebase that builds a service-role client — kept
-// deliberately narrow: it only ever touches the eight tables named in the
-// query below, never used as a general admin escape hatch.
+// config.toml and checks its own shared secret instead (below). It is one of
+// two functions in this codebase that build a service-role client (the other
+// is notify-new-signup) — kept deliberately narrow: it only ever touches the
+// eight tables named in the query below, never used as a general admin
+// escape hatch.
 
 const RECIPIENT_HEARING_STATUSES = ["confirmed", "cause_list_awaited"];
 const ACTIVE_LICENSE_STATUSES = ["active", "trialing"];
