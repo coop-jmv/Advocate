@@ -24,11 +24,79 @@ jobs:
 
       - name: Build
         # Publishable, non-secret values — same pair already committed in
-        # plain text in wrangler.toml's [vars]. CI has no deploy target of
-        # its own, so there's no separate "real" project config to keep
-        # these in sync with; this build only needs to prove the app builds
-        # correctly, which (since PR #8) requires these to be present at all.
+        # plain text in wrangler.toml's [vars]. The deploy job below builds
+        # with the same pair, so what CI proves builds is what ships.
         env:
           VITE_SUPABASE_URL: https://cjcjfdwdlsdgyvshuncn.supabase.co
           VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_DnB_8STNU8FST_sCkRAM4w_K9c8A4Ft
         run: bun run build
+
+  # Deploys every Cloudflare Worker after a merge to main, once build/lint has
+  # passed. Before this, merging deployed nothing: every release was a manual
+  # `wrangler deploy`, so merged work (e.g. PR #85) could sit unreleased.
+  #
+  # Scope: Cloudflare Workers only — the main app and the seven services/*.
+  # Supabase migrations and Edge Functions are deliberately NOT deployed here:
+  # they touch the production database and some have ordering requirements
+  # (see the migration headers), so they stay a reviewed, manual step.
+  #
+  # Needs one repository secret, CLOUDFLARE_API_TOKEN (Cloudflare dashboard →
+  # My Profile → API Tokens → "Edit Cloudflare Workers" template). Until it is
+  # set, this job skips its deploy steps and passes, so CI never goes red over
+  # a missing secret. Worker secrets (FIELD_ENCRYPTION_KEY etc.) live in
+  # Cloudflare and are untouched by `wrangler deploy`.
+  deploy:
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    # One deploy at a time; a newer merge waits rather than racing an older one.
+    concurrency:
+      group: production-deploy
+      cancel-in-progress: false
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: 88f2550148df27864e6e09797275e515
+    steps:
+      - name: Check deploy credentials
+        id: creds
+        run: |
+          if [ -n "$CLOUDFLARE_API_TOKEN" ]; then
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::CLOUDFLARE_API_TOKEN is not set — skipping deploy."
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.creds.outputs.ok == 'true'
+
+      - uses: oven-sh/setup-bun@v2
+        if: steps.creds.outputs.ok == 'true'
+        with:
+          bun-version: latest
+
+      - name: Deploy main app (lexdiary)
+        if: steps.creds.outputs.ok == 'true'
+        env:
+          VITE_SUPABASE_URL: https://cjcjfdwdlsdgyvshuncn.supabase.co
+          VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_DnB_8STNU8FST_sCkRAM4w_K9c8A4Ft
+        run: |
+          bun install --frozen-lockfile
+          bun run build
+          bunx wrangler deploy
+
+      - name: Deploy microservices
+        if: steps.creds.outputs.ok == 'true'
+        run: |
+          set -e
+          for s in clients matters diary documents billing drafting assistant; do
+            echo "::group::lexdiary-$s"
+            (cd "services/$s" && bun install --frozen-lockfile && bunx wrangler deploy)
+            echo "::endgroup::"
+          done
+
+      - name: Notify search engines (IndexNow)
+        # Best-effort: a search-engine hiccup must not mark a good deploy failed.
+        if: steps.creds.outputs.ok == 'true'
+        continue-on-error: true
+        run: bun run seo:indexnow
