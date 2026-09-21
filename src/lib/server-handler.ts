@@ -121,7 +121,12 @@ function securityHeaders(): Record<string, string> {
       // finding in docs/security-test-plan.md; note that a browser ignores
       // 'unsafe-inline' entirely once a nonce is present, so the two can't be
       // shipped as a half-measure together.
-      "script-src 'self' 'unsafe-inline'",
+      //
+      // static.cloudflareinsights.com is Cloudflare Web Analytics: Cloudflare's
+      // edge injects its beacon script into every page on lexdiary.online, and
+      // without this entry the browser blocked it, so no visits were recorded.
+      // Cookie-free; the beacon reports to cloudflareinsights.com (connect-src).
+      "script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com",
       // Plugin content is a script-execution vector of its own and nothing here
       // uses <object>/<embed>. default-src would fall back to 'self'; 'none' is
       // strictly tighter.
@@ -147,7 +152,7 @@ function securityHeaders(): Record<string, string> {
       // src/lib/matters-service.ts, src/lib/diary-service.ts,
       // src/lib/documents-service.ts, src/lib/billing-service.ts,
       // src/lib/drafting-service.ts and src/lib/assistant-service.ts.
-      `connect-src 'self' ${supabaseConnectSources()} https://api.openai.com https://lexdiary-clients.dhanapalan-advocate.workers.dev https://lexdiary-matters.dhanapalan-advocate.workers.dev https://lexdiary-diary.dhanapalan-advocate.workers.dev https://lexdiary-documents.dhanapalan-advocate.workers.dev https://lexdiary-billing.dhanapalan-advocate.workers.dev https://lexdiary-drafting.dhanapalan-advocate.workers.dev https://lexdiary-assistant.dhanapalan-advocate.workers.dev`,
+      `connect-src 'self' ${supabaseConnectSources()} https://api.openai.com https://lexdiary-clients.dhanapalan-advocate.workers.dev https://lexdiary-matters.dhanapalan-advocate.workers.dev https://lexdiary-diary.dhanapalan-advocate.workers.dev https://lexdiary-documents.dhanapalan-advocate.workers.dev https://lexdiary-billing.dhanapalan-advocate.workers.dev https://lexdiary-drafting.dhanapalan-advocate.workers.dev https://lexdiary-assistant.dhanapalan-advocate.workers.dev https://cloudflareinsights.com`,
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",
