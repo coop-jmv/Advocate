@@ -92,3 +92,21 @@ export function guideJsonLd(guide: {
     ],
   });
 }
+
+/**
+ * FAQPage structured data for questions that are also visible on the page.
+ * Google limits FAQ rich results to government and health sites, so this is
+ * not expected to change how results look in Google; Bing and AI search tools
+ * still read it. The answers must match the visible text word for word.
+ */
+export function faqJsonLd(items: ReadonlyArray<{ question: string; answer: string }>) {
+  return JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: items.map((item) => ({
+      "@type": "Question",
+      name: item.question,
+      acceptedAnswer: { "@type": "Answer", text: item.answer },
+    })),
+  });
+}

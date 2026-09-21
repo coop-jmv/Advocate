@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { canonical, homeJsonLd } from "@/lib/seo";
+import { canonical, faqJsonLd, homeJsonLd } from "@/lib/seo";
+import { GUIDES } from "@/lib/guides";
 import {
   Scale,
   CalendarClock,
@@ -13,7 +14,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { SiteHeader, SiteFooter } from "@/components/site/SiteChrome";
-import heroImage from "@/assets/hero-advocate.jpg";
+import heroImage from "@/assets/hero-advocate.webp";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -36,7 +37,10 @@ export const Route = createFileRoute("/")({
       },
     ],
     links: [canonical("/").link],
-    scripts: [{ type: "application/ld+json", children: homeJsonLd }],
+    scripts: [
+      { type: "application/ld+json", children: homeJsonLd },
+      { type: "application/ld+json", children: faqJsonLd(HOME_FAQ) },
+    ],
   }),
   component: Landing,
 });
@@ -118,6 +122,44 @@ const stats = [
   { value: "9", label: "Modules covering the full matter lifecycle" },
 ];
 
+// Every answer here was checked against the product: plan limits against
+// plan_limit() in 20260915090000_free_forever_plan.sql and the subscription
+// page, e-Courts against 20260916090000, region against the security page.
+// If a plan or feature changes, update this list too — it is also published
+// as structured data, so it must stay true.
+const HOME_FAQ = [
+  {
+    question: "Is LexDiary free?",
+    answer:
+      "Yes. The Free plan is free forever for one advocate: up to 25 matters and 25 clients, the court diary with cause-list matching, and AI case analysis (5 AI requests a day). e-Courts lookups, documents and OCR, billing, AI drafting, WhatsApp and team seats are paid add-ons.",
+  },
+  {
+    question: "Where is my data stored?",
+    answer:
+      "In India, in the Mumbai region, encrypted at rest. Each chamber's data is isolated from every other chamber's at the database level.",
+  },
+  {
+    question: "Does LexDiary work with e-Courts and CNR numbers?",
+    answer:
+      "Every matter can record its CNR. On paid plans, LexDiary can look a case up on e-Courts by CNR and pre-fill the case number, court and opposing party for you to review.",
+  },
+  {
+    question: "Can I use it from my phone in court?",
+    answer:
+      "Yes. LexDiary is built mobile-first and runs in your phone's browser, so you can record an outcome and the next date outside the courtroom.",
+  },
+  {
+    question: "Can my juniors and clerks use it?",
+    answer:
+      "Yes, with team seats on a paid plan. Each person gets their own login with an owner, admin or member role, so access can match their work.",
+  },
+  {
+    question: "How does LexDiary handle the DPDP Act, 2023?",
+    answer:
+      "It records consent, lets you export your personal data and your chamber's data, lets you withdraw consent, and lets you delete your account. The privacy notice explains how data is handled.",
+  },
+] as const;
+
 function Landing() {
   return (
     <div className="min-h-screen">
@@ -178,8 +220,9 @@ function Landing() {
               <img
                 src={heroImage}
                 alt="Advocate in court robes checking case details on a phone in a high court corridor"
-                width={1408}
-                height={1008}
+                width={1100}
+                height={788}
+                decoding="async"
                 className="relative w-full rounded shadow-lift"
               />
             </div>
@@ -278,6 +321,47 @@ function Landing() {
                 ))}
               </ul>
             </div>
+          </div>
+        </section>
+
+        <section className="mx-auto max-w-6xl px-5 pt-20">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div className="max-w-2xl">
+              <p className="text-eyebrow text-accent">Guides</p>
+              <h2 className="mt-4 text-3xl font-bold">Guides from the practice desk</h2>
+            </div>
+            <Link to="/guides" className="text-sm font-medium text-accent hover:underline">
+              All guides →
+            </Link>
+          </div>
+          <ul className="mt-8 grid gap-4 sm:grid-cols-2">
+            {GUIDES.map((guide) => (
+              <li key={guide.slug} className="surface-panel rounded p-5">
+                <Link
+                  to="/guides/$slug"
+                  params={{ slug: guide.slug }}
+                  className="font-display font-bold text-accent hover:underline"
+                >
+                  {guide.title}
+                </Link>
+                <p className="mt-2 text-sm text-muted-foreground">{guide.description}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <section className="mx-auto max-w-3xl px-5 pt-20">
+          <p className="text-eyebrow text-accent">Questions</p>
+          <h2 className="mt-4 text-3xl font-bold">Frequently asked questions</h2>
+          <div className="mt-8 divide-y divide-border border-y border-border">
+            {HOME_FAQ.map((item) => (
+              <details key={item.question} className="group py-4">
+                <summary className="cursor-pointer list-none font-medium marker:hidden">
+                  {item.question}
+                </summary>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{item.answer}</p>
+              </details>
+            ))}
           </div>
         </section>
 
