@@ -126,9 +126,10 @@ function securityHeaders(): Record<string, string> {
       // uses <object>/<embed>. default-src would fall back to 'self'; 'none' is
       // strictly tighter.
       "object-src 'none'",
-      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+      "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob:",
-      "font-src 'self' data: https://fonts.gstatic.com",
+      // Fonts are self-hosted (see styles.css), so no third-party font origin.
+      "font-src 'self' data:",
       // supabase-js's Realtime client keeps its heartbeat accurate in
       // backgrounded tabs via a same-origin blob: Worker — without worker-src,
       // that falls back to script-src, which doesn't permit blob: and the
