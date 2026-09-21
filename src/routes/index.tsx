@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { canonical, homeJsonLd } from "@/lib/seo";
 import {
   Scale,
   CalendarClock,
@@ -17,22 +18,25 @@ import heroImage from "@/assets/hero-advocate.jpg";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "LexDiary — Practice Management for Indian Advocates" },
+      { title: "LexDiary — Legal Practice Management Software for Indian Advocates" },
       {
         name: "description",
         content:
-          "The practice management platform built for Indian advocates. Case and matter tracking, a hearing diary with automatic cause-list matching, Indic OCR with AI document review, an AI case assistant and drafting studio, a client portal and GST-compliant billing — in one secure workspace.",
+          "Case management, a court diary with cause-list matching, an AI case assistant and GST billing — practice management software for Indian advocates and law firms.",
       },
       {
         property: "og:title",
-        content: "LexDiary — Practice Management for Indian Advocates",
+        content: "LexDiary — Legal Practice Management Software for Indian Advocates",
       },
+      canonical("/").meta,
       {
         property: "og:description",
         content:
           "Case tracking, hearing diary, cause-list intelligence, an AI case assistant and drafting studio, document vault, client portal and GST billing — the complete practice management platform for Indian legal professionals.",
       },
     ],
+    links: [canonical("/").link],
+    scripts: [{ type: "application/ld+json", children: homeJsonLd }],
   }),
   component: Landing,
 });

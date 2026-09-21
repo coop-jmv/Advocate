@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { canonical } from "@/lib/seo";
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Loader2 } from "lucide-react";
@@ -12,18 +13,23 @@ import { submitContactRequest } from "@/lib/contact.functions";
 export const Route = createFileRoute("/contact")({
   head: () => ({
     meta: [
-      { title: "Request access — LexDiary" },
+      { title: "Request Access — LexDiary Practice Management for Advocates" },
       {
         name: "description",
         content:
           "Tell us about your practice — court, bench and team size — and we will arrange onboarding for LexDiary.",
       },
-      { property: "og:title", content: "Request access — LexDiary" },
+      {
+        property: "og:title",
+        content: "Request Access — LexDiary Practice Management for Advocates",
+      },
       {
         property: "og:description",
         content: "Tell us about your practice and we will arrange onboarding for LexDiary.",
       },
+      canonical("/contact").meta,
     ],
+    links: [canonical("/contact").link],
   }),
   component: Contact,
 });

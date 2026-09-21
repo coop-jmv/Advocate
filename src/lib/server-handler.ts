@@ -154,9 +154,21 @@ function securityHeaders(): Record<string, string> {
   };
 }
 
-function withSecurityHeaders(response: Response): Response {
+// The same Worker answers on the custom domain and on its *.workers.dev
+// address, which would otherwise be indexed as a byte-identical duplicate of
+// every page. Pages already carry a canonical link to the custom domain; this
+// tells crawlers outright not to index the other host. Only the custom domain
+// (and local development) is left indexable. Static files (robots.txt,
+// sitemap.xml, images) are served by the assets binding before the Worker
+// runs, so they are unaffected either way.
+const INDEXABLE_HOSTS = new Set(["lexdiary.online", "localhost", "127.0.0.1"]);
+
+function withSecurityHeaders(response: Response, request: Request): Response {
   for (const [key, value] of Object.entries(securityHeaders())) {
     if (!response.headers.has(key)) response.headers.set(key, value);
+  }
+  if (!INDEXABLE_HOSTS.has(new URL(request.url).hostname)) {
+    response.headers.set("X-Robots-Tag", "noindex");
   }
   return response;
 }
@@ -165,9 +177,9 @@ export async function handleRequest(request: Request): Promise<Response> {
   try {
     const handler = await getServerEntry();
     const response = await handler.fetch(request, undefined, undefined);
-    return withSecurityHeaders(await normalizeCatastrophicSsrResponse(response, request));
+    return withSecurityHeaders(await normalizeCatastrophicSsrResponse(response, request), request);
   } catch (error) {
     console.error(error);
-    return withSecurityHeaders(catastrophicResponse(request));
+    return withSecurityHeaders(catastrophicResponse(request), request);
   }
 }

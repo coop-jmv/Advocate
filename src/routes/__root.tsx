@@ -14,6 +14,7 @@ import { reportError } from "../lib/error-reporting";
 import { Toaster } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { logAuthEvent } from "@/lib/edge-functions";
+import { OG_IMAGE_URL, SITE_NAME } from "@/lib/seo";
 
 function NotFoundComponent() {
   return (
@@ -97,7 +98,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           "Cases, court diary, documents with OCR, clients and GST billing in one mobile-first workspace built for Indian advocates.",
       },
       { property: "og:type", content: "website" },
+      { property: "og:site_name", content: SITE_NAME },
+      { property: "og:locale", content: "en_IN" },
+      // twitter:card was already summary_large_image, but no image existed to show.
+      { property: "og:image", content: OG_IMAGE_URL },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "630" },
+      { property: "og:image:alt", content: "LexDiary — practice management for Indian advocates" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:image", content: OG_IMAGE_URL },
       { name: "theme-color", content: "#0f1e42" },
       { name: "mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
@@ -129,7 +138,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en-IN">
       <head>
         <HeadContent />
       </head>

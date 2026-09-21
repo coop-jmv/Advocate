@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { canonical } from "@/lib/seo";
 import { SiteHeader, SiteFooter } from "@/components/site/SiteChrome";
 
 export const Route = createFileRoute("/privacy")({
@@ -9,7 +10,9 @@ export const Route = createFileRoute("/privacy")({
         name: "description",
         content: "How LexDiary collects, uses and protects personal data under the DPDP Act, 2023.",
       },
+      canonical("/privacy").meta,
     ],
+    links: [canonical("/privacy").link],
   }),
   component: Privacy,
 });
