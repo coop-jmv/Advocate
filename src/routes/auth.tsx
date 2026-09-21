@@ -249,7 +249,7 @@ function AuthPage() {
               <ul className="mt-2 space-y-0.5 rounded border border-accent/30 bg-accent/10 p-2 text-sm">
                 {[
                   "One advocate login, up to 25 matters and clients",
-                  "Court diary with daily cause-list matching and e-Courts lookups",
+                  "Court diary with daily cause-list matching",
                   "AI case analysis — 5 AI requests a day",
                   "No card, no payment details, nothing to cancel",
                 ].map((line) => (

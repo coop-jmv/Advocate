@@ -56,3 +56,39 @@ export const homeJsonLd = JSON.stringify({
     },
   ],
 });
+
+/** Article + breadcrumb structured data for a guide page. */
+export function guideJsonLd(guide: {
+  slug: string;
+  title: string;
+  description: string;
+  published: string;
+  updated: string;
+}) {
+  const url = `${SITE_URL}/guides/${guide.slug}`;
+  return JSON.stringify({
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Article",
+        headline: guide.title,
+        description: guide.description,
+        datePublished: guide.published,
+        dateModified: guide.updated,
+        mainEntityOfPage: url,
+        image: OG_IMAGE_URL,
+        inLanguage: "en-IN",
+        author: { "@type": "Organization", name: SITE_NAME, url: SITE_URL },
+        publisher: { "@id": `${SITE_URL}/#organization` },
+      },
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Home", item: `${SITE_URL}/` },
+          { "@type": "ListItem", position: 2, name: "Guides", item: `${SITE_URL}/guides` },
+          { "@type": "ListItem", position: 3, name: guide.title, item: url },
+        ],
+      },
+    ],
+  });
+}

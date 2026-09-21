@@ -15,7 +15,8 @@
     "deploy:dry-run": "bun run build && wrangler deploy --dry-run",
     "cap:sync": "bun run build && cap sync",
     "cap:android": "bun run cap:sync && cap open android",
-    "cap:ios": "bun run cap:sync && cap open ios"
+    "cap:ios": "bun run cap:sync && cap open ios",
+    "seo:indexnow": "bun scripts/indexnow.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.0",

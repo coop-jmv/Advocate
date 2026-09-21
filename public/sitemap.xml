@@ -18,7 +18,7 @@
   is worse than none.
 
   This file is static. When a new public marketing page is added under
-  src/routes/, add it here too.
+  src/routes/, or a guide is added to src/lib/guides.ts, add it here too.
 -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
@@ -35,5 +35,20 @@
   </url>
   <url>
     <loc>https://lexdiary.online/contact</loc>
+  </url>
+  <url>
+    <loc>https://lexdiary.online/guides</loc>
+  </url>
+  <url>
+    <loc>https://lexdiary.online/guides/cnr-number-explained</loc>
+  </url>
+  <url>
+    <loc>https://lexdiary.online/guides/track-daily-cause-list</loc>
+  </url>
+  <url>
+    <loc>https://lexdiary.online/guides/gst-on-legal-services</loc>
+  </url>
+  <url>
+    <loc>https://lexdiary.online/guides/choosing-practice-management-software</loc>
   </url>
 </urlset>

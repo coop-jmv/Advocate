@@ -115,7 +115,7 @@ function Subscription() {
           </h2>
           <p className="mt-1.5 text-sm text-muted-foreground">
             One advocate login, up to 25 matters and 25 clients, the court diary with cause-list
-            matching and e-Courts lookups, and AI case analysis (5 AI requests a day). Documents and
+            matching, and AI case analysis (5 AI requests a day). e-Courts lookups, documents and
             OCR, billing, AI drafting, WhatsApp and team seats are paid add-ons — contact us below
             to add them.
           </p>
