@@ -1,5 +1,5 @@
 import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
-import { ShieldCheck, Building2, Inbox, ListChecks, Puzzle, ScrollText } from "lucide-react";
+import { ShieldCheck, Building2, Inbox, ListChecks, Puzzle, ScrollText, Users } from "lucide-react";
 import { useInactivityLogout } from "@/lib/use-inactivity-logout";
 
 export const Route = createFileRoute("/_admin/admin")({
@@ -26,6 +26,14 @@ function AdminLayout() {
             >
               <Building2 className="size-4" />
               Tenants
+            </Link>
+            <Link
+              to="/admin/users"
+              className="flex items-center gap-1.5 hover:text-foreground"
+              activeProps={{ className: "text-foreground" }}
+            >
+              <Users className="size-4" />
+              Users
             </Link>
             <Link
               to="/admin/settings/integrations"

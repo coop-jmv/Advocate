@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { AlertTriangle, Download, Loader2, ShieldCheck } from "lucide-react";
 import { AppShell } from "@/components/app/AppShell";
 import { SettingsTabs } from "@/components/app/SettingsTabs";
+import { TwoFactorSettings } from "@/components/app/TwoFactorSettings";
 import { Tag, type Tone } from "@/components/app/primitives";
 import { confirmDestructive } from "@/lib/confirm";
 import { supabase } from "@/integrations/supabase/client";
@@ -93,6 +94,8 @@ function Profile() {
   const [deleting, setDeleting] = useState(false);
 
   const isAdmin = profile?.tenant_role === "owner" || profile?.tenant_role === "admin";
+  // Platform admins (superadmins) must use two-factor login; everyone else may.
+  const [isPlatformAdmin, setIsPlatformAdmin] = useState(false);
 
   async function reload() {
     setLoading(true);
@@ -115,6 +118,9 @@ function Profile() {
 
   useEffect(() => {
     void reload();
+    void supabase.rpc("my_admin_status").then(({ data }) => {
+      setIsPlatformAdmin(Boolean(data?.[0]?.is_admin));
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -291,6 +297,8 @@ function Profile() {
                 </button>
               </form>
             </section>
+
+            <TwoFactorSettings required={isPlatformAdmin} />
 
             <section className="surface-panel rounded p-5">
               <h2 className="flex items-center gap-2 font-display text-lg font-bold">

@@ -5,6 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { logAuthEvent } from "@/lib/edge-functions";
 import { MIN_PASSWORD_LENGTH, passwordLengthError } from "@/lib/password-policy";
 import { cn } from "@/lib/utils";
+import { needsMfaChallenge, verifiedTotpFactor } from "@/lib/mfa";
+import { MfaChallengeScreen } from "@/components/app/MfaChallengeScreen";
 import heroSignIn from "@/assets/hero-signin-courthouse.jpg";
 import heroSignUp from "@/assets/hero-signup-signing.jpg";
 
@@ -83,11 +85,34 @@ function AuthPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  // Set when the password was accepted but the account has two-factor login on:
+  // the session is only aal1, and the database refuses data until the code is in.
+  const [mfaFactorId, setMfaFactorId] = useState<string | null>(null);
+
+  // Where to go after sign-in. Only in-app paths are honoured (the /admin guard
+  // sends admins here with ?next=/admin), so this can't become an open redirect.
+  function destination(): "/app" | "/admin" {
+    if (typeof window === "undefined") return "/app";
+    return new URLSearchParams(window.location.search).get("next") === "/admin" ? "/admin" : "/app";
+  }
+
+  // After a password is accepted (or on arriving already signed in): ask for the
+  // authenticator code if this account needs one, otherwise go straight in.
+  async function continueSignedIn() {
+    if (await needsMfaChallenge()) {
+      const factor = await verifiedTotpFactor();
+      if (factor) {
+        setMfaFactorId(factor.id);
+        return;
+      }
+    }
+    void navigate({ to: destination() });
+  }
 
   useEffect(() => {
     let active = true;
     void supabase.auth.getSession().then(({ data }) => {
-      if (active && data.session) void navigate({ to: "/app" });
+      if (active && data.session) void continueSignedIn();
     });
     return () => {
       active = false;
@@ -146,7 +171,7 @@ function AuthPage() {
       }
       const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
       if (signInError) throw signInError;
-      void navigate({ to: "/app" });
+      await continueSignedIn();
     } catch (cause) {
       if (mode === "signin") void logAuthEvent({ event: "login_failed", email });
       // A network-level failure — sign-in service unreachable, DNS not resolving,
@@ -165,6 +190,15 @@ function AuthPage() {
     } finally {
       setBusy(false);
     }
+  }
+
+  if (mfaFactorId) {
+    return (
+      <MfaChallengeScreen
+        factorId={mfaFactorId}
+        onVerified={() => void navigate({ to: destination() })}
+      />
+    );
   }
 
   return (

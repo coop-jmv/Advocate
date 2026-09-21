@@ -34,6 +34,16 @@ additional_redirect_urls = [
   "http://127.0.0.1:5173/**",
 ]
 
+# Authenticator-app (TOTP) two-factor login. Hosted Supabase projects have TOTP
+# enabled by default; this makes the local stack match. Enforcement lives in the
+# database — see 20260921090000_mfa_enforcement.sql.
+[auth.mfa]
+max_enrolled_factors = 10
+
+[auth.mfa.totp]
+enroll_enabled = true
+verify_enabled = true
+
 [auth.email]
 # Skip the Mailpit confirmation round-trip when signing up locally.
 enable_confirmations = false
