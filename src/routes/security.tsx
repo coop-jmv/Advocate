@@ -1,23 +1,26 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { canonical } from "@/lib/seo";
 import { ShieldCheck, Lock, Database, FileSearch, KeyRound, Users } from "lucide-react";
 import { SiteHeader, SiteFooter } from "@/components/site/SiteChrome";
 
 export const Route = createFileRoute("/security")({
   head: () => ({
     meta: [
-      { title: "Security — LexDiary" },
+      { title: "Security & Data Protection for Law Firms | LexDiary" },
       {
         name: "description",
         content:
-          "How LexDiary protects privileged case data: firm-level isolation, encryption in transit, India data residency, DPDP Act alignment, and a structured internal security review across every release-blocking category.",
+          "How LexDiary protects privileged case data: firm-level isolation, encryption, India data residency and DPDP Act alignment.",
       },
-      { property: "og:title", content: "Security — LexDiary" },
+      { property: "og:title", content: "Security & Data Protection for Law Firms | LexDiary" },
       {
         property: "og:description",
         content:
           "Firm-level isolation, encryption in transit, India data residency, and a structured internal security review — how LexDiary protects privileged case data.",
       },
+      canonical("/security").meta,
     ],
+    links: [canonical("/security").link],
   }),
   component: Security,
 });

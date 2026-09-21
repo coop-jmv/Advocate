@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { canonical } from "@/lib/seo";
 import {
   UserPlus,
   Scale,
@@ -19,19 +20,24 @@ import { SiteHeader, SiteFooter } from "@/components/site/SiteChrome";
 export const Route = createFileRoute("/features")({
   head: () => ({
     meta: [
-      { title: "Features — LexDiary" },
+      { title: "Features — Case Management, Court Diary & AI for Advocates | LexDiary" },
       {
         name: "description",
         content:
-          "What each part of LexDiary replaces: the paper register, the blank-page first draft, the WhatsApp status update, the month-end billing scramble. See the manual work it removes, module by module.",
+          "What LexDiary replaces for advocates: the paper diary, the blank-page first draft, WhatsApp status updates and month-end billing — module by module.",
       },
-      { property: "og:title", content: "Features — LexDiary" },
+      {
+        property: "og:title",
+        content: "Features — Case Management, Court Diary & AI for Advocates | LexDiary",
+      },
       {
         property: "og:description",
         content:
           "Case & matter management, cause-list intelligence, an AI case assistant and drafting studio, Indic OCR with AI document review, client portal, GST billing and audit logs — and the manual work each one removes.",
       },
+      canonical("/features").meta,
     ],
+    links: [canonical("/features").link],
   }),
   component: Features,
 });

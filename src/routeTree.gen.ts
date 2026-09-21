@@ -21,6 +21,8 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SecurityRouteImport } from './routes/security'
 import { Route as AdminAdminRouteImport } from './routes/_admin/admin'
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
+import { Route as GuidesIndexRouteImport } from './routes/guides.index'
+import { Route as GuidesSlugRouteImport } from './routes/guides.$slug'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as AdminAdminIndexRouteImport } from './routes/_admin/admin.index'
 import { Route as AdminAdminAuditLogRouteImport } from './routes/_admin/admin.audit-log'
@@ -103,6 +105,16 @@ const AuthenticatedAppRoute = AuthenticatedAppRouteImport.update({
   id: '/app',
   path: '/app',
   getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const GuidesIndexRoute = GuidesIndexRouteImport.update({
+  id: '/guides/',
+  path: '/guides/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GuidesSlugRoute = GuidesSlugRouteImport.update({
+  id: '/guides/$slug',
+  path: '/guides/$slug',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const InviteTokenRoute = InviteTokenRouteImport.update({
   id: '/invite/$token',
@@ -249,7 +261,9 @@ export interface FileRoutesByFullPath {
   '/security': typeof SecurityRoute
   '/admin': typeof AdminAdminRouteWithChildren
   '/app': typeof AuthenticatedAppRouteWithChildren
+  '/guides/$slug': typeof GuidesSlugRoute
   '/invite/$token': typeof InviteTokenRoute
+  '/guides/': typeof GuidesIndexRoute
   '/admin/audit-log': typeof AdminAdminAuditLogRoute
   '/admin/cause-list-sources': typeof AdminAdminCauseListSourcesRoute
   '/admin/contact-requests': typeof AdminAdminContactRequestsRoute
@@ -283,7 +297,9 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/security': typeof SecurityRoute
+  '/guides/$slug': typeof GuidesSlugRoute
   '/invite/$token': typeof InviteTokenRoute
+  '/guides': typeof GuidesIndexRoute
   '/admin/audit-log': typeof AdminAdminAuditLogRoute
   '/admin/cause-list-sources': typeof AdminAdminCauseListSourcesRoute
   '/admin/contact-requests': typeof AdminAdminContactRequestsRoute
@@ -321,7 +337,9 @@ export interface FileRoutesById {
   '/security': typeof SecurityRoute
   '/_admin/admin': typeof AdminAdminRouteWithChildren
   '/_authenticated/app': typeof AuthenticatedAppRouteWithChildren
+  '/guides/$slug': typeof GuidesSlugRoute
   '/invite/$token': typeof InviteTokenRoute
+  '/guides/': typeof GuidesIndexRoute
   '/_admin/admin/audit-log': typeof AdminAdminAuditLogRoute
   '/_admin/admin/cause-list-sources': typeof AdminAdminCauseListSourcesRoute
   '/_admin/admin/contact-requests': typeof AdminAdminContactRequestsRoute
@@ -359,7 +377,9 @@ export interface FileRouteTypes {
     | '/security'
     | '/admin'
     | '/app'
+    | '/guides/$slug'
     | '/invite/$token'
+    | '/guides/'
     | '/admin/audit-log'
     | '/admin/cause-list-sources'
     | '/admin/contact-requests'
@@ -393,7 +413,9 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/reset-password'
     | '/security'
+    | '/guides/$slug'
     | '/invite/$token'
+    | '/guides'
     | '/admin/audit-log'
     | '/admin/cause-list-sources'
     | '/admin/contact-requests'
@@ -430,7 +452,9 @@ export interface FileRouteTypes {
     | '/security'
     | '/_admin/admin'
     | '/_authenticated/app'
+    | '/guides/$slug'
     | '/invite/$token'
+    | '/guides/'
     | '/_admin/admin/audit-log'
     | '/_admin/admin/cause-list-sources'
     | '/_admin/admin/contact-requests'
@@ -467,7 +491,9 @@ export interface RootRouteChildren {
   PrivacyRoute: typeof PrivacyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SecurityRoute: typeof SecurityRoute
+  GuidesSlugRoute: typeof GuidesSlugRoute
   InviteTokenRoute: typeof InviteTokenRoute
+  GuidesIndexRoute: typeof GuidesIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -555,6 +581,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/app'
       preLoaderRoute: typeof AuthenticatedAppRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/guides/': {
+      id: '/guides/'
+      path: '/guides'
+      fullPath: '/guides/'
+      preLoaderRoute: typeof GuidesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/guides/$slug': {
+      id: '/guides/$slug'
+      path: '/guides/$slug'
+      fullPath: '/guides/$slug'
+      preLoaderRoute: typeof GuidesSlugRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/invite/$token': {
       id: '/invite/$token'
@@ -837,7 +877,9 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyRoute: PrivacyRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SecurityRoute: SecurityRoute,
+  GuidesSlugRoute: GuidesSlugRoute,
   InviteTokenRoute: InviteTokenRoute,
+  GuidesIndexRoute: GuidesIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

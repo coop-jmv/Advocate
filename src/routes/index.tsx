@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { canonical, homeJsonLd } from "@/lib/seo";
 import {
   Scale,
   CalendarClock,
@@ -17,22 +18,25 @@ import heroImage from "@/assets/hero-advocate.jpg";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "LexDiary — Practice Management for Indian Advocates" },
+      { title: "LexDiary — Legal Practice Management Software for Indian Advocates" },
       {
         name: "description",
         content:
-          "The practice management platform built for Indian advocates. Case and matter tracking, a hearing diary with automatic cause-list matching, Indic OCR with AI document review, an AI case assistant and drafting studio, a client portal and GST-compliant billing — in one secure workspace.",
+          "Case management, a court diary with cause-list matching, an AI case assistant and GST billing — practice management software for Indian advocates and law firms.",
       },
       {
         property: "og:title",
-        content: "LexDiary — Practice Management for Indian Advocates",
+        content: "LexDiary — Legal Practice Management Software for Indian Advocates",
       },
+      canonical("/").meta,
       {
         property: "og:description",
         content:
           "Case tracking, hearing diary, cause-list intelligence, an AI case assistant and drafting studio, document vault, client portal and GST billing — the complete practice management platform for Indian legal professionals.",
       },
     ],
+    links: [canonical("/").link],
+    scripts: [{ type: "application/ld+json", children: homeJsonLd }],
   }),
   component: Landing,
 });
@@ -124,10 +128,10 @@ function Landing() {
           <div className="mx-auto grid max-w-6xl gap-12 px-5 py-20 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:py-28">
             <div>
               <span className="inline-flex items-center gap-2 rounded-full bg-docket-amber px-3 py-1 text-eyebrow text-docket-amber-foreground">
-                Practice management · India
+                A disciplined practice, run from a single workspace
               </span>
               <h1 className="mt-6 text-4xl leading-[1.1] font-bold sm:text-5xl">
-                A disciplined practice, run from a single workspace.
+                Legal practice management software for Indian advocates.
               </h1>
               <p className="mt-6 max-w-xl text-base leading-relaxed text-primary-foreground/80">
                 LexDiary brings matters, your hearing diary, documents, AI-assisted drafting,
@@ -152,8 +156,8 @@ function Landing() {
               </div>
 
               <p className="mt-4 text-xs text-primary-foreground/70">
-                Free forever for one advocate: court diary with daily cause-list matching and
-                e-Courts lookups, and AI case analysis. No card required.
+                Free forever for one advocate: court diary with daily cause-list matching, and AI
+                case analysis. No card required.
               </p>
 
               <dl className="mt-14 grid gap-6 border-t border-primary-foreground/15 pt-8 sm:grid-cols-3">

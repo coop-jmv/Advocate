@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Public, indexable pages only. Served as a static file from public/ (the ASSETS
+  binding in wrangler.toml serves dist/client before the Worker runs, the same way
+  robots.txt is). The host is the custom domain https://lexdiary.online, which is
+  the canonical origin (see capacitor.config.ts); the *.workers.dev address serves
+  the same pages but is not listed.
+
+  Deliberately NOT listed:
+    /pricing         redirects to /contact (a redirecting URL in a sitemap is an error)
+    /auth            sign-in / sign-up: an app page, not something to rank
+    /reset-password  token landing page, already noindex
+    /invite/<token>  private, single-use links
+    /app/*, /admin/* authenticated areas
+
+  No <lastmod>, <changefreq> or <priority>: Google ignores the latter two, and it
+  discounts <lastmod> once it has seen it be inaccurate, so a value that goes stale
+  is worse than none.
+
+  This file is static. When a new public marketing page is added under
+  src/routes/, or a guide is added to src/lib/guides.ts, add it here too.
+-->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://lexdiary.online/</loc>
+  </url>
+  <url>
+    <loc>https://lexdiary.online/features</loc>
+  </url>
+  <url>
+    <loc>https://lexdiary.online/security</loc>
+  </url>
+  <url>
+    <loc>https://lexdiary.online/privacy</loc>
+  </url>
+  <url>
+    <loc>https://lexdiary.online/contact</loc>
+  </url>
+  <url>
+    <loc>https://lexdiary.online/guides</loc>
+  </url>
+  <url>
+    <loc>https://lexdiary.online/guides/cnr-number-explained</loc>
+  </url>
+  <url>
+    <loc>https://lexdiary.online/guides/track-daily-cause-list</loc>
+  </url>
+  <url>
+    <loc>https://lexdiary.online/guides/gst-on-legal-services</loc>
+  </url>
+  <url>
+    <loc>https://lexdiary.online/guides/choosing-practice-management-software</loc>
+  </url>
+</urlset>
