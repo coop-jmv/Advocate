@@ -1,11 +1,17 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
+import { needsMfaChallenge } from "@/lib/mfa";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   beforeLoad: async ({ location }) => {
     const { data, error } = await supabase.auth.getUser();
     if (error || !data.user) throw redirect({ to: "/auth" });
+
+    // Password accepted but the authenticator code not yet entered: the
+    // database refuses every request from this session, so send it to the code
+    // prompt instead of rendering a page full of permission errors.
+    if (await needsMfaChallenge()) throw redirect({ to: "/auth" });
 
     // A trial that has run out, or a paid subscription past its renewal
     // date (plus grace), sends the dashboard itself to the plan-picker —

@@ -1482,6 +1482,16 @@ export type Database = {
           whatsapp_enabled: boolean
         }[]
       }
+      mfa_satisfied: { Args: never; Returns: boolean }
+      my_admin_status: {
+        Args: never
+        Returns: {
+          aal: string
+          is_admin: boolean
+          mfa_enrolled: boolean
+        }[]
+      }
+      users_with_verified_mfa: { Args: never; Returns: string[] }
       my_usage_summary: {
         Args: never
         Returns: {
