@@ -239,6 +239,107 @@ export const GUIDES: Guide[] = [
       },
     ],
   },
+  {
+    slug: "check-case-status-ecourts",
+    title: "How to check case status on e-Courts",
+    description:
+      "Step-by-step: find a case's status, next date and orders on the e-Courts services portal and app, by CNR, case number, party or advocate name.",
+    published: "2026-09-21",
+    updated: "2026-09-21",
+    readingMinutes: 4,
+    blocks: [
+      {
+        type: "p",
+        text: "The e-Courts services portal and the official eCourts Services app give free access to case status, next hearing dates, orders and cause lists for the district and subordinate courts on the e-Courts system. Knowing the fastest way to search saves time every day.",
+      },
+      { type: "h2", text: "On the website" },
+      {
+        type: "ol",
+        items: [
+          "Open the e-Courts services portal (services.ecourts.gov.in) and choose Case Status.",
+          "If you have the CNR, search by CNR number — it is the fastest route and needs no court selection.",
+          "Otherwise, select the state, district and court complex, then search by case number, filing number, party name, advocate name, FIR number or Act.",
+          "Enter the captcha and open the case. The status page shows the stage, next hearing date, the court and judge, and the history of hearings, with orders where uploaded.",
+        ],
+      },
+      { type: "h2", text: "On the phone" },
+      {
+        type: "p",
+        text: "The eCourts Services app offers the same searches and lets you save cases so their status is a tap away. It is the quickest way to check a next date from the court corridor.",
+      },
+      { type: "h2", text: "Which search to use" },
+      {
+        type: "ul",
+        items: [
+          "CNR number — exact and unique; use it whenever you have it.",
+          "Case number — needs the right court complex and case type, and the year.",
+          "Advocate name — useful for seeing everything listed against your name, but results depend on how the name was entered at filing.",
+          "Party name — for when you know the parties but not the number.",
+        ],
+      },
+      {
+        type: "note",
+        text: "High Courts and many tribunals run their own websites with their own case-status search. If a matter does not appear on e-Courts, check the court's own site.",
+      },
+      { type: "h2", text: "Keeping it in one place" },
+      {
+        type: "p",
+        text: "Checking status one case at a time does not scale across a busy docket. Record the CNR against every matter so you always have it, and keep next dates in one diary as soon as you see them. On paid plans, LexDiary can look a case up on e-Courts by its CNR and pre-fill the matter's details for you to review.",
+      },
+    ],
+  },
+  {
+    slug: "what-goes-into-a-vakalatnama",
+    title: "What goes into a vakalatnama: a checklist for advocates",
+    description:
+      "What a vakalatnama is, the details it must carry, and the common mistakes that get one returned by the registry — a practical checklist.",
+    published: "2026-09-21",
+    updated: "2026-09-21",
+    readingMinutes: 5,
+    blocks: [
+      {
+        type: "p",
+        text: "A vakalatnama is the document by which a party authorises an advocate to appear, plead and act for them in a matter. Without one on record, an advocate generally cannot act for the party, so getting it right — and filed on time — is basic hygiene for every new brief.",
+      },
+      {
+        type: "note",
+        text: "Formats and filing requirements differ between courts and states — including which stamps must be affixed and how many copies are needed. Always check the rules and practice directions of the court you are filing in.",
+      },
+      { type: "h2", text: "Details it should carry" },
+      {
+        type: "ul",
+        items: [
+          "The name of the court and the case — number, title and year, or the proposed title for a fresh filing.",
+          "The name and description of the party giving the authority, and their status in the case (petitioner, respondent, plaintiff, defendant).",
+          "The name of each advocate being engaged, with their enrolment number and address for service.",
+          "The powers being given — to appear, plead, act, file documents, receive papers and so on, as the court's format provides.",
+          "The client's signature, and the date and place of signing.",
+          "The advocate's signature accepting the engagement.",
+        ],
+      },
+      { type: "h2", text: "Stamps and filing" },
+      {
+        type: "p",
+        text: "Many states require a stamp to be affixed to the vakalatnama — commonly an advocates' welfare fund stamp, and in some courts a court-fee stamp. The value and type differ by state and court, so confirm the current requirement before filing rather than relying on the last matter you filed.",
+      },
+      { type: "h2", text: "Mistakes that get it returned" },
+      {
+        type: "ul",
+        items: [
+          "The party's name or status does not match the pleadings exactly.",
+          "A missing signature, date or place — from the client or the advocate.",
+          "Enrolment number omitted or incorrect.",
+          "The required stamp missing, or of the wrong value.",
+          "Signed on behalf of a company or other body without the authority to do so being on record.",
+        ],
+      },
+      { type: "h2", text: "After filing" },
+      {
+        type: "p",
+        text: "Keep a copy with the filing details and note the date it was filed against the matter. When a new advocate joins or one leaves, file a fresh vakalatnama or a no-objection as the court requires, so the record always shows who is appearing.",
+      },
+    ],
+  },
 ];
 
 export function findGuide(slug: string): Guide | undefined {
