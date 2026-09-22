@@ -292,6 +292,21 @@ export function withSecurityHeaders(response: Response, request: Request): Respo
   const url = new URL(request.url);
   const privatePath = isPrivatePath(url.pathname);
 
+  // HSTS is meaningless on a cleartext response — browsers ignore the header
+  // when it arrives over HTTP, by design, since an attacker could otherwise
+  // forge it. hstspreload.org flags sending it anyway as
+  // `redirects.http.useless_header` and asks for it to be removed, so it is
+  // stripped here rather than left as bytes on every http:// request.
+  //
+  // In practice this is the http -> https redirect above, which is the only
+  // http:// response this Worker still produces on a public host, plus local
+  // development over http://localhost. Done here rather than in httpsRedirect()
+  // so the rule is "never send HSTS over cleartext" in one place, instead of a
+  // special case one caller has to remember.
+  if (url.protocol === "http:") {
+    response.headers.delete("Strict-Transport-Security");
+  }
+
   if (!INDEXABLE_HOSTS.has(url.hostname)) {
     response.headers.set("X-Robots-Tag", "noindex");
   } else if (privatePath) {
