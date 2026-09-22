@@ -1,0 +1,82 @@
+name: TLS monitor
+
+# Watches the production certificate and the HTTPS redirect from outside
+# Cloudflare. See scripts/tls-monitor.mjs for why this deliberately does not
+# run as a Cloudflare cron trigger.
+#
+# Two things worth knowing about scheduled workflows:
+#   - They only run from the default branch, so this does nothing until it is
+#     merged to main.
+#   - GitHub disables them after 60 days with no repository activity, and
+#     emails the owner when it does. A quiet repo is the case where a silently
+#     stopped monitor would be least noticed, so if this repo goes dormant,
+#     re-enable it from the Actions tab.
+on:
+  schedule:
+    # 06:17 UTC daily. Off the hour on purpose: GitHub queues the
+    # on-the-hour slots heavily and drops runs under load.
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+
+# No repository secrets needed — the checks are all unauthenticated requests
+# a browser could make. github.token only opens the alert issue below.
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Node, not Bun, and not by accident: Bun cannot offer TLS 1.0/1.1 (it
+      # rejects the SECLEVEL=0 cipher string the probe needs), so under Bun the
+      # legacy-protocol checks degrade to an untested WARN and this monitor
+      # would stop watching the very regression it was added for. ubuntu-latest
+      # ships Node, so there is no setup step to go stale.
+      #
+      # No install step either: the script imports only node:tls and fetch, so
+      # it runs against a bare checkout and cannot be broken by a dependency.
+      - name: Check certificate, legacy TLS and HTTPS redirect
+        id: check
+        continue-on-error: true
+        run: node scripts/tls-monitor.mjs | tee monitor.log
+
+      - name: Raise or update the alert issue
+        if: steps.check.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          body="$(printf 'The scheduled TLS check failed.\n\n```\n%s\n```\n\n[Full run](%s)\n' "$(cat monitor.log)" "$RUN_URL")"
+          # `|| true` because on the very first failure the label does not exist
+          # yet and `gh issue list --label` can exit non-zero; the step runs under
+          # `bash -e -o pipefail`, so without it the step would abort here and
+          # never reach the create below.
+          # One issue per incident, not one per day: a failing cert stays
+          # failing for as long as it takes to fix, and a new issue every
+          # morning would train everyone to ignore the label.
+          existing="$(gh issue list --label tls-monitor --state open --limit 1 --json number --jq '.[0].number // empty' || true)"
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body "$body"
+          else
+            gh label create tls-monitor --color B60205 --description "Automated TLS/HTTPS monitoring" 2>/dev/null || true
+            gh issue create --title "TLS monitor: lexdiary.online check failed" --label tls-monitor --body "$body"
+          fi
+
+      # Close the loop: once the check passes again, say so on the open issue
+      # and close it, so a green monitor cannot sit behind a stale red issue.
+      - name: Resolve the alert issue
+        if: steps.check.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          existing="$(gh issue list --label tls-monitor --state open --limit 1 --json number --jq '.[0].number // empty' || true)"
+          if [ -n "$existing" ]; then
+            gh issue close "$existing" --comment "TLS check is passing again; closing automatically."
+          fi
+
+      - name: Fail the job if the check failed
+        if: steps.check.outcome == 'failure'
+        run: exit 1

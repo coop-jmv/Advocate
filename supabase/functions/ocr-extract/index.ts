@@ -10,6 +10,37 @@ function decodeBase64(base64: string): Uint8Array {
   return bytes;
 }
 
+// The client's mimeType reaches extractTextFromImage() and is interpolated
+// straight into a `data:${mimeType};base64,...` URL, so it was unvalidated
+// passthrough into a string the AI gateway parses. The <input accept="image/*">
+// in DocumentIntelligence.tsx is a picker hint, not a control — the field is
+// whatever the caller sends.
+//
+// The list is every image type an "image/*" picker realistically yields rather
+// than a minimal jpeg/png pair, on purpose: iOS cameras hand back HEIC/HEIF and
+// this app ships an iPhone build (capacitor.config.ts), so a tighter list would
+// break scans that work today. The point is to exclude non-images, not to
+// second-guess the camera.
+//
+// Parameters are stripped ("image/jpeg; charset=binary") and case is
+// normalised, because File.type is whatever the OS reported.
+const ALLOWED_IMAGE_MIME = new Set([
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+  "image/heic",
+  "image/heif",
+]);
+
+function normalizeImageMime(raw: string | undefined): string | null {
+  // Same default as before: an empty File.type (common on some Android
+  // pickers) is treated as a JPEG rather than rejected.
+  const candidate = (raw ?? "").split(";")[0].trim().toLowerCase() || "image/jpeg";
+  return ALLOWED_IMAGE_MIME.has(candidate) ? candidate : null;
+}
+
 Deno.serve(async (req) => {
   const preflight = handleOptions(req);
   if (preflight) return preflight;
@@ -51,8 +82,17 @@ Deno.serve(async (req) => {
     return errorResponse(req, "That photo is too large (max 10MB) — please retake it.", 413);
   }
 
+  const mimeType = normalizeImageMime(body.mimeType);
+  if (!mimeType) {
+    return errorResponse(
+      req,
+      "That file type isn't supported — please send a photo (JPEG, PNG, WebP, GIF or HEIC).",
+      415,
+    );
+  }
+
   try {
-    const result = await extractTextFromImage(bytes, body.mimeType || "image/jpeg");
+    const result = await extractTextFromImage(bytes, mimeType);
     return jsonResponse(req, result);
   } catch (cause) {
     return errorResponse(req, cause instanceof Error ? cause.message : "OCR failed.", 502);

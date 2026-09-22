@@ -15,11 +15,20 @@ import { secretMatches } from "../_shared/timing-safe.ts";
 // endpoint holding a service-role client is not something to leave open on the
 // strength of a TODO comment.
 //
-// Gupshup's dashboard lets a callback URL carry a query string but not always a
-// custom header, so both are accepted. When their per-app HMAC scheme is
-// finalized for this account, add the signature check alongside this one rather
-// than in place of it — a shared secret in a URL is weaker than a signature
-// (it can leak via provider-side logs), so it is the floor, not the ceiling.
+// The secret travels in the x-webhook-secret HEADER only. A `?token=` query
+// parameter used to be accepted too, because Gupshup's dashboard does not
+// always allow a custom header — but this account's callback is configured
+// with the header (confirmed 2026-09-21), and a secret in a URL is materially
+// weaker: query strings land in provider-side request logs, proxy logs and
+// analytics, none of which we control or can purge.
+//
+// If a future provider genuinely cannot send a header, put the secret back in
+// the URL only as a temporary measure and rotate WHATSAPP_WEBHOOK_SECRET when
+// you do — it should be treated as logged from that moment on.
+//
+// When Gupshup's per-app HMAC scheme is finalized for this account, add the
+// signature check alongside this one rather than in place of it: the shared
+// secret is the floor, not the ceiling.
 
 const GUPSHUP_STATUS_MAP: Record<string, "sent" | "delivered" | "failed" | "read"> = {
   submitted: "sent",
@@ -40,8 +49,7 @@ Deno.serve(async (req) => {
   const secret = Deno.env.get("WHATSAPP_WEBHOOK_SECRET");
   if (!secret) return errorResponse(req, "Webhook is not configured", 503);
 
-  const provided =
-    req.headers.get("x-webhook-secret") ?? new URL(req.url).searchParams.get("token");
+  const provided = req.headers.get("x-webhook-secret");
   if (!secretMatches(provided, secret)) return errorResponse(req, "Unauthorized", 401);
 
   let payload: {

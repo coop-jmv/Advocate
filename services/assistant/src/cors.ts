@@ -35,7 +35,15 @@ export function handleOptions(req: Request): Response | null {
 export function jsonResponse(req: Request, body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeadersFor(req), "Content-Type": "application/json" },
+    headers: {
+      ...corsHeadersFor(req),
+      "Content-Type": "application/json",
+      // Every response from here is tenant-scoped data (clients, matters,
+      // diary entries, invoices). With no Cache-Control at all these fell to
+      // heuristic caching and could be written to a shared machine's disk
+      // cache; no-store keeps privileged material out of any cache.
+      "Cache-Control": "no-store, max-age=0",
+    },
   });
 }
 

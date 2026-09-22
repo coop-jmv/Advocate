@@ -1,0 +1,35 @@
+# Security headers for static assets.
+#
+# Why this file exists at all: wrangler.toml's [assets] binding serves
+# everything under dist/client (the hashed JS/CSS bundles, icons, manifest,
+# robots.txt, sitemap.xml, sw.js) *before* the Worker runs, so those responses
+# never pass through withSecurityHeaders() in src/lib/server-handler.ts and
+# were going out bare. This file is the only way to header them; Cloudflare
+# applies it to asset responses only, and never to Worker-generated ones, so
+# the two sets have to be maintained together.
+#
+# Keep in sync with securityHeaders() in src/lib/server-handler.ts.
+#
+# Deliberately NOT repeated here:
+#   Content-Security-Policy - CSP only binds documents and workers. On a .js or
+#     .css subresource it is inert, and the one asset it would really bind is
+#     sw.js, where a wrong default-src silently breaks the service worker's own
+#     fetches. The Worker serves the CSP on every document, which is where it
+#     does the work.
+#   Permissions-Policy - likewise only meaningful on a document response.
+#   Cross-Origin-Embedder-Policy - see the note in server-handler.ts; COEP is
+#     not set on documents either, so setting it here would do nothing.
+#
+# Cross-Origin-Resource-Policy matters MORE here than on the Worker's own
+# responses: it is enforced on no-cors subresource loads, and subresources are
+# exactly what this directory serves. The native apps are unaffected because
+# capacitor.config.ts runs the WebView as https://lexdiary.online itself.
+
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-XSS-Protection: 0
+  Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Resource-Policy: same-origin

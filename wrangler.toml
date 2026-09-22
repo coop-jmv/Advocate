@@ -16,3 +16,26 @@ binding = "ASSETS"
 [vars]
 SUPABASE_URL = "https://cjcjfdwdlsdgyvshuncn.supabase.co"
 SUPABASE_PUBLISHABLE_KEY = "sb_publishable_DnB_8STNU8FST_sCkRAM4w_K9c8A4Ft"
+
+# Per-IP flood protection for the main app. The seven services/* Workers have
+# had this since Pass 5 (P5-3); the main app did not, leaving the SSR routes
+# and every TanStack server function — including the unauthenticated contact
+# form, which sends an email per call — as the one unmetered way in.
+# namespace_id 1008 continues the services' 1001-1007 series so the eight
+# Workers never share a bucket. 200/minute matches them: an anti-abuse floor,
+# not a quota. See src/lib/rate-limit.ts.
+[[ratelimits]]
+name = "RATE_LIMITER"
+namespace_id = "1008"
+simple = { limit = 200, period = 60 }
+
+# Much tighter ceiling for the one server function a signed-out visitor can
+# reach: submitContactRequest(), which writes a row AND sends a Resend email.
+# Its own throttle in src/lib/contact.functions.ts is per-email-address and so
+# is trivially sidestepped by varying the address; that file's comment asks for
+# exactly this Cloudflare-side companion. Deliberately per-IP rather than
+# global, so one script cannot lock out every genuine visitor.
+[[ratelimits]]
+name = "CONTACT_RATE_LIMITER"
+namespace_id = "1009"
+simple = { limit = 5, period = 60 }
