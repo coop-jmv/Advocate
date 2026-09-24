@@ -11,6 +11,22 @@ enabled = false
 # `supabase config push` with this block in place: it would copy these
 # localhost values to production and break every production auth redirect.
 #
+# There is now a second reason not to push, beyond the URLs. Production auth
+# hardening was configured in the dashboard on 2026-09-22 - CAPTCHA (Turnstile)
+# on Attack Protection, leaked-password protection, and a minimum password
+# length of 8 - and none of it is represented in this file. Two of those three
+# ARE expressible here ([auth.captcha] and minimum_password_length), so a push
+# would push this file's absent/default values over them. The third,
+# leaked-password protection, has no config.toml key at all in CLI 2.106
+# (password_hibp_enabled, enable_leaked_password_protection and hibp_enabled
+# are all rejected by the parser), so this file could not describe the hosted
+# project's auth config even if the URLs were corrected.
+#
+# If that ever changes and a push becomes worthwhile, note that env() is not a
+# safe escape hatch for the CAPTCHA secret: an unset variable only warns, it
+# does not fail, so a push would quietly send an empty secret and switch the
+# protection off.
+#
 # The CLI's defaults here are site_url http://127.0.0.1:3000 with an allowlist
 # of only https://127.0.0.1:3000 (read from the running auth container).
 #
