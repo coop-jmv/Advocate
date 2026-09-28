@@ -85,6 +85,7 @@ function AuthPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [existingAccount, setExistingAccount] = useState(false);
   // Set when the password was accepted but the account has two-factor login on:
   // the session is only aal1, and the database refuses data until the code is in.
   const [mfaFactorId, setMfaFactorId] = useState<string | null>(null);
@@ -141,6 +142,7 @@ function AuthPage() {
     setBusy(true);
     setError(null);
     setNotice(null);
+    setExistingAccount(false);
     try {
       if (mode === "forgot") {
         const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
@@ -160,6 +162,13 @@ function AuthPage() {
           },
         });
         if (signUpError) throw signUpError;
+        // With email confirmation on, Supabase answers an already-registered
+        // address with a user that has no identities instead of an error, and
+        // sends nothing — so "check your inbox" would be a dead end.
+        if (signUpData.user && signUpData.user.identities?.length === 0) {
+          setExistingAccount(true);
+          return;
+        }
         void logAuthEvent({ event: "signup", email, userId: signUpData.user?.id });
         const { data } = await supabase.auth.getSession();
         if (data.session) {
@@ -173,6 +182,15 @@ function AuthPage() {
       if (signInError) throw signInError;
       await continueSignedIn();
     } catch (cause) {
+      // Without email confirmation, the same case arrives as an error instead.
+      if (
+        mode === "signup" &&
+        cause instanceof Error &&
+        (cause as Error & { code?: string }).code === "user_already_exists"
+      ) {
+        setExistingAccount(true);
+        return;
+      }
       if (mode === "signin") void logAuthEvent({ event: "login_failed", email });
       // A network-level failure — sign-in service unreachable, DNS not resolving,
       // device offline — arrives as AuthRetryableFetchError carrying the browser's
@@ -413,6 +431,35 @@ function AuthPage() {
                 <p className="rounded border border-border bg-secondary px-3 py-2 text-sm text-muted-foreground">
                   {notice}
                 </p>
+              ) : null}
+              {mode === "signup" && existingAccount ? (
+                <div className="rounded border border-border bg-secondary px-3 py-2 text-sm">
+                  <p>
+                    <span className="font-semibold">{email}</span> already has a LexDiary account.
+                  </p>
+                  <p className="mt-1 flex flex-wrap gap-x-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setExistingAccount(false);
+                        setMode("signin");
+                      }}
+                      className="font-semibold text-primary underline-offset-4 hover:underline"
+                    >
+                      Sign in instead
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setExistingAccount(false);
+                        setMode("forgot");
+                      }}
+                      className="font-semibold text-primary underline-offset-4 hover:underline"
+                    >
+                      Reset password
+                    </button>
+                  </p>
+                </div>
               ) : null}
 
               <button
