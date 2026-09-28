@@ -19,7 +19,10 @@ import { secretMatches } from "../_shared/timing-safe.ts";
 // runs, and nothing here can undo or block it.
 
 const NOTIFY_TO = "lexdiary.online@gmail.com";
-const NOTIFY_FROM = "LexDiary Onboarding <onboarding@lexdiary.online>";
+// Resend's shared test sender until lexdiary.online passes domain
+// verification. It only delivers to the Resend account owner's address, which
+// is NOTIFY_TO. Switch back to onboarding@lexdiary.online once verified.
+const NOTIFY_FROM = "LexDiary Onboarding <onboarding@resend.dev>";
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function escapeHtml(value: string): string {
