@@ -17,7 +17,7 @@ export type WhatsAppSendResult = { providerMessageId: string };
  * Sends one WhatsApp message via Gupshup's template-message API. Templates
  * are how WhatsApp Business API supports business-initiated messages —
  * `params` fills the template's placeholder slots in order (here: the
- * hearing count and today's date, in that order — matches the template
+ * hearing count and the hearing date, in that order — matches the template
  * submitted for approval under GUPSHUP_TEMPLATE_ID).
  */
 export async function sendWhatsAppDigest(params: {

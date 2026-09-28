@@ -17,3 +17,16 @@ export function todayIsoIST(): string {
     day: "2-digit",
   }).format(new Date());
 }
+
+/**
+ * "Tomorrow" as an advocate in India sees it. Pure calendar arithmetic
+ * anchored at UTC midnight on todayIsoIST()'s result — mirrors
+ * src/lib/date-ist.ts's addDaysIso() — never re-derives "now" or reapplies a
+ * timezone conversion, so this can't drift across the IST/UTC boundary the
+ * way constructing a local Date and re-serializing with toISOString() does.
+ */
+export function tomorrowIsoIST(): string {
+  const d = new Date(`${todayIsoIST()}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + 1);
+  return d.toISOString().slice(0, 10);
+}
