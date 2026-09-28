@@ -117,14 +117,13 @@ function securityHeaders(): Record<string, string> {
     // frame-ancestors/X-Frame-Options do not cover, since those only govern
     // framing, not popups.
     //
-    // Safe here because nothing opens a cross-origin popup that needs to talk
-    // back: there is no window.open anywhere in src/, auth is Supabase's
-    // full-page redirect flow rather than an OAuth popup, and Razorpay is an
-    // emailed payment link (see src/lib/subscription-invoice.ts), not an
-    // embedded checkout. The only target="_blank" links are same-origin
-    // (/privacy) and already carry rel="noreferrer". Recheck this if an
-    // embedded payment checkout or a popup-based SSO is ever added.
-    "Cross-Origin-Opener-Policy": "same-origin",
+    // same-origin-allow-popups rather than same-origin because of Razorpay
+    // Checkout (src/lib/premium.ts): netbanking and some wallets finish the
+    // payment in a popup that reports back to the checkout frame through
+    // window.opener, and strict same-origin severs that, so those payments
+    // hang. The relaxation only covers popups this page itself opens; a
+    // cross-origin page that opens LexDiary still gets no handle to it.
+    "Cross-Origin-Opener-Policy": "same-origin-allow-popups",
     // Stops other origins loading this app's responses as a no-cors
     // subresource (<img>, <script>, <link>), which is the main defence against
     // cross-site leaks like Spectre-style probing of authenticated responses.
@@ -188,7 +187,9 @@ function securityHeaders(): Record<string, string> {
       "magnetometer=()",
       "microphone=(self)",
       "midi=()",
-      "payment=()",
+      // Razorpay's checkout frame uses the Payment Request API for some
+      // methods (e.g. Google Pay); denied everywhere else.
+      'payment=(self "https://api.razorpay.com")',
       "picture-in-picture=()",
       "publickey-credentials-get=()",
       "screen-wake-lock=()",
@@ -222,13 +223,20 @@ function securityHeaders(): Record<string, string> {
       // edge injects its beacon script into every page on lexdiary.online, and
       // without this entry the browser blocked it, so no visits were recorded.
       // Cookie-free; the beacon reports to cloudflareinsights.com (connect-src).
-      "script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com",
+      //
+      // checkout.razorpay.com is Razorpay Checkout's script, loaded only on
+      // the Subscription page when someone pays (src/lib/premium.ts).
+      "script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com https://checkout.razorpay.com",
+      // Razorpay Checkout renders the payment form in an iframe it serves
+      // from api.razorpay.com. Nothing else is framed.
+      "frame-src https://api.razorpay.com",
       // Plugin content is a script-execution vector of its own and nothing here
       // uses <object>/<embed>. default-src would fall back to 'self'; 'none' is
       // strictly tighter.
       "object-src 'none'",
       "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob:",
+      // cdn.razorpay.com: payment-method logos inside Razorpay Checkout.
+      "img-src 'self' data: blob: https://cdn.razorpay.com",
       // Fonts are self-hosted (see styles.css), so no third-party font origin.
       "font-src 'self' data:",
       // supabase-js's Realtime client keeps its heartbeat accurate in
@@ -248,7 +256,7 @@ function securityHeaders(): Record<string, string> {
       // src/lib/matters-service.ts, src/lib/diary-service.ts,
       // src/lib/documents-service.ts, src/lib/billing-service.ts,
       // src/lib/drafting-service.ts and src/lib/assistant-service.ts.
-      `connect-src 'self' ${supabaseConnectSources()} https://api.openai.com https://lexdiary-clients.dhanapalan-advocate.workers.dev https://lexdiary-matters.dhanapalan-advocate.workers.dev https://lexdiary-diary.dhanapalan-advocate.workers.dev https://lexdiary-documents.dhanapalan-advocate.workers.dev https://lexdiary-billing.dhanapalan-advocate.workers.dev https://lexdiary-drafting.dhanapalan-advocate.workers.dev https://lexdiary-assistant.dhanapalan-advocate.workers.dev https://cloudflareinsights.com`,
+      `connect-src 'self' ${supabaseConnectSources()} https://api.openai.com https://lexdiary-clients.dhanapalan-advocate.workers.dev https://lexdiary-matters.dhanapalan-advocate.workers.dev https://lexdiary-diary.dhanapalan-advocate.workers.dev https://lexdiary-documents.dhanapalan-advocate.workers.dev https://lexdiary-billing.dhanapalan-advocate.workers.dev https://lexdiary-drafting.dhanapalan-advocate.workers.dev https://lexdiary-assistant.dhanapalan-advocate.workers.dev https://cloudflareinsights.com https://api.razorpay.com https://lumberjack.razorpay.com`,
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",

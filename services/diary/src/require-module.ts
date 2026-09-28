@@ -19,9 +19,9 @@ export async function requireDiaryModule(supabase: SupabaseClient, userId: strin
     .eq("tenant_id", profile.tenant_id)
     .maybeSingle();
   if (!license) throw new Error("No license found for this chamber.");
-  // Included on Free (free_plan_module() in the database), and an active or
-  // ended trial is either everything or Free, so both pass.
-  if (license.plan === "free" || license.plan === "trial") return;
+  // Included on Free and Premium (free_plan_module() in the database), and an
+  // active or ended trial is either everything or Free, so all three pass.
+  if (license.plan === "free" || license.plan === "premium" || license.plan === "trial") return;
 
   const integrations = (license.integrations ?? {}) as Record<string, boolean | undefined>;
   if (integrations["diary_enabled"] === true) return;

@@ -13,6 +13,18 @@ export const Route = createFileRoute("/_authenticated")({
     // prompt instead of rendering a page full of permission errors.
     if (await needsMfaChallenge()) throw redirect({ to: "/auth" });
 
+    // Chose Premium when registering: the first time they reach the app
+    // (after confirming their email), take them to checkout with the seats
+    // they picked. The Subscription page clears the flag, so this happens once.
+    const meta = data.user.user_metadata as Record<string, unknown>;
+    if (meta["plan_intent"] === "premium" && location.pathname !== "/app/subscription") {
+      const seats = Number(meta["premium_seats"]);
+      throw redirect({
+        to: "/app/subscription",
+        search: Number.isInteger(seats) && seats >= 1 ? { seats } : {},
+      });
+    }
+
     // A trial that has run out, or a paid subscription past its renewal
     // date (plus grace), sends the dashboard itself to the plan-picker —
     // the database already blocks writes for both cases, this just means

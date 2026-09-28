@@ -17,6 +17,7 @@ import {
   setMemberRole,
   setSeatCount,
 } from "@/lib/team.functions";
+import { PREMIUM_SEAT_PRICE_INR } from "@/lib/premium";
 
 export const Route = createFileRoute("/_authenticated/app/team")({
   head: () => ({
@@ -74,6 +75,7 @@ const planLabel: Record<string, string> = {
   solo_basic: "Solo Basic",
   solo_pro: "Solo Pro",
   chamber: "Chamber",
+  premium: "Premium",
 };
 
 const rupees = (n: number) => `₹${n.toLocaleString("en-IN")}`;
@@ -330,14 +332,14 @@ function Team() {
               <h3 className="font-display text-sm font-bold">Add a teammate</h3>
               <p className="mt-2 text-sm text-muted-foreground">
                 Your {planLabel[ent?.plan ?? "free"] ?? ent?.plan} plan covers a single advocate.
-                The Chamber plan starts at {rupees(7999)} a month for two users, with extra seats at{" "}
-                {rupees(1999)} each.
+                Premium is {rupees(PREMIUM_SEAT_PRICE_INR)} per user per month plus GST — add as many
+                colleagues as you need.
               </p>
               <Link
                 to="/app/subscription"
                 className="mt-3 inline-flex items-center gap-2 rounded bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-ink"
               >
-                Upgrade to Chamber
+                Upgrade to Premium
               </Link>
             </div>
           ) : null}
@@ -385,7 +387,9 @@ function Team() {
                   <p className="w-full text-xs text-muted-foreground">
                     {seatsFree > 0
                       ? `${seatsFree} of ${ent.seats} seats free. A pending invite holds a seat until it is accepted or revoked.`
-                      : `All ${ent.seats} seats are in use — add a seat at ${rupees(ent.extra_seat_price_inr ?? 1999)} a month to invite another teammate.`}
+                      : ent.plan === "premium"
+                        ? `All ${ent.seats} seats are in use — add a seat on the Subscription page to invite another teammate.`
+                        : `All ${ent.seats} seats are in use — add a seat at ${rupees(ent.extra_seat_price_inr ?? 1999)} a month to invite another teammate.`}
                   </p>
                 ) : null}
               </form>
@@ -501,7 +505,20 @@ function Team() {
                   </div>
                 </dl>
 
-                {teamEnabled && isAdmin ? (
+                {teamEnabled && isAdmin && ent.plan === "premium" ? (
+                  <div className="mt-4 border-t border-border pt-4">
+                    <p className="text-eyebrow">Seats</p>
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      Premium seats are billed through Razorpay.
+                    </p>
+                    <Link
+                      to="/app/subscription"
+                      className="mt-2 inline-block text-sm font-semibold text-primary underline-offset-4 hover:underline"
+                    >
+                      Change seats
+                    </Link>
+                  </div>
+                ) : teamEnabled && isAdmin ? (
                   <div className="mt-4 border-t border-border pt-4">
                     <p className="text-eyebrow">Seats</p>
                     <div className="mt-2 flex items-center gap-2">

@@ -79,3 +79,8 @@ verify_jwt = false
 
 [functions.whatsapp-webhook]
 verify_jwt = false
+
+# Called only by Razorpay; authenticates each request by its
+# X-Razorpay-Signature instead of a user JWT.
+[functions.razorpay-webhook]
+verify_jwt = false

@@ -39,8 +39,8 @@ const FREE_PLAN_MODULES: ReadonlySet<ModuleKey> = new Set<ModuleKey>([
 ]);
 
 // Mirrors effective_plan() + module_enabled() in the database: an active trial
-// unlocks everything, an ended trial is treated as Free, and Free includes
-// FREE_PLAN_MODULES. Anything else needs its "{module}_enabled" flag.
+// unlocks everything, an ended trial is treated as Free, and Free and Premium
+// include FREE_PLAN_MODULES. Anything else needs its "{module}_enabled" flag.
 function includedByPlan(
   license: { plan: string; trial_ends_at: string | null },
   moduleKey: ModuleKey,
@@ -49,7 +49,7 @@ function includedByPlan(
     const trialActive = !license.trial_ends_at || new Date(license.trial_ends_at) > new Date();
     return trialActive || FREE_PLAN_MODULES.has(moduleKey);
   }
-  return license.plan === "free" && FREE_PLAN_MODULES.has(moduleKey);
+  return (license.plan === "free" || license.plan === "premium") && FREE_PLAN_MODULES.has(moduleKey);
 }
 
 export async function requireModule(

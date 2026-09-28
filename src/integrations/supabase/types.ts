@@ -937,6 +937,8 @@ export type Database = {
           legacy_base_price_inr: number | null
           legacy_extra_seat_price_inr: number | null
           plan: string
+          razorpay_subscription_id: string | null
+          razorpay_subscription_status: string | null
           seats: number
           status: string
           tenant_id: string
@@ -952,6 +954,8 @@ export type Database = {
           legacy_base_price_inr?: number | null
           legacy_extra_seat_price_inr?: number | null
           plan?: string
+          razorpay_subscription_id?: string | null
+          razorpay_subscription_status?: string | null
           seats?: number
           status?: string
           tenant_id: string
@@ -967,6 +971,8 @@ export type Database = {
           legacy_base_price_inr?: number | null
           legacy_extra_seat_price_inr?: number | null
           plan?: string
+          razorpay_subscription_id?: string | null
+          razorpay_subscription_status?: string | null
           seats?: number
           status?: string
           tenant_id?: string
@@ -1467,6 +1473,7 @@ export type Database = {
           monthly_total_inr: number
           ocr_enabled: boolean
           plan: string
+          razorpay_subscription_status: string
           seats: number
           seats_included: number
           seats_used: number
