@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Loader2, Mail, MessageCircle, Minus, Plus, Users, X } from "lucide-react";
@@ -331,9 +331,14 @@ function Team() {
               <p className="mt-2 text-sm text-muted-foreground">
                 Your {planLabel[ent?.plan ?? "free"] ?? ent?.plan} plan covers a single advocate.
                 The Chamber plan starts at {rupees(7999)} a month for two users, with extra seats at{" "}
-                {rupees(1999)} each — ask the platform admin to move your chamber onto it and this
-                screen will let you invite and manage teammates here.
+                {rupees(1999)} each.
               </p>
+              <Link
+                to="/app/subscription"
+                className="mt-3 inline-flex items-center gap-2 rounded bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-ink"
+              >
+                Upgrade to Chamber
+              </Link>
             </div>
           ) : null}
 

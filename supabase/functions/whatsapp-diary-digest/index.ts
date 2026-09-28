@@ -1,15 +1,16 @@
 import { createClient, type SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { handleOptions, jsonResponse, errorResponse } from "../_shared/cors.ts";
-import { todayIsoIST } from "../_shared/date-ist.ts";
+import { todayIsoIST, tomorrowIsoIST } from "../_shared/date-ist.ts";
 import { sendWhatsAppDigest } from "../_shared/whatsapp.ts";
 import { secretMatches } from "../_shared/timing-safe.ts";
 
 // Cron-triggered daily digest: for every tenant that has WhatsApp switched on
-// and an active/trialing license, find today's hearings (computed in
-// Asia/Kolkata, never the runtime's own UTC clock — see _shared/date-ist.ts),
-// write an in-app notification to every team member unconditionally, and
-// send a WhatsApp message to whichever team members have both a phone number
-// on file AND an active 'whatsapp_notifications' consent.
+// and an active/trialing license, find tomorrow's hearings (computed in
+// Asia/Kolkata, never the runtime's own UTC clock — see _shared/date-ist.ts)
+// so the chamber gets a day's notice instead of a same-morning alert, write
+// an in-app notification to every team member unconditionally, and send a
+// WhatsApp message to whichever team members have both a phone number on
+// file AND an active 'whatsapp_notifications' consent.
 //
 // Invoked only by pg_cron -> pg_net (see the migration that schedules it) —
 // never by a real user, so this function has `verify_jwt = false` in
@@ -30,7 +31,8 @@ type ConsentRow = { user_id: string };
 async function processTenant(
   admin: SupabaseClient,
   tenant: TenantRow,
-  todayIso: string,
+  sendDayIso: string,
+  tomorrowIso: string,
 ): Promise<{ notified: number; sent: number; failed: number; skipped: number }> {
   const result = { notified: 0, sent: 0, failed: 0, skipped: 0 };
 
@@ -38,7 +40,7 @@ async function processTenant(
     .from("hearings")
     .select("id, hearing_date")
     .eq("tenant_id", tenant.tenant_id)
-    .eq("hearing_date", todayIso)
+    .eq("hearing_date", tomorrowIso)
     .in("status", RECIPIENT_HEARING_STATUSES)
     .returns<HearingRow[]>();
 
@@ -61,15 +63,15 @@ async function processTenant(
     .returns<ConsentRow[]>();
   const consentedUserIds = new Set((consents ?? []).map((c) => c.user_id));
 
-  const title = `${hearingCount} hearing${hearingCount === 1 ? "" : "s"} today`;
+  const title = `${hearingCount} hearing${hearingCount === 1 ? "" : "s"} tomorrow`;
   const notificationRows = profiles.map((p) => ({
     tenant_id: tenant.tenant_id,
     user_id: p.id,
     type: "diary_digest",
     title,
-    body: `You have ${hearingCount} hearing${hearingCount === 1 ? "" : "s"} listed for today.`,
+    body: `You have ${hearingCount} hearing${hearingCount === 1 ? "" : "s"} listed for tomorrow.`,
     link: "/app/diary",
-    metadata: { hearing_date: todayIso, hearing_count: hearingCount },
+    metadata: { hearing_date: tomorrowIso, hearing_count: hearingCount },
   }));
   const { error: notifyError } = await admin.from("notifications").insert(notificationRows);
   if (!notifyError) result.notified = notificationRows.length;
@@ -85,9 +87,13 @@ async function processTenant(
     let statusDetail: string | null = null;
 
     try {
+      // Quota is keyed by the day this send actually goes out (sendDayIso),
+      // not the hearing date being digested — the daily cap is a same-day
+      // send-volume control, independent of which calendar day the hearings
+      // it describes fall on.
       const { error: quotaError } = await admin.rpc("increment_whatsapp_usage", {
         p_tenant_id: tenant.tenant_id,
-        p_ist_date: todayIso,
+        p_ist_date: sendDayIso,
         p_count: 1,
       });
       if (quotaError) throw new Error(quotaError.message);
@@ -95,7 +101,7 @@ async function processTenant(
       const sendResult = await sendWhatsAppDigest({
         toPhoneE164: profile.phone,
         hearingCount,
-        hearingDateIso: todayIso,
+        hearingDateIso: tomorrowIso,
       });
       providerMessageId = sendResult.providerMessageId;
       result.sent++;
@@ -109,7 +115,7 @@ async function processTenant(
       tenant_id: tenant.tenant_id,
       recipient_profile_id: profile.id,
       phone: profile.phone,
-      hearing_date: todayIso,
+      hearing_date: tomorrowIso,
       hearing_count: hearingCount,
       provider: "gupshup",
       provider_message_id: providerMessageId,
@@ -126,7 +132,7 @@ async function processTenant(
     action: "diary_digest_sent",
     resource_type: "whatsapp_messages",
     metadata: {
-      hearing_date: todayIso,
+      hearing_date: tomorrowIso,
       hearing_count: hearingCount,
       notified: result.notified,
       sent: result.sent,
@@ -155,7 +161,8 @@ Deno.serve(async (req) => {
     },
   );
 
-  const todayIso = todayIsoIST();
+  const sendDayIso = todayIsoIST();
+  const tomorrowIso = tomorrowIsoIST();
 
   const { data: licenses, error: licensesError } = await admin
     .from("licenses")
@@ -193,7 +200,7 @@ Deno.serve(async (req) => {
 
   for (const tenant of eligibleTenants) {
     try {
-      const result = await processTenant(admin, tenant, todayIso);
+      const result = await processTenant(admin, tenant, sendDayIso, tomorrowIso);
       if (result.notified > 0 || result.sent > 0 || result.failed > 0) tenantsProcessed++;
       notified += result.notified;
       whatsappSent += result.sent;
