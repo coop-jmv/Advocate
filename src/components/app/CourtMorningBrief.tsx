@@ -27,6 +27,15 @@ const statusLabel: Record<string, string> = {
   completed: "Completed",
 };
 
+// This component is a client-side render (see date-ist.ts's header comment on
+// why client components can trust the browser's own clock for this
+// India-only audience), so the local hour is already the advocate's hour.
+function timeOfDayGreeting(hour: number): string {
+  if (hour < 12) return "Good morning";
+  if (hour < 17) return "Good afternoon";
+  return "Good evening";
+}
+
 // Used only when the AI call fails or hasn't been run yet — built entirely
 // from the same structured facts the AI is given, so the brief is fully
 // functional with zero AI configuration.
@@ -139,6 +148,7 @@ export function CourtMorningBrief() {
   }, [items]);
 
   const nextHearing = items[0] ?? null;
+  const greeting = useMemo(() => timeOfDayGreeting(new Date().getHours()), []);
 
   async function handleGenerateSummaries() {
     setAiBusy(true);
@@ -185,7 +195,8 @@ export function CourtMorningBrief() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="font-display text-xl font-bold">
-            Good morning{advocateName ? `, ${advocateName}` : ""}
+            {greeting}
+            {advocateName ? `, ${advocateName}` : ""}
           </h2>
           <p className="mt-0.5 text-sm text-foreground/70 sm:text-muted-foreground">
             Your Court Brief —{" "}

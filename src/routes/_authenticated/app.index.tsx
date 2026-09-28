@@ -32,7 +32,7 @@ export const Route = createFileRoute("/_authenticated/app/")({
   component: Dashboard,
 });
 
-type Matter = { id: string; title: string; status: string };
+type Matter = { id: string; title: string; status: string; client_name: string | null };
 type Hearing = {
   id: string;
   matter_title: string;
@@ -137,6 +137,12 @@ function Dashboard() {
     [hearings, weekStart, weekEnd],
   );
   const activeMatters = useMemo(() => matters.filter((m) => m.status === "active"), [matters]);
+  // Hearings/time entries only carry the matter title, not its id, so match on
+  // title the same way getMorningBrief() does when it resolves client names.
+  const clientByMatterTitle = useMemo(
+    () => new Map(matters.map((m) => [m.title, m.client_name])),
+    [matters],
+  );
   const unbilled = useMemo(() => timeEntries.filter((e) => !e.billed), [timeEntries]);
   const unbilledHours = unbilled.reduce((sum, e) => sum + e.hours, 0);
   const unbilledValue = unbilled.reduce((sum, e) => sum + e.hours * e.rate, 0);
@@ -240,7 +246,7 @@ function Dashboard() {
               No hearings listed for today.
             </p>
           ) : (
-            <DataTable headers={["Time", "Court", "Matter", "Purpose", "Status"]}>
+            <DataTable headers={["Time", "Court", "Matter", "Client", "Purpose", "Status"]}>
               {todaysHearings.map((hearing) => (
                 <tr key={hearing.id} className="hover:bg-secondary/40">
                   <td className="px-4 py-3 font-medium whitespace-nowrap">
@@ -248,6 +254,9 @@ function Dashboard() {
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">{hearing.court ?? "—"}</td>
                   <td className="px-4 py-3">{hearing.matter_title}</td>
+                  <td className="px-4 py-3 text-foreground/70 sm:text-muted-foreground">
+                    {clientByMatterTitle.get(hearing.matter_title) ?? "—"}
+                  </td>
                   <td className="px-4 py-3 text-foreground/70 sm:text-muted-foreground">
                     {hearing.purpose ?? "—"}
                   </td>
@@ -269,11 +278,14 @@ function Dashboard() {
               No time entries logged yet.
             </p>
           ) : (
-            <DataTable headers={["Date", "Matter", "Task", "Hours", "Value"]}>
+            <DataTable headers={["Date", "Matter", "Client", "Task", "Hours", "Value"]}>
               {recentTimeEntries.map((entry) => (
                 <tr key={entry.id} className="hover:bg-secondary/40">
                   <td className="px-4 py-3 whitespace-nowrap">{entry.entry_date}</td>
                   <td className="px-4 py-3 font-mono text-xs">{entry.matter_title}</td>
+                  <td className="px-4 py-3 text-foreground/70 sm:text-muted-foreground">
+                    {clientByMatterTitle.get(entry.matter_title) ?? "—"}
+                  </td>
                   <td className="px-4 py-3">{entry.task}</td>
                   <td className="px-4 py-3">{entry.hours}</td>
                   <td className="px-4 py-3 font-medium">{rupees(entry.hours * entry.rate)}</td>
