@@ -1,11 +1,12 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Check, Scale, Loader2 } from "lucide-react";
+import { Check, Scale, Loader2, Minus, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { logAuthEvent } from "@/lib/edge-functions";
 import { MIN_PASSWORD_LENGTH, passwordLengthError } from "@/lib/password-policy";
 import { cn } from "@/lib/utils";
 import { needsMfaChallenge, verifiedTotpFactor } from "@/lib/mfa";
+import { PREMIUM_MAX_SEATS, PREMIUM_SEAT_PRICE_INR, inr, premiumQuote } from "@/lib/premium";
 import { MfaChallengeScreen } from "@/components/app/MfaChallengeScreen";
 import heroSignIn from "@/assets/hero-signin-courthouse.jpg";
 import heroSignUp from "@/assets/hero-signup-signing.jpg";
@@ -82,6 +83,14 @@ function AuthPage() {
   const [firmName, setFirmName] = useState("");
   const [phone, setPhone] = useState("");
   const [agreedToPrivacy, setAgreedToPrivacy] = useState(false);
+  // ?plan=premium lets the pricing page open registration with Premium chosen.
+  const [plan, setPlan] = useState<"free" | "premium">(() => {
+    if (typeof window === "undefined") return "free";
+    return new URLSearchParams(window.location.search).get("plan") === "premium"
+      ? "premium"
+      : "free";
+  });
+  const [premiumSeats, setPremiumSeats] = useState(1);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -158,7 +167,16 @@ function AuthPage() {
           password,
           options: {
             emailRedirectTo: `${window.location.origin}/app`,
-            data: { full_name: fullName, firm_name: firmName, phone: toE164(phone) },
+            data: {
+              full_name: fullName,
+              firm_name: firmName,
+              phone: toE164(phone),
+              // Every account starts on Free; this sends the first sign-in to
+              // checkout for these seats (see _authenticated/route.tsx).
+              ...(plan === "premium"
+                ? { plan_intent: "premium", premium_seats: premiumSeats }
+                : {}),
+            },
           },
         });
         if (signUpError) throw signUpError;
@@ -175,7 +193,11 @@ function AuthPage() {
           void navigate({ to: "/app" });
           return;
         }
-        setNotice("Check your inbox to confirm the email address, then sign in.");
+        setNotice(
+          plan === "premium"
+            ? "Check your inbox to confirm the email address, then sign in — you'll go straight to payment for Premium."
+            : "Check your inbox to confirm the email address, then sign in.",
+        );
         return;
       }
       const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
@@ -279,38 +301,124 @@ function AuthPage() {
               {mode === "signin"
                 ? "Sign in"
                 : mode === "signup"
-                  ? "Free forever"
+                  ? plan === "premium"
+                    ? "Premium"
+                    : "Free forever"
                   : "Reset password"}
             </span>
             <h1 className="mt-2 font-display text-xl font-bold">
               {mode === "signin"
                 ? "Sign in to your chamber"
                 : mode === "signup"
-                  ? "Create your free chamber"
+                  ? plan === "premium"
+                    ? "Create your Premium chamber"
+                    : "Create your free chamber"
                   : "Reset your password"}
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
               {mode === "signin"
                 ? "Your matters, diary, documents and AI drafts stay private to your login."
                 : mode === "signup"
-                  ? "The Free plan never expires. Add paid modules only when you need them."
+                  ? plan === "premium"
+                    ? "Create your account first; you'll pay on Razorpay after confirming your email."
+                    : "The Free plan never expires. Upgrade to Premium whenever you need more."
                   : "Enter the email on your account and we'll send you a link to set a new password."}
             </p>
 
             {mode === "signup" ? (
-              <ul className="mt-2 space-y-0.5 rounded border border-accent/30 bg-accent/10 p-2 text-sm">
-                {[
-                  "One advocate login, up to 25 matters and clients",
-                  "Court diary with daily cause-list matching",
-                  "AI case analysis — 5 AI requests a day",
-                  "No card, no payment details, nothing to cancel",
-                ].map((line) => (
-                  <li key={line} className="flex gap-2">
-                    <Check className="mt-0.5 size-3.5 shrink-0 text-accent" />
-                    <span>{line}</span>
-                  </li>
+              <fieldset className="mt-2 grid gap-2 sm:grid-cols-2">
+                <legend className="sr-only">Plan</legend>
+                {(
+                  [
+                    {
+                      value: "free",
+                      title: "Free",
+                      price: "₹0, forever",
+                      lines: [
+                        "One advocate login",
+                        "Up to 25 matters and clients",
+                        "AI case analysis — 5 a day",
+                      ],
+                    },
+                    {
+                      value: "premium",
+                      title: "Premium",
+                      price: `${inr(PREMIUM_SEAT_PRICE_INR)}/user/month + GST`,
+                      lines: [
+                        "Just you, or your whole team",
+                        "Unlimited matters and clients",
+                        "AI case analysis — 100 a day",
+                      ],
+                    },
+                  ] as const
+                ).map((option) => (
+                  <label
+                    key={option.value}
+                    className={cn(
+                      "cursor-pointer rounded border p-2 text-sm transition-colors",
+                      plan === option.value
+                        ? "border-primary bg-primary/5 ring-1 ring-primary"
+                        : "border-input hover:bg-secondary/60",
+                    )}
+                  >
+                    <span className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name="plan"
+                        value={option.value}
+                        checked={plan === option.value}
+                        onChange={() => setPlan(option.value)}
+                        className="size-3.5"
+                      />
+                      <span className="font-semibold">{option.title}</span>
+                    </span>
+                    <span className="mt-0.5 block text-xs font-medium">{option.price}</span>
+                    <ul className="mt-1 space-y-0.5 text-xs text-muted-foreground">
+                      {option.lines.map((line) => (
+                        <li key={line} className="flex gap-1.5">
+                          <Check className="mt-0.5 size-3 shrink-0 text-accent" />
+                          <span>{line}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </label>
                 ))}
-              </ul>
+                {plan === "premium" ? (
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded border border-border bg-secondary/40 px-2 py-1.5 text-sm sm:col-span-2">
+                    <span className="text-eyebrow">Users</span>
+                    <span className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        disabled={premiumSeats <= 1}
+                        onClick={() => setPremiumSeats(premiumSeats - 1)}
+                        className="flex size-6 items-center justify-center rounded border border-input bg-background disabled:opacity-40"
+                        aria-label="One user fewer"
+                      >
+                        <Minus className="size-3" />
+                      </button>
+                      <span className="min-w-6 text-center font-semibold tabular-nums">
+                        {premiumSeats}
+                      </span>
+                      <button
+                        type="button"
+                        disabled={premiumSeats >= PREMIUM_MAX_SEATS}
+                        onClick={() => setPremiumSeats(premiumSeats + 1)}
+                        className="flex size-6 items-center justify-center rounded border border-input bg-background disabled:opacity-40"
+                        aria-label="One user more"
+                      >
+                        <Plus className="size-3" />
+                      </button>
+                    </span>
+                    <span className="ml-auto text-xs text-muted-foreground">
+                      {inr(premiumQuote(premiumSeats).subtotal)} +{" "}
+                      {inr(premiumQuote(premiumSeats).gst)} GST ={" "}
+                      <span className="font-semibold text-foreground">
+                        {inr(premiumQuote(premiumSeats).total)}/month
+                      </span>
+                    </span>
+                  </div>
+                ) : null}
+              </fieldset>
             ) : null}
 
             <form onSubmit={handleSubmit} className="mt-3 space-y-2.5">
