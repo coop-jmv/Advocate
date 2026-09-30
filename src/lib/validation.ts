@@ -38,13 +38,26 @@ export function splitName(full: string | null | undefined): { first: string; las
   return { first: parts.slice(0, -1).join(" "), last: parts[parts.length - 1]! };
 }
 
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// Practical address check, not full RFC 5322: the local part is dot-separated
+// runs of the usual characters (no leading, trailing or doubled dots); the
+// domain is hyphen-safe labels ending in a letters-only TLD (.com, .in,
+// .co.in). Keep in sync with isValidEmail() in services/clients/src/index.ts.
+const EMAIL_LOCAL = /^[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+)*$/;
+const EMAIL_DOMAIN = /^(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+[A-Za-z]{2,63}$/;
+
+export function isValidEmail(value: string): boolean {
+  if (value.length > LIMITS.email) return false;
+  const at = value.lastIndexOf("@");
+  if (at < 1) return false;
+  const local = value.slice(0, at);
+  const domain = value.slice(at + 1);
+  return local.length <= 64 && EMAIL_LOCAL.test(local) && EMAIL_DOMAIN.test(domain);
+}
 
 export function emailError(value: string, { required = true } = {}): string | null {
   const trimmed = value.trim();
   if (!trimmed) return required ? "Email is required." : null;
-  if (trimmed.length > LIMITS.email || !EMAIL.test(trimmed))
-    return "Enter a valid email address, e.g. name@example.com.";
+  if (!isValidEmail(trimmed)) return "Enter a valid email address, e.g. name@example.com.";
   return null;
 }
 

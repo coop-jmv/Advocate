@@ -36,8 +36,17 @@ function isUuid(value: string): boolean {
 
 // The deleted clients.functions.ts validated this with Zod's z.string().email()
 // — this is the format check that was dropped when the handler moved here.
+// Same rule as isValidEmail() in src/lib/validation.ts.
+const EMAIL_LOCAL = /^[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+)*$/;
+const EMAIL_DOMAIN = /^(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+[A-Za-z]{2,63}$/;
+
 function isValidEmail(value: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) && value.length <= 254;
+  if (value.length > 254) return false;
+  const at = value.lastIndexOf("@");
+  if (at < 1) return false;
+  const local = value.slice(0, at);
+  const domain = value.slice(at + 1);
+  return local.length <= 64 && EMAIL_LOCAL.test(local) && EMAIL_DOMAIN.test(domain);
 }
 
 // Same rules as src/lib/validation.ts: first name and surname (stored as one
