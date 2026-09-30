@@ -26,20 +26,24 @@ export const updateMyProfile = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) =>
     z
       .object({
-        fullName: z.string().trim().min(1).max(120),
-        firmName: z.string().trim().max(160).optional(),
+        // First name and surname, sent joined as one string (see
+        // src/lib/validation.ts).
+        fullName: z
+          .string()
+          .trim()
+          .max(101)
+          .refine(
+            (name) => name.split(/\s+/).filter(Boolean).length >= 2,
+            "Enter your first name and surname.",
+          ),
+        firmName: z.string().trim().max(120).optional(),
         enrolmentNo: z.string().trim().max(60).optional(),
-        // Matches the DB CHECK on profiles.phone. Empty is allowed here so an
-        // existing profile can clear the field; signup requires it separately.
+        // A 10-digit Indian mobile, stored as +91XXXXXXXXXX; a subset of the
+        // DB CHECK on profiles.phone.
         phone: z
           .string()
           .trim()
-          .regex(
-            /^\+[1-9][0-9]{7,14}$/,
-            "Enter the number in +<country code> form, e.g. +919820041122.",
-          )
-          .optional()
-          .or(z.literal("")),
+          .regex(/^\+91[6-9][0-9]{9}$/, "Enter your 10-digit mobile number."),
       })
       .parse(data),
   )

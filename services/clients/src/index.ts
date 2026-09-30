@@ -37,7 +37,25 @@ function isUuid(value: string): boolean {
 // The deleted clients.functions.ts validated this with Zod's z.string().email()
 // — this is the format check that was dropped when the handler moved here.
 function isValidEmail(value: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) && value.length <= 254;
+}
+
+// Same rules as src/lib/validation.ts: first name and surname (stored as one
+// "First Surname" string), an Indian mobile as +91XXXXXXXXXX, and an email.
+type ClientBody = { name?: string; phone?: string; email?: string; notes?: string };
+
+function clientInputError(body: ClientBody): string | null {
+  const name = body.name?.trim() ?? "";
+  if (name.split(/\s+/).filter(Boolean).length < 2)
+    return "Enter the client's first name and surname.";
+  if (name.length > 101) return "The client's name is too long.";
+  if (!body.phone || !/^\+91[6-9]\d{9}$/.test(body.phone)) {
+    return "Enter the client's 10-digit mobile number.";
+  }
+  if (!body.email || !isValidEmail(body.email.trim()))
+    return "Enter a valid email address for the client.";
+  if (body.notes && body.notes.length > 2000) return "Notes can be at most 2000 characters.";
+  return null;
 }
 
 async function listClients(req: Request, supabase: SupabaseClient) {
@@ -57,25 +75,21 @@ async function listClients(req: Request, supabase: SupabaseClient) {
 }
 
 async function createClient(req: Request, supabase: SupabaseClient, userId: string) {
-  let body: { name?: string; phone?: string; email?: string; notes?: string };
+  let body: ClientBody;
   try {
     body = await req.json();
   } catch {
     return errorResponse(req, "Invalid JSON body");
   }
-  if (!body.name || body.name.trim().length < 2) {
-    return errorResponse(req, "name must be at least 2 characters");
-  }
-  if (body.email && !isValidEmail(body.email)) {
-    return errorResponse(req, "email must be a valid email address");
-  }
+  const inputError = clientInputError(body);
+  if (inputError) return errorResponse(req, inputError);
 
   const { data: saved, error } = await supabase
     .from("clients")
     .insert({
-      name: body.name,
-      phone: body.phone ?? null,
-      email: body.email ?? null,
+      name: body.name!.trim(),
+      phone: body.phone,
+      email: body.email!.trim(),
       notes: await encryptField(body.notes),
       created_by: userId,
     })
@@ -87,25 +101,21 @@ async function createClient(req: Request, supabase: SupabaseClient, userId: stri
 
 async function updateClient(req: Request, supabase: SupabaseClient, clientId: string) {
   if (!isUuid(clientId)) return errorResponse(req, "Invalid client id", 400);
-  let body: { name?: string; phone?: string; email?: string; notes?: string };
+  let body: ClientBody;
   try {
     body = await req.json();
   } catch {
     return errorResponse(req, "Invalid JSON body");
   }
-  if (!body.name || body.name.trim().length < 2) {
-    return errorResponse(req, "name must be at least 2 characters");
-  }
-  if (body.email && !isValidEmail(body.email)) {
-    return errorResponse(req, "email must be a valid email address");
-  }
+  const inputError = clientInputError(body);
+  if (inputError) return errorResponse(req, inputError);
 
   const { data: saved, error } = await supabase
     .from("clients")
     .update({
-      name: body.name,
-      phone: body.phone ?? null,
-      email: body.email || null,
+      name: body.name!.trim(),
+      phone: body.phone,
+      email: body.email!.trim(),
       notes: await encryptField(body.notes),
     })
     .eq("id", clientId)

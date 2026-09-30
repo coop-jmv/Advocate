@@ -13,6 +13,25 @@ import {
   updateInvoiceStatus,
 } from "@/lib/billing-service";
 import { friendlyErrorMessage } from "@/lib/friendly-error";
+import { FieldError, invalidClass, Req } from "@/components/app/form-fields";
+import { cn } from "@/lib/utils";
+import {
+  collectErrors,
+  hasErrors,
+  LIMITS,
+  numberError,
+  optionalText,
+  requiredText,
+  type FieldErrors,
+} from "@/lib/validation";
+
+type EntryField = "matterTitle" | "task" | "hours" | "rate";
+type InvoiceField = "invoiceNumber" | "clientName" | "matterTitle" | "amount" | "gstAmount";
+
+const INPUT = "mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm";
+// Sanity ceilings, not business rules: they catch a stray extra zero.
+const MAX_RATE_INR = 100000;
+const MAX_INVOICE_INR = 10000000;
 
 export const Route = createFileRoute("/_authenticated/app/billing")({
   head: () => ({
@@ -80,6 +99,8 @@ function Billing() {
 
   const [entryForm, setEntryForm] = useState({ matterTitle: "", task: "", hours: "", rate: "" });
   const [entrySaving, setEntrySaving] = useState(false);
+  const [entryErrors, setEntryErrors] = useState<FieldErrors<EntryField>>({});
+  const [invoiceErrors, setInvoiceErrors] = useState<FieldErrors<InvoiceField>>({});
 
   const [invoiceForm, setInvoiceForm] = useState({
     invoiceNumber: "",
@@ -130,8 +151,15 @@ function Billing() {
 
   async function handleAddEntry(event: React.FormEvent) {
     event.preventDefault();
+    const errors = collectErrors<EntryField>({
+      matterTitle: requiredText(entryForm.matterTitle, "Matter", { min: 2, max: LIMITS.title }),
+      task: requiredText(entryForm.task, "Task", { min: 2, max: LIMITS.title }),
+      hours: numberError(entryForm.hours, "Hours", { min: 0, max: 24, minExclusive: true }),
+      rate: numberError(entryForm.rate, "Rate", { min: 0, max: MAX_RATE_INR, required: false }),
+    });
+    setEntryErrors(errors);
+    if (hasErrors(errors)) return;
     const hours = Number(entryForm.hours);
-    if (!entryForm.matterTitle.trim() || !entryForm.task.trim() || !(hours > 0)) return;
     setEntrySaving(true);
     setError(null);
     try {
@@ -152,9 +180,28 @@ function Billing() {
 
   async function handleAddInvoice(event: React.FormEvent) {
     event.preventDefault();
+    const errors = collectErrors<InvoiceField>({
+      invoiceNumber: requiredText(invoiceForm.invoiceNumber, "Invoice number", { min: 1, max: 40 }),
+      clientName: requiredText(invoiceForm.clientName, "Client", { min: 2 }),
+      matterTitle: optionalText(invoiceForm.matterTitle, "Matter", LIMITS.title),
+      amount: numberError(invoiceForm.amount, "Amount", {
+        min: 0,
+        max: MAX_INVOICE_INR,
+        minExclusive: true,
+      }),
+      gstAmount:
+        numberError(invoiceForm.gstAmount, "GST", {
+          min: 0,
+          max: MAX_INVOICE_INR,
+          required: false,
+        }) ??
+        (invoiceForm.gstAmount && Number(invoiceForm.gstAmount) > Number(invoiceForm.amount)
+          ? "GST can't be more than the amount."
+          : null),
+    });
+    setInvoiceErrors(errors);
+    if (hasErrors(errors)) return;
     const amount = Number(invoiceForm.amount);
-    if (!invoiceForm.invoiceNumber.trim() || !invoiceForm.clientName.trim() || !(amount >= 0))
-      return;
     setInvoiceSaving(true);
     setError(null);
     try {
@@ -236,54 +283,84 @@ function Billing() {
       <h2 className="mt-8 mb-3 font-display text-lg font-bold">Invoices</h2>
       <form
         onSubmit={handleAddInvoice}
+        noValidate
         className="surface-panel mb-4 grid gap-3 rounded p-4 sm:grid-cols-2 lg:grid-cols-6"
       >
         <label className="text-sm">
-          <span className="text-eyebrow">Invoice #</span>
+          <span className="text-eyebrow">
+            Invoice #
+            <Req />
+          </span>
           <input
             value={invoiceForm.invoiceNumber}
             onChange={(event) =>
               setInvoiceForm((f) => ({ ...f, invoiceNumber: event.target.value }))
             }
             placeholder="INV-2026-001"
-            className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
+            required
+            maxLength={40}
+            aria-invalid={invoiceErrors.invoiceNumber ? true : undefined}
+            className={cn(INPUT, invalidClass(invoiceErrors.invoiceNumber))}
           />
+          <FieldError message={invoiceErrors.invoiceNumber} />
         </label>
         <label className="text-sm">
-          <span className="text-eyebrow">Client</span>
+          <span className="text-eyebrow">
+            Client
+            <Req />
+          </span>
           <input
             value={invoiceForm.clientName}
             onChange={(event) => setInvoiceForm((f) => ({ ...f, clientName: event.target.value }))}
-            className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
+            required
+            maxLength={LIMITS.shortText}
+            aria-invalid={invoiceErrors.clientName ? true : undefined}
+            className={cn(INPUT, invalidClass(invoiceErrors.clientName))}
           />
+          <FieldError message={invoiceErrors.clientName} />
         </label>
         <label className="text-sm">
           <span className="text-eyebrow">Matter</span>
           <input
             value={invoiceForm.matterTitle}
             onChange={(event) => setInvoiceForm((f) => ({ ...f, matterTitle: event.target.value }))}
-            className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
+            maxLength={LIMITS.title}
+            className={cn(INPUT, invalidClass(invoiceErrors.matterTitle))}
           />
+          <FieldError message={invoiceErrors.matterTitle} />
         </label>
         <label className="text-sm">
-          <span className="text-eyebrow">Amount (₹)</span>
+          <span className="text-eyebrow">
+            Amount (₹)
+            <Req />
+          </span>
           <input
             type="number"
-            min="0"
+            min="1"
+            max={MAX_INVOICE_INR}
+            step="0.01"
+            inputMode="decimal"
             value={invoiceForm.amount}
             onChange={(event) => setInvoiceForm((f) => ({ ...f, amount: event.target.value }))}
-            className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
+            required
+            aria-invalid={invoiceErrors.amount ? true : undefined}
+            className={cn(INPUT, invalidClass(invoiceErrors.amount))}
           />
+          <FieldError message={invoiceErrors.amount} />
         </label>
         <label className="text-sm">
           <span className="text-eyebrow">GST (₹)</span>
           <input
             type="number"
             min="0"
+            step="0.01"
+            inputMode="decimal"
             value={invoiceForm.gstAmount}
             onChange={(event) => setInvoiceForm((f) => ({ ...f, gstAmount: event.target.value }))}
-            className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
+            aria-invalid={invoiceErrors.gstAmount ? true : undefined}
+            className={cn(INPUT, invalidClass(invoiceErrors.gstAmount))}
           />
+          <FieldError message={invoiceErrors.gstAmount} />
         </label>
         <label className="text-sm">
           <span className="text-eyebrow">Due date</span>
@@ -294,12 +371,10 @@ function Billing() {
             className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
           />
         </label>
-        <div className="sm:col-span-2 lg:col-span-6">
+        <div className="flex items-center gap-3 sm:col-span-2 lg:col-span-6">
           <button
             type="submit"
-            disabled={
-              invoiceSaving || !invoiceForm.invoiceNumber.trim() || !invoiceForm.clientName.trim()
-            }
+            disabled={invoiceSaving}
             className="flex items-center gap-2 rounded bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-ink disabled:opacity-60"
           >
             {invoiceSaving ? (
@@ -309,6 +384,9 @@ function Billing() {
             )}
             Add invoice
           </button>
+          <span className="text-xs text-muted-foreground">
+            <span className="text-destructive">*</span> required
+          </span>
         </div>
       </form>
 
@@ -351,54 +429,76 @@ function Billing() {
       <h2 className="mt-8 mb-3 font-display text-lg font-bold">Time entries</h2>
       <form
         onSubmit={handleAddEntry}
+        noValidate
         className="surface-panel mb-4 grid gap-3 rounded p-4 sm:grid-cols-2 lg:grid-cols-5"
       >
         <label className="text-sm sm:col-span-2">
-          <span className="text-eyebrow">Matter</span>
+          <span className="text-eyebrow">
+            Matter
+            <Req />
+          </span>
           <input
             value={entryForm.matterTitle}
             onChange={(event) => setEntryForm((f) => ({ ...f, matterTitle: event.target.value }))}
-            className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
+            required
+            maxLength={LIMITS.title}
+            aria-invalid={entryErrors.matterTitle ? true : undefined}
+            className={cn(INPUT, invalidClass(entryErrors.matterTitle))}
           />
+          <FieldError message={entryErrors.matterTitle} />
         </label>
         <label className="text-sm">
-          <span className="text-eyebrow">Task</span>
+          <span className="text-eyebrow">
+            Task
+            <Req />
+          </span>
           <input
             value={entryForm.task}
             onChange={(event) => setEntryForm((f) => ({ ...f, task: event.target.value }))}
-            className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
+            required
+            maxLength={LIMITS.title}
+            aria-invalid={entryErrors.task ? true : undefined}
+            className={cn(INPUT, invalidClass(entryErrors.task))}
           />
+          <FieldError message={entryErrors.task} />
         </label>
         <label className="text-sm">
-          <span className="text-eyebrow">Hours</span>
+          <span className="text-eyebrow">
+            Hours
+            <Req />
+          </span>
           <input
             type="number"
-            min="0"
+            min="0.25"
+            max="24"
             step="0.25"
+            inputMode="decimal"
             value={entryForm.hours}
             onChange={(event) => setEntryForm((f) => ({ ...f, hours: event.target.value }))}
-            className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
+            required
+            aria-invalid={entryErrors.hours ? true : undefined}
+            className={cn(INPUT, invalidClass(entryErrors.hours))}
           />
+          <FieldError message={entryErrors.hours} />
         </label>
         <label className="text-sm">
           <span className="text-eyebrow">Rate (₹/hr)</span>
           <input
             type="number"
             min="0"
+            max={MAX_RATE_INR}
+            inputMode="decimal"
             value={entryForm.rate}
             onChange={(event) => setEntryForm((f) => ({ ...f, rate: event.target.value }))}
-            className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
+            aria-invalid={entryErrors.rate ? true : undefined}
+            className={cn(INPUT, invalidClass(entryErrors.rate))}
           />
+          <FieldError message={entryErrors.rate} />
         </label>
-        <div className="sm:col-span-2 lg:col-span-5">
+        <div className="flex items-center gap-3 sm:col-span-2 lg:col-span-5">
           <button
             type="submit"
-            disabled={
-              entrySaving ||
-              !entryForm.matterTitle.trim() ||
-              !entryForm.task.trim() ||
-              !entryForm.hours
-            }
+            disabled={entrySaving}
             className="flex items-center gap-2 rounded bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-ink disabled:opacity-60"
           >
             {entrySaving ? (
@@ -408,6 +508,9 @@ function Billing() {
             )}
             Log time
           </button>
+          <span className="text-xs text-muted-foreground">
+            <span className="text-destructive">*</span> required
+          </span>
         </div>
       </form>
 

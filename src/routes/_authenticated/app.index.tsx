@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { AppShell } from "@/components/app/AppShell";
 import { CourtMorningBrief } from "@/components/app/CourtMorningBrief";
+import { WhatsAppConsentPrompt } from "@/components/app/WhatsAppConsentPrompt";
 import { DataTable, StatCard, Tag, type Tone } from "@/components/app/primitives";
 // Calls the Diary microservice (services/diary/) directly — not a
 // TanStack server function, so no useServerFn wrapping.
@@ -199,6 +200,8 @@ function Dashboard() {
           {error}
         </p>
       ) : null}
+
+      <WhatsAppConsentPrompt />
 
       <div className="mb-6">
         <CourtMorningBrief />

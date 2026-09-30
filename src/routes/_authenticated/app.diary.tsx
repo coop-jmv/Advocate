@@ -8,6 +8,20 @@ import { Tag, type Tone } from "@/components/app/primitives";
 import { createHearing, listHearings, updateHearingStatus } from "@/lib/diary-service";
 import { findClashKeys, isClashing } from "@/lib/hearing-conflicts";
 import { todayIsoIST } from "@/lib/date-ist";
+import { FieldError, invalidClass, Req } from "@/components/app/form-fields";
+import { cn } from "@/lib/utils";
+import {
+  collectErrors,
+  hasErrors,
+  LIMITS,
+  optionalText,
+  requiredText,
+  type FieldErrors,
+} from "@/lib/validation";
+
+type HearingField = "matterTitle" | "court" | "hearingDate" | "purpose";
+
+const INPUT = "mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm";
 
 export const Route = createFileRoute("/_authenticated/app/diary")({
   head: () => ({
@@ -66,6 +80,7 @@ function Diary() {
     hearingTime: "",
     purpose: "",
   });
+  const [formErrors, setFormErrors] = useState<FieldErrors<HearingField>>({});
 
   async function reload() {
     setLoading(true);
@@ -87,7 +102,14 @@ function Diary() {
 
   async function handleCreate(event: React.FormEvent) {
     event.preventDefault();
-    if (!form.matterTitle.trim() || !form.hearingDate) return;
+    const errors = collectErrors<HearingField>({
+      matterTitle: requiredText(form.matterTitle, "Matter", { min: 2, max: LIMITS.title }),
+      court: optionalText(form.court, "Court"),
+      hearingDate: form.hearingDate ? null : "Hearing date is required.",
+      purpose: optionalText(form.purpose, "Purpose", LIMITS.title),
+    });
+    setFormErrors(errors);
+    if (hasErrors(errors)) return;
     setCreating(true);
     setError(null);
     try {
@@ -152,33 +174,49 @@ function Diary() {
     >
       <form
         onSubmit={handleCreate}
+        noValidate
         className="surface-panel mb-6 grid gap-3 rounded p-4 sm:grid-cols-2 lg:grid-cols-5"
       >
         <label className="text-sm sm:col-span-2 lg:col-span-1">
-          <span className="text-eyebrow">Matter</span>
+          <span className="text-eyebrow">
+            Matter
+            <Req />
+          </span>
           <input
             value={form.matterTitle}
             onChange={(event) => setForm((f) => ({ ...f, matterTitle: event.target.value }))}
             placeholder="Malhotra v. Sunrise Developers"
-            className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
+            required
+            maxLength={LIMITS.title}
+            aria-invalid={formErrors.matterTitle ? true : undefined}
+            className={cn(INPUT, invalidClass(formErrors.matterTitle))}
           />
+          <FieldError message={formErrors.matterTitle} />
         </label>
         <label className="text-sm">
           <span className="text-eyebrow">Court</span>
           <input
             value={form.court}
             onChange={(event) => setForm((f) => ({ ...f, court: event.target.value }))}
-            className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
+            maxLength={LIMITS.shortText}
+            className={cn(INPUT, invalidClass(formErrors.court))}
           />
+          <FieldError message={formErrors.court} />
         </label>
         <label className="text-sm">
-          <span className="text-eyebrow">Date</span>
+          <span className="text-eyebrow">
+            Date
+            <Req />
+          </span>
           <input
             type="date"
             value={form.hearingDate}
             onChange={(event) => setForm((f) => ({ ...f, hearingDate: event.target.value }))}
-            className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
+            required
+            aria-invalid={formErrors.hearingDate ? true : undefined}
+            className={cn(INPUT, invalidClass(formErrors.hearingDate))}
           />
+          <FieldError message={formErrors.hearingDate} />
         </label>
         <label className="text-sm">
           <span className="text-eyebrow">Time</span>
@@ -194,18 +232,23 @@ function Diary() {
           <input
             value={form.purpose}
             onChange={(event) => setForm((f) => ({ ...f, purpose: event.target.value }))}
-            className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
+            maxLength={LIMITS.title}
+            className={cn(INPUT, invalidClass(formErrors.purpose))}
           />
+          <FieldError message={formErrors.purpose} />
         </label>
-        <div className="flex items-end sm:col-span-2 lg:col-span-5">
+        <div className="flex items-end gap-3 sm:col-span-2 lg:col-span-5">
           <button
             type="submit"
-            disabled={creating || !form.matterTitle.trim() || !form.hearingDate}
+            disabled={creating}
             className="flex items-center gap-2 rounded bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-ink disabled:opacity-60"
           >
             {creating ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
             Add hearing
           </button>
+          <span className="text-xs text-muted-foreground">
+            <span className="text-destructive">*</span> required
+          </span>
         </div>
       </form>
 

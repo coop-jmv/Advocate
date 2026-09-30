@@ -18,6 +18,9 @@ import {
   setSeatCount,
 } from "@/lib/team.functions";
 import { PREMIUM_SEAT_PRICE_INR } from "@/lib/premium";
+import { FieldError, invalidClass, Req } from "@/components/app/form-fields";
+import { cn } from "@/lib/utils";
+import { emailError } from "@/lib/validation";
 
 export const Route = createFileRoute("/_authenticated/app/team")({
   head: () => ({
@@ -101,6 +104,7 @@ function Team() {
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<"admin" | "member">("member");
   const [inviting, setInviting] = useState(false);
+  const [inviteEmailError, setInviteEmailError] = useState<string | null>(null);
   const [busyMember, setBusyMember] = useState<string | null>(null);
   const [seatBusy, setSeatBusy] = useState(false);
   const [lastInviteLink, setLastInviteLink] = useState<string | null>(null);
@@ -137,7 +141,9 @@ function Team() {
 
   async function handleInvite(event: React.FormEvent) {
     event.preventDefault();
-    if (!inviteEmail.trim()) return;
+    const emailProblem = emailError(inviteEmail);
+    setInviteEmailError(emailProblem);
+    if (emailProblem) return;
     setInviting(true);
     setError(null);
     setNotice(null);
@@ -348,17 +354,28 @@ function Team() {
             <>
               <form
                 onSubmit={handleInvite}
+                noValidate
                 className="surface-panel mt-6 mb-4 flex flex-wrap items-end gap-3 rounded p-4"
               >
                 <label className="flex-1 text-sm">
-                  <span className="text-eyebrow">Invite by email</span>
+                  <span className="text-eyebrow">
+                    Invite by email
+                    <Req />
+                  </span>
                   <input
                     type="email"
                     value={inviteEmail}
                     onChange={(event) => setInviteEmail(event.target.value)}
                     placeholder="junior@example.com"
-                    className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
+                    required
+                    maxLength={254}
+                    aria-invalid={inviteEmailError ? true : undefined}
+                    className={cn(
+                      "mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm",
+                      invalidClass(inviteEmailError ?? undefined),
+                    )}
                   />
+                  <FieldError message={inviteEmailError ?? undefined} />
                 </label>
                 <label className="text-sm">
                   <span className="text-eyebrow">Role</span>
@@ -373,7 +390,7 @@ function Team() {
                 </label>
                 <button
                   type="submit"
-                  disabled={inviting || !inviteEmail.trim()}
+                  disabled={inviting}
                   className="flex items-center gap-2 rounded bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-ink disabled:opacity-60"
                 >
                   {inviting ? (

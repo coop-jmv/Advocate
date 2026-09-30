@@ -7,6 +7,19 @@ import { MIN_PASSWORD_LENGTH, passwordLengthError } from "@/lib/password-policy"
 import { cn } from "@/lib/utils";
 import { needsMfaChallenge, verifiedTotpFactor } from "@/lib/mfa";
 import { PREMIUM_MAX_SEATS, PREMIUM_SEAT_PRICE_INR, inr, premiumQuote } from "@/lib/premium";
+import {
+  collectErrors,
+  emailError,
+  hasErrors,
+  joinName,
+  LIMITS,
+  mobileError,
+  namePartError,
+  optionalText,
+  toE164Mobile,
+  type FieldErrors,
+} from "@/lib/validation";
+import { FieldError, invalidClass, MobileInput, Req } from "@/components/app/form-fields";
 import { MfaChallengeScreen } from "@/components/app/MfaChallengeScreen";
 import heroSignIn from "@/assets/hero-signin-courthouse.jpg";
 import heroSignUp from "@/assets/hero-signup-signing.jpg";
@@ -33,18 +46,8 @@ export const Route = createFileRoute("/auth")({
   component: AuthPage,
 });
 
-// Indian mobiles are the norm here, so a bare 10-digit number is accepted and
-// assumed +91 — that is what people actually type. An explicit +<country code>
-// is passed through untouched so an advocate practising on an overseas number
-// is not locked out. Returns null when the input cannot be made into a
-// plausible E.164 number, which is what the DB CHECK constraint expects.
-function toE164(raw: string): string | null {
-  const trimmed = raw.replace(/[\s()-]/g, "");
-  if (/^[6-9]\d{9}$/.test(trimmed)) return `+91${trimmed}`;
-  if (/^0[6-9]\d{9}$/.test(trimmed)) return `+91${trimmed.slice(1)}`;
-  if (/^\+[1-9]\d{7,14}$/.test(trimmed)) return trimmed;
-  return null;
-}
+type SignupField =
+  "firstName" | "lastName" | "firmName" | "phone" | "email" | "password" | "privacy";
 
 function AuthPage() {
   const navigate = useNavigate();
@@ -79,9 +82,12 @@ function AuthPage() {
           };
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [firmName, setFirmName] = useState("");
+  // The 10 national digits; stored as +91XXXXXXXXXX.
   const [phone, setPhone] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors<SignupField>>({});
   const [agreedToPrivacy, setAgreedToPrivacy] = useState(false);
   // ?plan=premium lets the pricing page open registration with Premium chosen.
   const [plan, setPlan] = useState<"free" | "premium">(() => {
@@ -120,6 +126,10 @@ function AuthPage() {
   }
 
   useEffect(() => {
+    setFieldErrors({});
+  }, [mode]);
+
+  useEffect(() => {
     let active = true;
     void supabase.auth.getSession().then(({ data }) => {
       if (active && data.session) void continueSignedIn();
@@ -131,22 +141,30 @@ function AuthPage() {
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
-    if (mode === "signup" && !agreedToPrivacy) {
-      setError("Please confirm you have read the privacy notice before creating an account.");
+    const errors = collectErrors<SignupField>({
+      firstName: mode === "signup" ? namePartError(firstName, "First name") : null,
+      lastName: mode === "signup" ? namePartError(lastName, "Surname") : null,
+      firmName:
+        mode === "signup" ? optionalText(firmName, "Chamber / firm", LIMITS.shortText) : null,
+      phone: mode === "signup" ? mobileError(phone) : null,
+      email: emailError(email),
+      password:
+        mode === "forgot"
+          ? null
+          : mode === "signup"
+            ? passwordLengthError(password)
+            : password
+              ? null
+              : "Password is required.",
+      privacy:
+        mode === "signup" && !agreedToPrivacy
+          ? "Please confirm you have read the privacy notice."
+          : null,
+    });
+    setFieldErrors(errors);
+    if (hasErrors(errors)) {
+      setError(null);
       return;
-    }
-    if (mode === "signup" && !toE164(phone)) {
-      setError(
-        "Enter a valid mobile number — 10 digits for an Indian number, or +<country code> for an overseas one.",
-      );
-      return;
-    }
-    if (mode === "signup") {
-      const lengthError = passwordLengthError(password);
-      if (lengthError) {
-        setError(lengthError);
-        return;
-      }
     }
     setBusy(true);
     setError(null);
@@ -168,9 +186,9 @@ function AuthPage() {
           options: {
             emailRedirectTo: `${window.location.origin}/app`,
             data: {
-              full_name: fullName,
-              firm_name: firmName,
-              phone: toE164(phone),
+              full_name: joinName(firstName, lastName),
+              firm_name: firmName.trim(),
+              phone: toE164Mobile(phone),
               // Every account starts on Free; this sends the first sign-in to
               // checkout for these seats (see _authenticated/route.tsx).
               ...(plan === "premium"
@@ -421,67 +439,121 @@ function AuthPage() {
               </fieldset>
             ) : null}
 
-            <form onSubmit={handleSubmit} className="mt-3 space-y-2.5">
+            <form onSubmit={handleSubmit} noValidate className="mt-3 space-y-2.5">
               {mode === "signup" ? (
                 <>
-                  <label className="block text-sm">
-                    <span className="text-eyebrow">Advocate name</span>
-                    <input
-                      value={fullName}
-                      onChange={(event) => setFullName(event.target.value)}
-                      required
-                      className="mt-1 w-full rounded border border-input bg-background px-3 py-1.5 text-sm"
-                      placeholder="Your full name"
-                    />
-                  </label>
+                  <div className="grid gap-2.5 sm:grid-cols-2">
+                    <label className="block text-sm">
+                      <span className="text-eyebrow">
+                        First name
+                        <Req />
+                      </span>
+                      <input
+                        value={firstName}
+                        onChange={(event) => setFirstName(event.target.value)}
+                        required
+                        maxLength={LIMITS.namePart}
+                        autoComplete="given-name"
+                        aria-invalid={fieldErrors.firstName ? true : undefined}
+                        className={cn(
+                          "mt-1 w-full rounded border border-input bg-background px-3 py-1.5 text-sm",
+                          invalidClass(fieldErrors.firstName),
+                        )}
+                        placeholder="Priya"
+                      />
+                      <FieldError message={fieldErrors.firstName} />
+                    </label>
+                    <label className="block text-sm">
+                      <span className="text-eyebrow">
+                        Surname
+                        <Req />
+                      </span>
+                      <input
+                        value={lastName}
+                        onChange={(event) => setLastName(event.target.value)}
+                        required
+                        maxLength={LIMITS.namePart}
+                        autoComplete="family-name"
+                        aria-invalid={fieldErrors.lastName ? true : undefined}
+                        className={cn(
+                          "mt-1 w-full rounded border border-input bg-background px-3 py-1.5 text-sm",
+                          invalidClass(fieldErrors.lastName),
+                        )}
+                        placeholder="Sharma"
+                      />
+                      <FieldError message={fieldErrors.lastName} />
+                    </label>
+                  </div>
                   <label className="block text-sm">
                     <span className="text-eyebrow">Chamber / firm</span>
                     <input
                       value={firmName}
                       onChange={(event) => setFirmName(event.target.value)}
+                      maxLength={LIMITS.shortText}
                       className="mt-1 w-full rounded border border-input bg-background px-3 py-1.5 text-sm"
-                      placeholder="Your chamber or firm name"
+                      placeholder="Your chamber or firm name (optional)"
                     />
+                    <FieldError message={fieldErrors.firmName} />
                   </label>
                   <label className="block text-sm">
-                    <span className="text-eyebrow">Mobile number</span>
-                    <input
-                      type="tel"
-                      inputMode="tel"
-                      autoComplete="tel"
+                    <span className="text-eyebrow">
+                      Mobile number
+                      <Req />
+                    </span>
+                    <MobileInput
                       value={phone}
-                      onChange={(event) => setPhone(event.target.value)}
-                      required
-                      className="mt-1 w-full rounded border border-input bg-background px-3 py-1.5 text-sm"
-                      placeholder="10-digit mobile number"
+                      onChange={setPhone}
+                      error={fieldErrors.phone}
+                      className="mt-1"
                     />
+                    <FieldError message={fieldErrors.phone} />
                     <span className="mt-0.5 block text-xs text-muted-foreground">
-                      For hearing reminders. 10 digits, or +&lt;country code&gt; if outside India.
+                      10-digit Indian mobile, used for hearing reminders.
                     </span>
                   </label>
                 </>
               ) : null}
               <label className="block text-sm">
-                <span className="text-eyebrow">Email</span>
+                <span className="text-eyebrow">
+                  Email
+                  <Req />
+                </span>
                 <input
                   type="email"
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
                   required
-                  className="mt-1 w-full rounded border border-input bg-background px-3 py-1.5 text-sm"
+                  maxLength={LIMITS.email}
+                  autoComplete="email"
+                  aria-invalid={fieldErrors.email ? true : undefined}
+                  className={cn(
+                    "mt-1 w-full rounded border border-input bg-background px-3 py-1.5 text-sm",
+                    invalidClass(fieldErrors.email),
+                  )}
                 />
+                <FieldError message={fieldErrors.email} />
               </label>
               {mode !== "forgot" ? (
                 <label className="block text-sm">
-                  <span className="text-eyebrow">Password</span>
+                  <span className="text-eyebrow">
+                    Password
+                    <Req />
+                  </span>
                   <input
                     type="password"
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
                     required
                     minLength={mode === "signup" ? MIN_PASSWORD_LENGTH : undefined}
-                    className="mt-1 w-full rounded border border-input bg-background px-3 py-1.5 text-sm"
+                    maxLength={72}
+                    autoComplete={mode === "signup" ? "new-password" : "current-password"}
+                    aria-invalid={fieldErrors.password ? true : undefined}
+                    className={cn(
+                      "mt-1 w-full rounded border border-input bg-background px-3 py-1.5 text-sm",
+                      invalidClass(fieldErrors.password),
+                    )}
                   />
+                  <FieldError message={fieldErrors.password} />
                   {mode === "signup" ? (
                     <span className="mt-1 block text-xs text-muted-foreground">
                       At least {MIN_PASSWORD_LENGTH} characters.
@@ -526,6 +598,7 @@ function AuthPage() {
                       privacy notice
                     </a>
                     , including how my account data is used and my rights under the DPDP Act.
+                    <FieldError message={fieldErrors.privacy} />
                   </span>
                 </label>
               ) : null}
@@ -572,7 +645,7 @@ function AuthPage() {
 
               <button
                 type="submit"
-                disabled={busy || (mode === "signup" && !agreedToPrivacy)}
+                disabled={busy}
                 className="flex w-full items-center justify-center gap-2 rounded bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-ink disabled:opacity-60"
               >
                 {busy ? <Loader2 className="size-4 animate-spin" /> : null}

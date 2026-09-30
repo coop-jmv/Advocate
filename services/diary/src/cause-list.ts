@@ -6,6 +6,11 @@ import { parseBulkCauseList } from "./cause-list-parse";
 import { matchCauseListRecord, type MatchStatus, type RecordToMatch } from "./cause-list-matching";
 import { detectChanges, findRemovedReferences, type ComparableRecord } from "./cause-list-changes";
 
+// A generous ceiling on one paste (a full day's list for a large court is a
+// few tens of thousands of characters); keeps one request from tying up the
+// Worker. Same limit as the import form in src/routes/_authenticated/app.cause-list.tsx.
+const MAX_PASTED_CHARS = 200000;
+
 // Ported verbatim from cause-list.functions.ts. listMatterCauseListHistory
 // was NOT ported — grep confirmed nothing in the app called it (same dead-
 // code situation as diary.functions.ts's listMatterHearings).
@@ -236,6 +241,12 @@ export async function ingestCauseList(req: Request, supabase: SupabaseClient, us
   }
   if (!body.pastedText || body.pastedText.length === 0) {
     return errorResponse(req, "pastedText is required");
+  }
+  if (body.pastedText.length > MAX_PASTED_CHARS) {
+    return errorResponse(
+      req,
+      "That cause list is too long to import at once. Split it into parts.",
+    );
   }
   const { sourceId, listDate, pastedText } = body as {
     sourceId: string;
