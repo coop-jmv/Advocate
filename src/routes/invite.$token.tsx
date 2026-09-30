@@ -3,6 +3,19 @@ import { useEffect, useState } from "react";
 import { Scale, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { logAuthEvent } from "@/lib/edge-functions";
+import { FieldError, invalidClass, MobileInput, Req } from "@/components/app/form-fields";
+import { passwordLengthError, MIN_PASSWORD_LENGTH } from "@/lib/password-policy";
+import { cn } from "@/lib/utils";
+import {
+  collectErrors,
+  hasErrors,
+  joinName,
+  LIMITS,
+  mobileError,
+  namePartError,
+  toE164Mobile,
+  type FieldErrors,
+} from "@/lib/validation";
 
 export const Route = createFileRoute("/invite/$token")({
   ssr: false,
@@ -27,8 +40,14 @@ function InvitePage() {
 
   const [info, setInfo] = useState<InviteInfo | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [fullName, setFullName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
+  const [agreedToPrivacy, setAgreedToPrivacy] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<
+    FieldErrors<"firstName" | "lastName" | "phone" | "password" | "privacy">
+  >({});
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -48,6 +67,15 @@ function InvitePage() {
     // The form only renders on the valid branch, where get_invite_info() has
     // populated email — this narrows that for the compiler too.
     if (!info?.valid || !info.email) return;
+    const errors = collectErrors({
+      firstName: namePartError(firstName, "First name"),
+      lastName: namePartError(lastName, "Surname"),
+      phone: mobileError(phone),
+      password: passwordLengthError(password),
+      privacy: agreedToPrivacy ? null : "Please confirm you have read the privacy notice.",
+    });
+    setFieldErrors(errors);
+    if (hasErrors(errors)) return;
     setBusy(true);
     setError(null);
     setNotice(null);
@@ -57,7 +85,11 @@ function InvitePage() {
         password,
         options: {
           emailRedirectTo: `${window.location.origin}/app`,
-          data: { full_name: fullName, invite_token: token },
+          data: {
+            full_name: joinName(firstName, lastName),
+            phone: toE164Mobile(phone),
+            invite_token: token,
+          },
         },
       });
       if (signUpError) throw signUpError;
@@ -123,27 +155,102 @@ function InvitePage() {
                 You've been invited as a {info.role} for <strong>{info.email}</strong>.
               </p>
 
-              <form onSubmit={handleSubmit} className="mt-5 space-y-4">
+              <form onSubmit={handleSubmit} noValidate className="mt-5 space-y-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className="block text-sm">
+                    <span className="text-eyebrow">
+                      First name
+                      <Req />
+                    </span>
+                    <input
+                      value={firstName}
+                      onChange={(event) => setFirstName(event.target.value)}
+                      required
+                      maxLength={LIMITS.namePart}
+                      autoComplete="given-name"
+                      aria-invalid={fieldErrors.firstName ? true : undefined}
+                      className={cn(
+                        "mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm",
+                        invalidClass(fieldErrors.firstName),
+                      )}
+                      placeholder="Priya"
+                    />
+                    <FieldError message={fieldErrors.firstName} />
+                  </label>
+                  <label className="block text-sm">
+                    <span className="text-eyebrow">
+                      Surname
+                      <Req />
+                    </span>
+                    <input
+                      value={lastName}
+                      onChange={(event) => setLastName(event.target.value)}
+                      required
+                      maxLength={LIMITS.namePart}
+                      autoComplete="family-name"
+                      aria-invalid={fieldErrors.lastName ? true : undefined}
+                      className={cn(
+                        "mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm",
+                        invalidClass(fieldErrors.lastName),
+                      )}
+                      placeholder="Nair"
+                    />
+                    <FieldError message={fieldErrors.lastName} />
+                  </label>
+                </div>
                 <label className="block text-sm">
-                  <span className="text-eyebrow">Your name</span>
-                  <input
-                    value={fullName}
-                    onChange={(event) => setFullName(event.target.value)}
-                    required
-                    className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
-                    placeholder="Adv. Priya Nair"
+                  <span className="text-eyebrow">
+                    Mobile number
+                    <Req />
+                  </span>
+                  <MobileInput
+                    value={phone}
+                    onChange={setPhone}
+                    error={fieldErrors.phone}
+                    className="mt-1.5"
                   />
+                  <FieldError message={fieldErrors.phone} />
                 </label>
                 <label className="block text-sm">
-                  <span className="text-eyebrow">Set a password</span>
+                  <span className="text-eyebrow">
+                    Set a password
+                    <Req />
+                  </span>
                   <input
                     type="password"
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
                     required
-                    minLength={6}
-                    className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
+                    minLength={MIN_PASSWORD_LENGTH}
+                    maxLength={72}
+                    autoComplete="new-password"
+                    aria-invalid={fieldErrors.password ? true : undefined}
+                    className={cn(
+                      "mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm",
+                      invalidClass(fieldErrors.password),
+                    )}
                   />
+                  <FieldError message={fieldErrors.password} />
+                  <span className="mt-1 block text-xs text-muted-foreground">
+                    At least {MIN_PASSWORD_LENGTH} characters.
+                  </span>
+                </label>
+                <label className="flex items-start gap-2.5 text-xs text-muted-foreground">
+                  <input
+                    type="checkbox"
+                    checked={agreedToPrivacy}
+                    onChange={(event) => setAgreedToPrivacy(event.target.checked)}
+                    required
+                    className="mt-0.5 size-3.5 shrink-0"
+                  />
+                  <span>
+                    I have read and agree to the{" "}
+                    <a href="/privacy" target="_blank" rel="noreferrer" className="text-foreground underline">
+                      privacy notice
+                    </a>
+                    , including how my account data is used and my rights under the DPDP Act.
+                    <FieldError message={fieldErrors.privacy} />
+                  </span>
                 </label>
 
                 {error ? (

@@ -9,6 +9,12 @@ import { StatCard, Tag, type Tone } from "@/components/app/primitives";
 // useServerFn wrapping.
 import { listMatters } from "@/lib/matters-service";
 import { todayIsoIST } from "@/lib/date-ist";
+import { FieldError, invalidClass, Req } from "@/components/app/form-fields";
+import { cn } from "@/lib/utils";
+import { collectErrors, hasErrors, optionalText, requiredText, type FieldErrors } from "@/lib/validation";
+
+// Keep in sync with MAX_PASTED_CHARS in services/diary/src/cause-list.ts.
+const MAX_PASTED_CHARS = 200000;
 import {
   createCauseListSource,
   getCauseListFeatureEnabled,
@@ -117,6 +123,8 @@ function CauseListIntelligence() {
   const [showAddSource, setShowAddSource] = useState(false);
   const [newSource, setNewSource] = useState({ court: "", bench: "", listType: "daily" as const });
   const [creatingSource, setCreatingSource] = useState(false);
+  const [sourceErrors, setSourceErrors] = useState<FieldErrors<"court" | "bench">>({});
+  const [importErrors, setImportErrors] = useState<FieldErrors<"source" | "listDate" | "pastedText">>({});
 
   const [importSourceId, setImportSourceId] = useState("");
   const [pastedText, setPastedText] = useState("");
@@ -178,7 +186,12 @@ function CauseListIntelligence() {
 
   async function handleAddSource(event: React.FormEvent) {
     event.preventDefault();
-    if (!newSource.court.trim()) return;
+    const errors = collectErrors({
+      court: requiredText(newSource.court, "Court", { min: 2 }),
+      bench: optionalText(newSource.bench, "Bench"),
+    });
+    setSourceErrors(errors);
+    if (hasErrors(errors)) return;
     setCreatingSource(true);
     try {
       await addSource({
@@ -206,7 +219,17 @@ function CauseListIntelligence() {
   }
 
   async function handleImport() {
-    if (!importSourceId || !pastedText.trim()) return;
+    const errors = collectErrors({
+      source: importSourceId ? null : "Choose which court source this list is for.",
+      listDate: listDate ? null : "List date is required.",
+      pastedText: !pastedText.trim()
+        ? "Paste the cause list to import."
+        : pastedText.length > MAX_PASTED_CHARS
+          ? `That's too long to import at once (over ${MAX_PASTED_CHARS.toLocaleString("en-IN")} characters). Split it into parts.`
+          : null,
+    });
+    setImportErrors(errors);
+    if (hasErrors(errors)) return;
     setImporting(true);
     try {
       const result = await runIngest({ sourceId: importSourceId, listDate, pastedText });
@@ -322,16 +345,27 @@ function CauseListIntelligence() {
             {showAddSource ? (
               <form
                 onSubmit={handleAddSource}
+                noValidate
                 className="mt-4 grid gap-3 rounded border border-dashed border-border p-3 sm:grid-cols-3"
               >
                 <label className="text-sm">
-                  <span className="text-eyebrow">Court</span>
+                  <span className="text-eyebrow">
+                    Court
+                    <Req />
+                  </span>
                   <input
                     value={newSource.court}
                     onChange={(e) => setNewSource((s) => ({ ...s, court: e.target.value }))}
                     placeholder="Delhi High Court"
-                    className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
+                    required
+                    maxLength={120}
+                    aria-invalid={sourceErrors.court ? true : undefined}
+                    className={cn(
+                      "mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm",
+                      invalidClass(sourceErrors.court),
+                    )}
                   />
+                  <FieldError message={sourceErrors.court} />
                 </label>
                 <label className="text-sm">
                   <span className="text-eyebrow">Bench (optional)</span>
@@ -339,13 +373,15 @@ function CauseListIntelligence() {
                     value={newSource.bench}
                     onChange={(e) => setNewSource((s) => ({ ...s, bench: e.target.value }))}
                     placeholder="Court 4, Justice Sharma"
+                    maxLength={120}
                     className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
                   />
+                  <FieldError message={sourceErrors.bench} />
                 </label>
                 <div className="flex items-end">
                   <button
                     type="submit"
-                    disabled={creatingSource || !newSource.court.trim()}
+                    disabled={creatingSource}
                     className="flex items-center gap-2 rounded bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-ink disabled:opacity-60"
                   >
                     {creatingSource ? (
@@ -411,11 +447,18 @@ function CauseListIntelligence() {
             </p>
             <div className="mt-3 grid gap-3 sm:grid-cols-3">
               <label className="text-sm">
-                <span className="text-eyebrow">Source</span>
+                <span className="text-eyebrow">
+                  Source
+                  <Req />
+                </span>
                 <select
                   value={importSourceId}
                   onChange={(e) => setImportSourceId(e.target.value)}
-                  className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
+                  aria-invalid={importErrors.source ? true : undefined}
+                  className={cn(
+                    "mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm",
+                    invalidClass(importErrors.source),
+                  )}
                 >
                   {sources.length === 0 ? <option value="">Add a source first</option> : null}
                   {sources.map((s) => (
@@ -425,28 +468,48 @@ function CauseListIntelligence() {
                     </option>
                   ))}
                 </select>
+                <FieldError message={importErrors.source} />
               </label>
               <label className="text-sm">
-                <span className="text-eyebrow">List date</span>
+                <span className="text-eyebrow">
+                  List date
+                  <Req />
+                </span>
                 <input
                   type="date"
                   value={listDate}
                   onChange={(e) => setListDate(e.target.value)}
-                  className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
+                  aria-invalid={importErrors.listDate ? true : undefined}
+                  className={cn(
+                    "mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm",
+                    invalidClass(importErrors.listDate),
+                  )}
                 />
+                <FieldError message={importErrors.listDate} />
               </label>
             </div>
-            <textarea
-              value={pastedText}
-              onChange={(e) => setPastedText(e.target.value)}
-              rows={6}
-              placeholder="1	WP(C) 1234/2024	DLHC010012342024	Ramesh Kumar	State of Delhi	Adv. Priya Nair	Arguments	Hall 4"
-              className="mt-3 w-full rounded border border-input bg-background p-3 font-mono text-xs"
-            />
+            <label className="mt-3 block text-sm">
+              <span className="text-eyebrow">
+                Cause list
+                <Req />
+              </span>
+              <textarea
+                value={pastedText}
+                onChange={(e) => setPastedText(e.target.value)}
+                rows={6}
+                aria-invalid={importErrors.pastedText ? true : undefined}
+                placeholder="1	WP(C) 1234/2024	DLHC010012342024	Ramesh Kumar	State of Delhi	Adv. Priya Nair	Arguments	Hall 4"
+                className={cn(
+                  "mt-1.5 w-full rounded border border-input bg-background p-3 font-mono text-xs",
+                  invalidClass(importErrors.pastedText),
+                )}
+              />
+              <FieldError message={importErrors.pastedText} />
+            </label>
             <button
               type="button"
               onClick={handleImport}
-              disabled={importing || !importSourceId || !pastedText.trim()}
+              disabled={importing}
               className="mt-3 flex items-center gap-2 rounded bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-ink disabled:opacity-50"
             >
               {importing ? (

@@ -15,6 +15,30 @@ import { getMyMembership } from "@/lib/team.functions";
 import { buildMatterTimeline } from "@/lib/matter-timeline";
 import { todayIsoIST } from "@/lib/date-ist";
 import { confirmPermanentRemoval } from "@/lib/confirm";
+import { FieldError, invalidClass, Req } from "@/components/app/form-fields";
+import { cn } from "@/lib/utils";
+import {
+  cnrError,
+  collectErrors,
+  hasErrors,
+  LIMITS,
+  optionalText,
+  pastDateError,
+  requiredText,
+  type FieldErrors,
+} from "@/lib/validation";
+
+type MatterField =
+  | "title"
+  | "clientName"
+  | "caseNumber"
+  | "cnr"
+  | "court"
+  | "opposingParty"
+  | "filedDate"
+  | "notes";
+
+const INPUT = "mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm";
 
 export const Route = createFileRoute("/_authenticated/app/cases/$matterId")({
   head: () => ({
@@ -61,6 +85,7 @@ function MatterDetail() {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors<MatterField>>({});
 
   useEffect(() => {
     let cancelled = false;
@@ -97,12 +122,24 @@ function MatterDetail() {
       notes: context.matter.notes ?? "",
     });
     setFormError(null);
+    setFieldErrors({});
     setEditing(true);
   }
 
   async function handleSave(event: React.FormEvent) {
     event.preventDefault();
-    if (!editForm.title.trim()) return;
+    const errors = collectErrors<MatterField>({
+      title: requiredText(editForm.title, "Matter title", { min: 2, max: LIMITS.title }),
+      clientName: optionalText(editForm.clientName, "Client"),
+      caseNumber: optionalText(editForm.caseNumber, "Case number", 60),
+      cnr: cnrError(editForm.cnr),
+      court: optionalText(editForm.court, "Court"),
+      opposingParty: optionalText(editForm.opposingParty, "Opposing party"),
+      filedDate: pastDateError(editForm.filedDate, "Filed date"),
+      notes: optionalText(editForm.notes, "Notes", LIMITS.notes),
+    });
+    setFieldErrors(errors);
+    if (hasErrors(errors)) return;
     setSaving(true);
     setFormError(null);
     try {
@@ -252,31 +289,43 @@ function MatterDetail() {
       {editing ? (
         <form
           onSubmit={handleSave}
+          noValidate
           className="surface-panel mb-6 grid gap-3 rounded p-5 sm:grid-cols-2 lg:grid-cols-4"
         >
           <label className="text-sm sm:col-span-2 lg:col-span-1">
-            <span className="text-eyebrow">Matter title</span>
+            <span className="text-eyebrow">
+              Matter title
+              <Req />
+            </span>
             <input
               value={editForm.title}
               onChange={(event) => setEditForm((f) => ({ ...f, title: event.target.value }))}
-              className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
+              required
+              maxLength={LIMITS.title}
+              aria-invalid={fieldErrors.title ? true : undefined}
+              className={cn(INPUT, invalidClass(fieldErrors.title))}
             />
+            <FieldError message={fieldErrors.title} />
           </label>
           <label className="text-sm">
             <span className="text-eyebrow">Client</span>
             <input
               value={editForm.clientName}
               onChange={(event) => setEditForm((f) => ({ ...f, clientName: event.target.value }))}
-              className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
+              maxLength={LIMITS.shortText}
+              className={cn(INPUT, invalidClass(fieldErrors.clientName))}
             />
+            <FieldError message={fieldErrors.clientName} />
           </label>
           <label className="text-sm">
             <span className="text-eyebrow">Case number</span>
             <input
               value={editForm.caseNumber}
               onChange={(event) => setEditForm((f) => ({ ...f, caseNumber: event.target.value }))}
-              className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
+              maxLength={60}
+              className={cn(INPUT, invalidClass(fieldErrors.caseNumber))}
             />
+            <FieldError message={fieldErrors.caseNumber} />
           </label>
           <label className="text-sm">
             <span className="text-eyebrow">CNR</span>
@@ -286,16 +335,20 @@ function MatterDetail() {
                 setEditForm((f) => ({ ...f, cnr: event.target.value.toUpperCase() }))
               }
               maxLength={16}
-              className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm uppercase"
+              aria-invalid={fieldErrors.cnr ? true : undefined}
+              className={cn(INPUT, "uppercase", invalidClass(fieldErrors.cnr))}
             />
+            <FieldError message={fieldErrors.cnr} />
           </label>
           <label className="text-sm">
             <span className="text-eyebrow">Court</span>
             <input
               value={editForm.court}
               onChange={(event) => setEditForm((f) => ({ ...f, court: event.target.value }))}
-              className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
+              maxLength={LIMITS.shortText}
+              className={cn(INPUT, invalidClass(fieldErrors.court))}
             />
+            <FieldError message={fieldErrors.court} />
           </label>
           <label className="text-sm">
             <span className="text-eyebrow">Opposing party</span>
@@ -304,8 +357,10 @@ function MatterDetail() {
               onChange={(event) =>
                 setEditForm((f) => ({ ...f, opposingParty: event.target.value }))
               }
-              className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
+              maxLength={LIMITS.shortText}
+              className={cn(INPUT, invalidClass(fieldErrors.opposingParty))}
             />
+            <FieldError message={fieldErrors.opposingParty} />
           </label>
           <label className="text-sm">
             <span className="text-eyebrow">Filed date</span>
@@ -313,8 +368,10 @@ function MatterDetail() {
               type="date"
               value={editForm.filedDate}
               onChange={(event) => setEditForm((f) => ({ ...f, filedDate: event.target.value }))}
-              className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
+              aria-invalid={fieldErrors.filedDate ? true : undefined}
+              className={cn(INPUT, invalidClass(fieldErrors.filedDate))}
             />
+            <FieldError message={fieldErrors.filedDate} />
           </label>
           <label className="text-sm">
             <span className="text-eyebrow">Status</span>
@@ -339,13 +396,15 @@ function MatterDetail() {
               value={editForm.notes}
               onChange={(event) => setEditForm((f) => ({ ...f, notes: event.target.value }))}
               rows={3}
-              className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
+              maxLength={LIMITS.notes}
+              className={cn(INPUT, invalidClass(fieldErrors.notes))}
             />
+            <FieldError message={fieldErrors.notes} />
           </label>
           <div className="flex items-center gap-2 sm:col-span-2 lg:col-span-4">
             <button
               type="submit"
-              disabled={saving || !editForm.title.trim()}
+              disabled={saving}
               className="flex items-center gap-2 rounded bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-ink disabled:opacity-60"
             >
               {saving ? <Loader2 className="size-4 animate-spin" /> : null}

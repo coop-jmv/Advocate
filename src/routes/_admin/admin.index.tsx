@@ -19,6 +19,9 @@ import { DataTable, Tag, type Tone } from "@/components/app/primitives";
 import { activateSubscription } from "@/lib/subscription-invoice";
 import { listTenantOwners } from "@/lib/admin-tenants.functions";
 import type { Database } from "@/integrations/supabase/types";
+import { FieldError, invalidClass, Req } from "@/components/app/form-fields";
+import { cn } from "@/lib/utils";
+import { requiredText } from "@/lib/validation";
 
 type TenantOwner = { fullName: string | null; phone: string | null; email: string | null };
 
@@ -109,6 +112,7 @@ function AdminTenants() {
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState("");
+  const [newNameError, setNewNameError] = useState<string | null>(null);
 
   async function reload() {
     setLoading(true);
@@ -133,7 +137,9 @@ function AdminTenants() {
 
   async function handleCreate(event: React.FormEvent) {
     event.preventDefault();
-    if (!newName.trim()) return;
+    const nameError = requiredText(newName, "Tenant name", { min: 2 });
+    setNewNameError(nameError);
+    if (nameError) return;
     setCreating(true);
     setError(null);
     try {
@@ -276,19 +282,33 @@ function AdminTenants() {
         </div>
       </div>
 
-      <form onSubmit={handleCreate} className="surface-panel mt-6 flex items-end gap-3 rounded p-4">
+      <form
+        onSubmit={handleCreate}
+        noValidate
+        className="surface-panel mt-6 flex items-start gap-3 rounded p-4"
+      >
         <label className="flex-1 text-sm">
-          <span className="text-eyebrow">New tenant name</span>
+          <span className="text-eyebrow">
+            New tenant name
+            <Req />
+          </span>
           <input
             value={newName}
             onChange={(event) => setNewName(event.target.value)}
             placeholder="Nair & Associates"
-            className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
+            required
+            maxLength={120}
+            aria-invalid={newNameError ? true : undefined}
+            className={cn(
+              "mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm",
+              invalidClass(newNameError ?? undefined),
+            )}
           />
+          <FieldError message={newNameError ?? undefined} />
         </label>
         <button
           type="submit"
-          disabled={creating || !newName.trim()}
+          disabled={creating}
           className="flex items-center gap-2 rounded bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-ink disabled:opacity-60"
         >
           {creating ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}

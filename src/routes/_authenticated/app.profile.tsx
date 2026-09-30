@@ -6,6 +6,21 @@ import { AppShell } from "@/components/app/AppShell";
 import { SettingsTabs } from "@/components/app/SettingsTabs";
 import { TwoFactorSettings } from "@/components/app/TwoFactorSettings";
 import { Tag, type Tone } from "@/components/app/primitives";
+import { FieldError, invalidClass, MobileInput, Req } from "@/components/app/form-fields";
+import { cn } from "@/lib/utils";
+import {
+  collectErrors,
+  hasErrors,
+  joinName,
+  LIMITS,
+  mobileError,
+  mobileForInput,
+  namePartError,
+  optionalText,
+  splitName,
+  toE164Mobile,
+  type FieldErrors,
+} from "@/lib/validation";
 import { confirmDestructive } from "@/lib/confirm";
 import { supabase } from "@/integrations/supabase/client";
 import { logAuthEvent } from "@/lib/edge-functions";
@@ -83,10 +98,15 @@ function Profile() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
-  const [fullName, setFullName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [firmName, setFirmName] = useState("");
   const [enrolmentNo, setEnrolmentNo] = useState("");
+  // The 10 national digits; saved as +91XXXXXXXXXX.
   const [phone, setPhone] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<
+    FieldErrors<"firstName" | "lastName" | "firmName" | "enrolmentNo" | "phone">
+  >({});
 
   const [exportingMine, setExportingMine] = useState(false);
   const [exportingChamber, setExportingChamber] = useState(false);
@@ -104,10 +124,12 @@ function Profile() {
       const [p, c] = await Promise.all([loadProfile(), loadConsents()]);
       const pd = p as ProfileData;
       setProfile(pd);
-      setFullName(pd.full_name ?? "");
+      const { first, last } = splitName(pd.full_name);
+      setFirstName(first);
+      setLastName(last);
       setFirmName(pd.firm_name ?? "");
       setEnrolmentNo(pd.enrolment_no ?? "");
-      setPhone(pd.phone ?? "");
+      setPhone(mobileForInput(pd.phone));
       setConsents(c as Consent[]);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Failed to load your profile.");
@@ -126,11 +148,27 @@ function Profile() {
 
   async function handleSave(event: React.FormEvent) {
     event.preventDefault();
+    const errors = collectErrors({
+      firstName: namePartError(firstName, "First name"),
+      lastName: namePartError(lastName, "Surname"),
+      firmName: optionalText(firmName, "Chamber / firm", LIMITS.shortText),
+      enrolmentNo: optionalText(enrolmentNo, "Enrolment number", 60),
+      phone: mobileError(phone),
+    });
+    setFieldErrors(errors);
+    setNotice(null);
+    if (hasErrors(errors)) return;
     setSaving(true);
     setError(null);
-    setNotice(null);
     try {
-      await saveProfile({ data: { fullName, firmName, enrolmentNo, phone } });
+      await saveProfile({
+        data: {
+          fullName: joinName(firstName, lastName),
+          firmName: firmName.trim(),
+          enrolmentNo: enrolmentNo.trim(),
+          phone: toE164Mobile(phone),
+        },
+      });
       await reload();
       setNotice("Profile updated.");
     } catch (cause) {
@@ -237,46 +275,82 @@ function Profile() {
           <div className="space-y-6">
             <section className="surface-panel rounded p-5">
               <h2 className="font-display text-lg font-bold">Your details</h2>
-              <form onSubmit={handleSave} className="mt-4 space-y-4">
-                <label className="block text-sm">
-                  <span className="text-eyebrow">Advocate name</span>
-                  <input
-                    value={fullName}
-                    onChange={(event) => setFullName(event.target.value)}
-                    required
-                    className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
-                  />
-                </label>
+              <form onSubmit={handleSave} noValidate className="mt-4 space-y-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className="block text-sm">
+                    <span className="text-eyebrow">
+                      First name
+                      <Req />
+                    </span>
+                    <input
+                      value={firstName}
+                      onChange={(event) => setFirstName(event.target.value)}
+                      required
+                      maxLength={LIMITS.namePart}
+                      autoComplete="given-name"
+                      aria-invalid={fieldErrors.firstName ? true : undefined}
+                      className={cn(
+                        "mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm",
+                        invalidClass(fieldErrors.firstName),
+                      )}
+                    />
+                    <FieldError message={fieldErrors.firstName} />
+                  </label>
+                  <label className="block text-sm">
+                    <span className="text-eyebrow">
+                      Surname
+                      <Req />
+                    </span>
+                    <input
+                      value={lastName}
+                      onChange={(event) => setLastName(event.target.value)}
+                      required
+                      maxLength={LIMITS.namePart}
+                      autoComplete="family-name"
+                      aria-invalid={fieldErrors.lastName ? true : undefined}
+                      className={cn(
+                        "mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm",
+                        invalidClass(fieldErrors.lastName),
+                      )}
+                    />
+                    <FieldError message={fieldErrors.lastName} />
+                  </label>
+                </div>
                 <label className="block text-sm">
                   <span className="text-eyebrow">Chamber / firm</span>
                   <input
                     value={firmName}
                     onChange={(event) => setFirmName(event.target.value)}
+                    maxLength={LIMITS.shortText}
                     className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
                   />
+                  <FieldError message={fieldErrors.firmName} />
                 </label>
                 <label className="block text-sm">
                   <span className="text-eyebrow">Bar Council enrolment number</span>
                   <input
                     value={enrolmentNo}
                     onChange={(event) => setEnrolmentNo(event.target.value)}
+                    maxLength={60}
                     placeholder="MH/1234/2015"
                     className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
                   />
+                  <FieldError message={fieldErrors.enrolmentNo} />
                 </label>
                 <label className="block text-sm">
-                  <span className="text-eyebrow">Mobile number</span>
-                  <input
-                    type="tel"
-                    inputMode="tel"
-                    autoComplete="tel"
+                  <span className="text-eyebrow">
+                    Mobile number
+                    <Req />
+                  </span>
+                  <MobileInput
                     value={phone}
-                    onChange={(event) => setPhone(event.target.value)}
-                    placeholder="+919820041122"
-                    className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
+                    onChange={setPhone}
+                    error={fieldErrors.phone}
+                    className="mt-1.5"
                   />
+                  <FieldError message={fieldErrors.phone} />
                   <span className="mt-1 block text-xs text-muted-foreground">
-                    Include the country code, e.g. +91 for India.
+                    10-digit Indian mobile, used for hearing reminders.
                   </span>
                 </label>
                 <label className="block text-sm">

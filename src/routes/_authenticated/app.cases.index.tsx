@@ -8,6 +8,22 @@ import { DataTable, Tag, type Tone } from "@/components/app/primitives";
 import { createMatter, listMatters } from "@/lib/matters-service";
 import { friendlyErrorMessage } from "@/lib/friendly-error";
 import { lookupEcourtsCase } from "@/lib/edge-functions";
+import { FieldError, invalidClass, Req } from "@/components/app/form-fields";
+import { cn } from "@/lib/utils";
+import {
+  cnrError,
+  collectErrors,
+  hasErrors,
+  LIMITS,
+  optionalText,
+  pastDateError,
+  requiredText,
+  type FieldErrors,
+} from "@/lib/validation";
+
+type MatterField = "title" | "clientName" | "cnr" | "caseNumber" | "court" | "opposingParty" | "filedDate";
+
+const INPUT = "mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm";
 
 export const Route = createFileRoute("/_authenticated/app/cases/")({
   head: () => ({
@@ -66,6 +82,7 @@ function Cases() {
     opposingParty: "",
     filedDate: "",
   });
+  const [formErrors, setFormErrors] = useState<FieldErrors<MatterField>>({});
   const [verifying, setVerifying] = useState(false);
   const [verifyNotice, setVerifyNotice] = useState<string | null>(null);
 
@@ -89,7 +106,17 @@ function Cases() {
 
   async function handleCreate(event: React.FormEvent) {
     event.preventDefault();
-    if (!form.title.trim()) return;
+    const errors = collectErrors<MatterField>({
+      title: requiredText(form.title, "Matter title", { min: 2, max: LIMITS.title }),
+      clientName: optionalText(form.clientName, "Client"),
+      cnr: cnrError(form.cnr),
+      caseNumber: optionalText(form.caseNumber, "Case number", 60),
+      court: optionalText(form.court, "Court"),
+      opposingParty: optionalText(form.opposingParty, "Opposing party"),
+      filedDate: pastDateError(form.filedDate, "Filed date"),
+    });
+    setFormErrors(errors);
+    if (hasErrors(errors)) return;
     setCreating(true);
     setError(null);
     try {
@@ -173,24 +200,34 @@ function Cases() {
     >
       <form
         onSubmit={handleCreate}
+        noValidate
         className="surface-panel mb-6 grid gap-3 rounded p-4 sm:grid-cols-2 lg:grid-cols-3"
       >
         <label className="text-sm sm:col-span-2 lg:col-span-1">
-          <span className="text-eyebrow">Matter title</span>
+          <span className="text-eyebrow">
+            Matter title
+            <Req />
+          </span>
           <input
             value={form.title}
             onChange={(event) => setForm((f) => ({ ...f, title: event.target.value }))}
             placeholder="Malhotra v. Sunrise Developers"
-            className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
+            required
+            maxLength={LIMITS.title}
+            aria-invalid={formErrors.title ? true : undefined}
+            className={cn(INPUT, invalidClass(formErrors.title))}
           />
+          <FieldError message={formErrors.title} />
         </label>
         <label className="text-sm">
           <span className="text-eyebrow">Client</span>
           <input
             value={form.clientName}
             onChange={(event) => setForm((f) => ({ ...f, clientName: event.target.value }))}
-            className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
+            maxLength={LIMITS.shortText}
+            className={cn(INPUT, invalidClass(formErrors.clientName))}
           />
+          <FieldError message={formErrors.clientName} />
         </label>
         <label className="text-sm">
           <span className="text-eyebrow">CNR (optional)</span>
@@ -202,7 +239,11 @@ function Cases() {
               }
               placeholder="MHCC010012342024"
               maxLength={16}
-              className="w-full rounded border border-input bg-background px-3 py-2 text-sm uppercase"
+              aria-invalid={formErrors.cnr ? true : undefined}
+              className={cn(
+                "w-full rounded border border-input bg-background px-3 py-2 text-sm uppercase",
+                invalidClass(formErrors.cnr),
+              )}
             />
             <button
               type="button"
@@ -219,6 +260,7 @@ function Cases() {
               Verify
             </button>
           </div>
+          <FieldError message={formErrors.cnr} />
           {verifyNotice ? (
             <span className="mt-1 block text-xs text-muted-foreground">{verifyNotice}</span>
           ) : null}
@@ -228,24 +270,30 @@ function Cases() {
           <input
             value={form.caseNumber}
             onChange={(event) => setForm((f) => ({ ...f, caseNumber: event.target.value }))}
-            className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
+            maxLength={60}
+            className={cn(INPUT, invalidClass(formErrors.caseNumber))}
           />
+          <FieldError message={formErrors.caseNumber} />
         </label>
         <label className="text-sm">
           <span className="text-eyebrow">Court</span>
           <input
             value={form.court}
             onChange={(event) => setForm((f) => ({ ...f, court: event.target.value }))}
-            className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
+            maxLength={LIMITS.shortText}
+            className={cn(INPUT, invalidClass(formErrors.court))}
           />
+          <FieldError message={formErrors.court} />
         </label>
         <label className="text-sm">
           <span className="text-eyebrow">Opposing party</span>
           <input
             value={form.opposingParty}
             onChange={(event) => setForm((f) => ({ ...f, opposingParty: event.target.value }))}
-            className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
+            maxLength={LIMITS.shortText}
+            className={cn(INPUT, invalidClass(formErrors.opposingParty))}
           />
+          <FieldError message={formErrors.opposingParty} />
         </label>
         <label className="text-sm">
           <span className="text-eyebrow">Filed date</span>
@@ -253,18 +301,23 @@ function Cases() {
             type="date"
             value={form.filedDate}
             onChange={(event) => setForm((f) => ({ ...f, filedDate: event.target.value }))}
-            className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
+            aria-invalid={formErrors.filedDate ? true : undefined}
+            className={cn(INPUT, invalidClass(formErrors.filedDate))}
           />
+          <FieldError message={formErrors.filedDate} />
         </label>
-        <div className="flex items-end sm:col-span-2 lg:col-span-3">
+        <div className="flex items-end gap-3 sm:col-span-2 lg:col-span-3">
           <button
             type="submit"
-            disabled={creating || !form.title.trim()}
+            disabled={creating}
             className="flex items-center gap-2 rounded bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-ink disabled:opacity-60"
           >
             {creating ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
             Add matter
           </button>
+          <span className="text-xs text-muted-foreground">
+            <span className="text-destructive">*</span> required
+          </span>
         </div>
       </form>
 
