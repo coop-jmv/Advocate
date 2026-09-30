@@ -46,12 +46,14 @@ type ClientBody = { name?: string; phone?: string; email?: string; notes?: strin
 
 function clientInputError(body: ClientBody): string | null {
   const name = body.name?.trim() ?? "";
-  if (name.split(/\s+/).filter(Boolean).length < 2) return "Enter the client's first name and surname.";
+  if (name.split(/\s+/).filter(Boolean).length < 2)
+    return "Enter the client's first name and surname.";
   if (name.length > 101) return "The client's name is too long.";
   if (!body.phone || !/^\+91[6-9]\d{9}$/.test(body.phone)) {
     return "Enter the client's 10-digit mobile number.";
   }
-  if (!body.email || !isValidEmail(body.email.trim())) return "Enter a valid email address for the client.";
+  if (!body.email || !isValidEmail(body.email.trim()))
+    return "Enter a valid email address for the client.";
   if (body.notes && body.notes.length > 2000) return "Notes can be at most 2000 characters.";
   return null;
 }

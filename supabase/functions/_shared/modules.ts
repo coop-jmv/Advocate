@@ -44,7 +44,9 @@ function includedByPlan(
     const trialActive = !license.trial_ends_at || new Date(license.trial_ends_at) > new Date();
     return trialActive || FREE_PLAN_MODULES.has(moduleKey);
   }
-  return (license.plan === "free" || license.plan === "premium") && FREE_PLAN_MODULES.has(moduleKey);
+  return (
+    (license.plan === "free" || license.plan === "premium") && FREE_PLAN_MODULES.has(moduleKey)
+  );
 }
 
 /**

@@ -29,14 +29,7 @@ import {
 } from "@/lib/validation";
 
 type MatterField =
-  | "title"
-  | "clientName"
-  | "caseNumber"
-  | "cnr"
-  | "court"
-  | "opposingParty"
-  | "filedDate"
-  | "notes";
+  "title" | "clientName" | "caseNumber" | "cnr" | "court" | "opposingParty" | "filedDate" | "notes";
 
 const INPUT = "mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm";
 

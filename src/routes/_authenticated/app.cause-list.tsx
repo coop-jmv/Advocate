@@ -11,7 +11,13 @@ import { listMatters } from "@/lib/matters-service";
 import { todayIsoIST } from "@/lib/date-ist";
 import { FieldError, invalidClass, Req } from "@/components/app/form-fields";
 import { cn } from "@/lib/utils";
-import { collectErrors, hasErrors, optionalText, requiredText, type FieldErrors } from "@/lib/validation";
+import {
+  collectErrors,
+  hasErrors,
+  optionalText,
+  requiredText,
+  type FieldErrors,
+} from "@/lib/validation";
 
 // Keep in sync with MAX_PASTED_CHARS in services/diary/src/cause-list.ts.
 const MAX_PASTED_CHARS = 200000;
@@ -124,7 +130,9 @@ function CauseListIntelligence() {
   const [newSource, setNewSource] = useState({ court: "", bench: "", listType: "daily" as const });
   const [creatingSource, setCreatingSource] = useState(false);
   const [sourceErrors, setSourceErrors] = useState<FieldErrors<"court" | "bench">>({});
-  const [importErrors, setImportErrors] = useState<FieldErrors<"source" | "listDate" | "pastedText">>({});
+  const [importErrors, setImportErrors] = useState<
+    FieldErrors<"source" | "listDate" | "pastedText">
+  >({});
 
   const [importSourceId, setImportSourceId] = useState("");
   const [pastedText, setPastedText] = useState("");

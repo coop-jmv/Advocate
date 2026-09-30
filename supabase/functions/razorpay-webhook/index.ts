@@ -47,15 +47,22 @@ Deno.serve(async (req) => {
   const event = payload.event ?? "";
   const subscriptionId = payload.payload?.subscription?.entity?.id;
 
-  const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
-    auth: { persistSession: false },
-  });
+  const admin = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    {
+      auth: { persistSession: false },
+    },
+  );
 
   const eventId = req.headers.get("x-razorpay-event-id");
   if (eventId) {
     await admin
       .from("razorpay_events")
-      .upsert({ event_id: eventId, event, subscription_id: subscriptionId ?? null }, { onConflict: "event_id", ignoreDuplicates: true });
+      .upsert(
+        { event_id: eventId, event, subscription_id: subscriptionId ?? null },
+        { onConflict: "event_id", ignoreDuplicates: true },
+      );
   }
 
   if (!event.startsWith("subscription.") || !subscriptionId) {
@@ -75,7 +82,11 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const result = await applySubscription(admin, license.tenant_id, await fetchSubscription(subscriptionId));
+    const result = await applySubscription(
+      admin,
+      license.tenant_id,
+      await fetchSubscription(subscriptionId),
+    );
     return new Response(JSON.stringify({ event, result }), { status: 200 });
   } catch (cause) {
     // A failure here (Razorpay or the database unreachable) should be

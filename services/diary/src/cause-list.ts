@@ -243,7 +243,10 @@ export async function ingestCauseList(req: Request, supabase: SupabaseClient, us
     return errorResponse(req, "pastedText is required");
   }
   if (body.pastedText.length > MAX_PASTED_CHARS) {
-    return errorResponse(req, "That cause list is too long to import at once. Split it into parts.");
+    return errorResponse(
+      req,
+      "That cause list is too long to import at once. Split it into parts.",
+    );
   }
   const { sourceId, listDate, pastedText } = body as {
     sourceId: string;

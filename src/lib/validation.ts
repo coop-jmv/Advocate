@@ -20,8 +20,10 @@ const NAME_PART = /^[\p{L}\p{M}][\p{L}\p{M} .'-]*$/u;
 export function namePartError(value: string, label: string): string | null {
   const trimmed = value.trim();
   if (!trimmed) return `${label} is required.`;
-  if (trimmed.length > LIMITS.namePart) return `${label} can be at most ${LIMITS.namePart} characters.`;
-  if (!NAME_PART.test(trimmed)) return `${label} can only contain letters, spaces, dots, apostrophes and hyphens.`;
+  if (trimmed.length > LIMITS.namePart)
+    return `${label} can be at most ${LIMITS.namePart} characters.`;
+  if (!NAME_PART.test(trimmed))
+    return `${label} can only contain letters, spaces, dots, apostrophes and hyphens.`;
   return null;
 }
 
@@ -41,7 +43,8 @@ const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export function emailError(value: string, { required = true } = {}): string | null {
   const trimmed = value.trim();
   if (!trimmed) return required ? "Email is required." : null;
-  if (trimmed.length > LIMITS.email || !EMAIL.test(trimmed)) return "Enter a valid email address, e.g. name@example.com.";
+  if (trimmed.length > LIMITS.email || !EMAIL.test(trimmed))
+    return "Enter a valid email address, e.g. name@example.com.";
   return null;
 }
 
@@ -60,7 +63,8 @@ export function mobileDigits(raw: string): string {
 export function mobileError(digits: string, { required = true } = {}): string | null {
   if (!digits) return required ? "Mobile number is required." : null;
   if (digits.length !== 10) return "Mobile number must be exactly 10 digits.";
-  if (!MOBILE.test(digits)) return "Enter a valid Indian mobile number (starting with 6, 7, 8 or 9).";
+  if (!MOBILE.test(digits))
+    return "Enter a valid Indian mobile number (starting with 6, 7, 8 or 9).";
   return null;
 }
 
@@ -85,20 +89,31 @@ export function requiredText(
   return null;
 }
 
-export function optionalText(value: string, label: string, max: number = LIMITS.shortText): string | null {
+export function optionalText(
+  value: string,
+  label: string,
+  max: number = LIMITS.shortText,
+): string | null {
   return value.trim().length > max ? `${label} can be at most ${max} characters.` : null;
 }
 
 export function numberError(
   raw: string,
   label: string,
-  { min, max, required = true, minExclusive = false }: { min: number; max: number; required?: boolean; minExclusive?: boolean },
+  {
+    min,
+    max,
+    required = true,
+    minExclusive = false,
+  }: { min: number; max: number; required?: boolean; minExclusive?: boolean },
 ): string | null {
   if (!raw.trim()) return required ? `${label} is required.` : null;
   const value = Number(raw);
   if (!Number.isFinite(value)) return `${label} must be a number.`;
   if (minExclusive ? value <= min : value < min)
-    return minExclusive ? `${label} must be more than ${min}.` : `${label} must be at least ${min}.`;
+    return minExclusive
+      ? `${label} must be more than ${min}.`
+      : `${label} must be at least ${min}.`;
   if (value > max) return `${label} can be at most ${max.toLocaleString("en-IN")}.`;
   return null;
 }
@@ -116,7 +131,11 @@ function todayIso(): string {
 }
 
 /** For dates that have already happened (filed on, worked on). ISO yyyy-mm-dd. */
-export function pastDateError(value: string, label: string, { required = false } = {}): string | null {
+export function pastDateError(
+  value: string,
+  label: string,
+  { required = false } = {},
+): string | null {
   if (!value) return required ? `${label} is required.` : null;
   return value > todayIso() ? `${label} can't be in the future.` : null;
 }

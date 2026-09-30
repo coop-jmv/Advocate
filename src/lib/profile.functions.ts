@@ -32,7 +32,10 @@ export const updateMyProfile = createServerFn({ method: "POST" })
           .string()
           .trim()
           .max(101)
-          .refine((name) => name.split(/\s+/).filter(Boolean).length >= 2, "Enter your first name and surname."),
+          .refine(
+            (name) => name.split(/\s+/).filter(Boolean).length >= 2,
+            "Enter your first name and surname.",
+          ),
         firmName: z.string().trim().max(120).optional(),
         enrolmentNo: z.string().trim().max(60).optional(),
         // A 10-digit Indian mobile, stored as +91XXXXXXXXXX; a subset of the

@@ -22,7 +22,10 @@ async function billing<T>(body: Record<string, unknown>): Promise<T> {
   if (error) {
     const context = (error as { context?: unknown }).context;
     if (context instanceof Response) {
-      const parsed = (await context.clone().json().catch(() => null)) as { error?: unknown } | null;
+      const parsed = (await context
+        .clone()
+        .json()
+        .catch(() => null)) as { error?: unknown } | null;
       if (typeof parsed?.error === "string" && parsed.error) throw new Error(parsed.error);
     }
     throw new Error(error.message);

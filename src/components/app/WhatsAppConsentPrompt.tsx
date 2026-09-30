@@ -44,10 +44,14 @@ export function WhatsAppConsentPrompt() {
           loadProfile(),
           loadEntitlements(),
         ]);
-        const decided = (consents as ConsentRow[]).some((c) => c.purpose === "whatsapp_notifications");
+        const decided = (consents as ConsentRow[]).some(
+          (c) => c.purpose === "whatsapp_notifications",
+        );
         if (cancelled || decided) return;
         setPhone((profile as { phone: string | null }).phone);
-        setWhatsappOnForChamber(Boolean((entitlements as { whatsapp_enabled?: boolean } | null)?.whatsapp_enabled));
+        setWhatsappOnForChamber(
+          Boolean((entitlements as { whatsapp_enabled?: boolean } | null)?.whatsapp_enabled),
+        );
         setVisible(true);
       } catch {
         // A prompt is never worth an error on the dashboard; just don't show it.
@@ -67,7 +71,9 @@ export function WhatsAppConsentPrompt() {
       await grant({ data: { purpose: "whatsapp_notifications" } });
       setDone(true);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Couldn't save your choice. Please try again.");
+      setError(
+        cause instanceof Error ? cause.message : "Couldn't save your choice. Please try again.",
+      );
     } finally {
       setBusy(false);
     }
@@ -75,7 +81,9 @@ export function WhatsAppConsentPrompt() {
 
   async function notNow() {
     setVisible(false);
-    await supabase.auth.updateUser({ data: { whatsapp_prompt_dismissed_at: new Date().toISOString() } });
+    await supabase.auth.updateUser({
+      data: { whatsapp_prompt_dismissed_at: new Date().toISOString() },
+    });
   }
 
   if (!visible) return null;
@@ -157,7 +165,8 @@ export function WhatsAppConsentPrompt() {
                   <Link to="/app/profile" className="font-semibold text-primary hover:underline">
                     Profile
                   </Link>{" "}
-                  and we can send tomorrow's hearings to WhatsApp each evening — only if you say yes.
+                  and we can send tomorrow's hearings to WhatsApp each evening — only if you say
+                  yes.
                 </p>
               )}
             </>

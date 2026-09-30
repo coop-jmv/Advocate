@@ -70,18 +70,23 @@ async function razorpayRequest<T>(method: string, path: string, body?: unknown):
 export async function assertPlanPrice(): Promise<string> {
   const planId = Deno.env.get("RAZORPAY_PLAN_ID");
   if (!planId) throw new RazorpayConfigError("Online payment is not configured yet.");
-  const plan = await razorpayRequest<{ period: string; interval: number; item: { amount: number; currency: string } }>(
-    "GET",
-    `/plans/${planId}`,
-  );
+  const plan = await razorpayRequest<{
+    period: string;
+    interval: number;
+    item: { amount: number; currency: string };
+  }>("GET", `/plans/${planId}`);
   if (
     plan.period !== "monthly" ||
     plan.interval !== 1 ||
     plan.item.currency !== "INR" ||
     plan.item.amount !== PREMIUM_SEAT_AMOUNT_PAISE
   ) {
-    console.error(`[razorpay] plan ${planId} does not match Premium pricing: ${JSON.stringify(plan)}`);
-    throw new RazorpayConfigError("Online payment is misconfigured. Please contact lexdiary.online@gmail.com.");
+    console.error(
+      `[razorpay] plan ${planId} does not match Premium pricing: ${JSON.stringify(plan)}`,
+    );
+    throw new RazorpayConfigError(
+      "Online payment is misconfigured. Please contact lexdiary.online@gmail.com.",
+    );
   }
   return planId;
 }
@@ -139,7 +144,10 @@ export async function checkoutSignatureValid(
 }
 
 // Webhooks: signed over the exact raw request body with the webhook secret.
-export async function webhookSignatureValid(rawBody: string, signature: string | null): Promise<boolean> {
+export async function webhookSignatureValid(
+  rawBody: string,
+  signature: string | null,
+): Promise<boolean> {
   const secret = Deno.env.get("RAZORPAY_WEBHOOK_SECRET");
   if (!secret) throw new RazorpayConfigError("RAZORPAY_WEBHOOK_SECRET is not set.");
   return secretMatches(signature, await hmacSha256Hex(secret, rawBody));
@@ -186,7 +194,9 @@ export async function applySubscription(
         current_period_end: subscription.current_end
           ? new Date(subscription.current_end * 1000).toISOString()
           : null,
-        razorpay_subscription_status: keepScheduledCancel ? "cancel_scheduled" : subscription.status,
+        razorpay_subscription_status: keepScheduledCancel
+          ? "cancel_scheduled"
+          : subscription.status,
       })
       .eq("tenant_id", tenantId);
     if (updateError) throw new Error(updateError.message);

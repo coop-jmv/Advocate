@@ -184,9 +184,17 @@ function Billing() {
       invoiceNumber: requiredText(invoiceForm.invoiceNumber, "Invoice number", { min: 1, max: 40 }),
       clientName: requiredText(invoiceForm.clientName, "Client", { min: 2 }),
       matterTitle: optionalText(invoiceForm.matterTitle, "Matter", LIMITS.title),
-      amount: numberError(invoiceForm.amount, "Amount", { min: 0, max: MAX_INVOICE_INR, minExclusive: true }),
+      amount: numberError(invoiceForm.amount, "Amount", {
+        min: 0,
+        max: MAX_INVOICE_INR,
+        minExclusive: true,
+      }),
       gstAmount:
-        numberError(invoiceForm.gstAmount, "GST", { min: 0, max: MAX_INVOICE_INR, required: false }) ??
+        numberError(invoiceForm.gstAmount, "GST", {
+          min: 0,
+          max: MAX_INVOICE_INR,
+          required: false,
+        }) ??
         (invoiceForm.gstAmount && Number(invoiceForm.gstAmount) > Number(invoiceForm.amount)
           ? "GST can't be more than the amount."
           : null),

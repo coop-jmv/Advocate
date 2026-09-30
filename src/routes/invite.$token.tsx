@@ -245,7 +245,12 @@ function InvitePage() {
                   />
                   <span>
                     I have read and agree to the{" "}
-                    <a href="/privacy" target="_blank" rel="noreferrer" className="text-foreground underline">
+                    <a
+                      href="/privacy"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-foreground underline"
+                    >
                       privacy notice
                     </a>
                     , including how my account data is used and my rights under the DPDP Act.
