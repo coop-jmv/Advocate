@@ -13,7 +13,7 @@ import {
   updateInvoiceStatus,
 } from "@/lib/billing-service";
 import { friendlyErrorMessage } from "@/lib/friendly-error";
-import { FieldError, invalidClass, Req } from "@/components/app/form-fields";
+import { FieldError, FormErrorSummary, invalidClass, Req } from "@/components/app/form-fields";
 import { cn } from "@/lib/utils";
 import {
   collectErrors,
@@ -28,7 +28,7 @@ import {
 type EntryField = "matterTitle" | "task" | "hours" | "rate";
 type InvoiceField = "invoiceNumber" | "clientName" | "matterTitle" | "amount" | "gstAmount";
 
-const INPUT = "mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm";
+const INPUT = "mt-1.5 h-10 w-full rounded border border-input bg-background px-3 text-sm";
 // Sanity ceilings, not business rules: they catch a stray extra zero.
 const MAX_RATE_INR = 100000;
 const MAX_INVOICE_INR = 10000000;
@@ -284,8 +284,12 @@ function Billing() {
       <form
         onSubmit={handleAddInvoice}
         noValidate
-        className="surface-panel mb-4 grid gap-3 rounded p-4 sm:grid-cols-2 lg:grid-cols-6"
+        className="surface-panel mb-4 grid gap-4 rounded p-5 sm:grid-cols-2 lg:grid-cols-6"
       >
+        <FormErrorSummary
+          show={Object.keys(invoiceErrors).length > 0}
+          className="sm:col-span-2 lg:col-span-6"
+        />
         <label className="text-sm">
           <span className="text-eyebrow">
             Invoice #
@@ -368,7 +372,7 @@ function Billing() {
             type="date"
             value={invoiceForm.dueDate}
             onChange={(event) => setInvoiceForm((f) => ({ ...f, dueDate: event.target.value }))}
-            className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
+            className="mt-1.5 h-10 w-full rounded border border-input bg-background px-3 text-sm"
           />
         </label>
         <div className="flex items-center gap-3 sm:col-span-2 lg:col-span-6">
@@ -430,8 +434,12 @@ function Billing() {
       <form
         onSubmit={handleAddEntry}
         noValidate
-        className="surface-panel mb-4 grid gap-3 rounded p-4 sm:grid-cols-2 lg:grid-cols-5"
+        className="surface-panel mb-4 grid gap-4 rounded p-5 sm:grid-cols-2 lg:grid-cols-5"
       >
+        <FormErrorSummary
+          show={Object.keys(entryErrors).length > 0}
+          className="sm:col-span-2 lg:col-span-5"
+        />
         <label className="text-sm sm:col-span-2">
           <span className="text-eyebrow">
             Matter

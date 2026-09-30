@@ -15,7 +15,13 @@ import { getMyMembership } from "@/lib/team.functions";
 import { buildMatterTimeline } from "@/lib/matter-timeline";
 import { todayIsoIST } from "@/lib/date-ist";
 import { confirmPermanentRemoval } from "@/lib/confirm";
-import { FieldError, invalidClass, Req } from "@/components/app/form-fields";
+import {
+  FieldError,
+  FormErrorSummary,
+  invalidClass,
+  Req,
+  TEXTAREA_CLASS,
+} from "@/components/app/form-fields";
 import { cn } from "@/lib/utils";
 import {
   cnrError,
@@ -31,7 +37,7 @@ import {
 type MatterField =
   "title" | "clientName" | "caseNumber" | "cnr" | "court" | "opposingParty" | "filedDate" | "notes";
 
-const INPUT = "mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm";
+const INPUT = "mt-1.5 h-10 w-full rounded border border-input bg-background px-3 text-sm";
 
 export const Route = createFileRoute("/_authenticated/app/cases/$matterId")({
   head: () => ({
@@ -283,9 +289,14 @@ function MatterDetail() {
         <form
           onSubmit={handleSave}
           noValidate
-          className="surface-panel mb-6 grid gap-3 rounded p-5 sm:grid-cols-2 lg:grid-cols-4"
+          className="surface-panel mb-6 grid max-w-3xl gap-4 rounded p-5 sm:grid-cols-2"
         >
-          <label className="text-sm sm:col-span-2 lg:col-span-1">
+          <FormErrorSummary
+            show={Object.keys(fieldErrors).length > 0}
+            message="The matter could not be saved. Review the highlighted details."
+            className="sm:col-span-2"
+          />
+          <label className="text-sm sm:col-span-2">
             <span className="text-eyebrow">
               Matter title
               <Req />
@@ -376,25 +387,25 @@ function MatterDetail() {
                   status: event.target.value as "active" | "closed" | "archived",
                 }))
               }
-              className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
+              className="mt-1.5 h-10 w-full rounded border border-input bg-background px-3 text-sm"
             >
               <option value="active">active</option>
               <option value="closed">closed</option>
               <option value="archived">archived</option>
             </select>
           </label>
-          <label className="text-sm sm:col-span-2 lg:col-span-4">
+          <label className="text-sm sm:col-span-2">
             <span className="text-eyebrow">Notes</span>
             <textarea
               value={editForm.notes}
               onChange={(event) => setEditForm((f) => ({ ...f, notes: event.target.value }))}
               rows={3}
               maxLength={LIMITS.notes}
-              className={cn(INPUT, invalidClass(fieldErrors.notes))}
+              className={cn(TEXTAREA_CLASS, invalidClass(fieldErrors.notes))}
             />
             <FieldError message={fieldErrors.notes} />
           </label>
-          <div className="flex items-center gap-2 sm:col-span-2 lg:col-span-4">
+          <div className="flex items-center gap-2 sm:col-span-2">
             <button
               type="submit"
               disabled={saving}

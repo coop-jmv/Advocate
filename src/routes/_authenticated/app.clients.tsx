@@ -4,7 +4,14 @@ import { useServerFn } from "@tanstack/react-start";
 import { Loader2, Plus, Pencil, Trash2 } from "lucide-react";
 import { AppShell } from "@/components/app/AppShell";
 import { DataTable } from "@/components/app/primitives";
-import { FieldError, invalidClass, MobileInput, Req } from "@/components/app/form-fields";
+import {
+  FieldError,
+  FormErrorSummary,
+  invalidClass,
+  MobileInput,
+  Req,
+  TEXTAREA_CLASS,
+} from "@/components/app/form-fields";
 // Calls the Clients microservice (services/clients/) directly from the
 // browser — not a TanStack server function, so no useServerFn wrapping.
 // See src/lib/clients-service.ts for why.
@@ -83,7 +90,7 @@ function formFromRow(client: ClientRow): ClientForm {
   };
 }
 
-const INPUT = "mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm";
+const INPUT = "mt-1.5 h-10 w-full rounded border border-input bg-background px-3 text-sm";
 
 function ClientFields({
   form,
@@ -158,14 +165,15 @@ function ClientFields({
         />
         <FieldError message={errors.email} />
       </label>
-      <label className="text-sm sm:col-span-2 lg:col-span-4">
+      <label className="text-sm sm:col-span-2">
         <span className="text-eyebrow">Notes</span>
-        <input
+        <textarea
           value={form.notes}
           onChange={(event) => onChange({ notes: event.target.value })}
           maxLength={LIMITS.notes}
+          rows={2}
           placeholder="Optional"
-          className={cn(INPUT, invalidClass(errors.notes))}
+          className={cn(TEXTAREA_CLASS, invalidClass(errors.notes))}
         />
         <FieldError message={errors.notes} />
       </label>
@@ -299,14 +307,16 @@ function Clients() {
       <form
         onSubmit={handleCreate}
         noValidate
-        className="surface-panel mb-6 grid gap-3 rounded p-4 sm:grid-cols-2 lg:grid-cols-4"
+        className="surface-panel mb-6 grid max-w-3xl gap-4 rounded p-5 sm:grid-cols-2"
       >
+        <h2 className="font-display text-lg font-bold sm:col-span-2">Add client</h2>
+        <FormErrorSummary show={Object.keys(formErrors).length > 0} className="sm:col-span-2" />
         <ClientFields
           form={form}
           errors={formErrors}
           onChange={(patch) => setForm((f) => ({ ...f, ...patch }))}
         />
-        <div className="flex items-end gap-3 sm:col-span-2 lg:col-span-4">
+        <div className="flex items-end gap-3 sm:col-span-2">
           <button
             type="submit"
             disabled={creating}
@@ -351,14 +361,19 @@ function Clients() {
                   <form
                     onSubmit={handleSaveEdit}
                     noValidate
-                    className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
+                    className="grid max-w-3xl gap-4 sm:grid-cols-2"
                   >
+                    <FormErrorSummary
+                      show={Object.keys(editErrors).length > 0}
+                      message="This client's record is missing details. Complete the highlighted fields."
+                      className="sm:col-span-2"
+                    />
                     <ClientFields
                       form={editForm}
                       errors={editErrors}
                       onChange={(patch) => setEditForm((f) => ({ ...f, ...patch }))}
                     />
-                    <div className="flex items-center gap-2 sm:col-span-2 lg:col-span-4">
+                    <div className="flex items-center gap-2 sm:col-span-2">
                       <button
                         type="submit"
                         disabled={savingEdit}
