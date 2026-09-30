@@ -86,7 +86,9 @@ function AuthPage() {
   // ?plan=premium lets the pricing page open registration with Premium chosen.
   const [plan, setPlan] = useState<"free" | "premium">(() => {
     if (typeof window === "undefined") return "free";
-    return new URLSearchParams(window.location.search).get("plan") === "premium" ? "premium" : "free";
+    return new URLSearchParams(window.location.search).get("plan") === "premium"
+      ? "premium"
+      : "free";
   });
   const [premiumSeats, setPremiumSeats] = useState(1);
   const [busy, setBusy] = useState(false);
@@ -171,7 +173,9 @@ function AuthPage() {
               phone: toE164(phone),
               // Every account starts on Free; this sends the first sign-in to
               // checkout for these seats (see _authenticated/route.tsx).
-              ...(plan === "premium" ? { plan_intent: "premium", premium_seats: premiumSeats } : {}),
+              ...(plan === "premium"
+                ? { plan_intent: "premium", premium_seats: premiumSeats }
+                : {}),
             },
           },
         });
@@ -392,7 +396,9 @@ function AuthPage() {
                       >
                         <Minus className="size-3" />
                       </button>
-                      <span className="min-w-6 text-center font-semibold tabular-nums">{premiumSeats}</span>
+                      <span className="min-w-6 text-center font-semibold tabular-nums">
+                        {premiumSeats}
+                      </span>
                       <button
                         type="button"
                         disabled={premiumSeats >= PREMIUM_MAX_SEATS}
@@ -404,7 +410,8 @@ function AuthPage() {
                       </button>
                     </span>
                     <span className="ml-auto text-xs text-muted-foreground">
-                      {inr(premiumQuote(premiumSeats).subtotal)} + {inr(premiumQuote(premiumSeats).gst)} GST ={" "}
+                      {inr(premiumQuote(premiumSeats).subtotal)} +{" "}
+                      {inr(premiumQuote(premiumSeats).gst)} GST ={" "}
                       <span className="font-semibold text-foreground">
                         {inr(premiumQuote(premiumSeats).total)}/month
                       </span>

@@ -60,7 +60,11 @@ type Entitlements = {
 };
 
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
+  return new Date(iso).toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
 }
 
 function SeatStepper({
@@ -85,7 +89,9 @@ function SeatStepper({
       >
         <Minus className="size-4" />
       </button>
-      <span className="min-w-10 text-center font-display text-lg font-bold tabular-nums">{seats}</span>
+      <span className="min-w-10 text-center font-display text-lg font-bold tabular-nums">
+        {seats}
+      </span>
       <button
         type="button"
         disabled={disabled || seats >= PREMIUM_MAX_SEATS}
@@ -95,7 +101,9 @@ function SeatStepper({
       >
         <Plus className="size-4" />
       </button>
-      <span className="text-sm text-muted-foreground">{seats === 1 ? "seat (just you)" : "seats"}</span>
+      <span className="text-sm text-muted-foreground">
+        {seats === 1 ? "seat (just you)" : "seats"}
+      </span>
     </div>
   );
 }
@@ -129,7 +137,9 @@ function Subscription() {
 
   const [entitlements, setEntitlements] = useState<Entitlements | null>(null);
   const [role, setRole] = useState<string | null>(null);
-  const [prefill, setPrefill] = useState<{ name?: string | undefined; email?: string | undefined }>({});
+  const [prefill, setPrefill] = useState<{ name?: string | undefined; email?: string | undefined }>(
+    {},
+  );
   const [loading, setLoading] = useState(true);
   const [seats, setSeats] = useState(requestedSeats ?? 1);
   const [busy, setBusy] = useState(false);
@@ -225,7 +235,9 @@ function Subscription() {
     if (
       !confirmDestructive(
         `Cancel Premium? It stays active until ${
-          entitlements?.current_period_end ? formatDate(entitlements.current_period_end) : "the end of this period"
+          entitlements?.current_period_end
+            ? formatDate(entitlements.current_period_end)
+            : "the end of this period"
         }, then your chamber moves to the Free plan. Nothing is deleted.`,
       )
     )
@@ -246,7 +258,9 @@ function Subscription() {
         </p>
       ) : null}
       {notice ? (
-        <p className="mb-4 rounded border border-accent/30 bg-accent/10 px-3 py-2 text-sm">{notice}</p>
+        <p className="mb-4 rounded border border-accent/30 bg-accent/10 px-3 py-2 text-sm">
+          {notice}
+        </p>
       ) : null}
 
       {loading ? (
@@ -259,7 +273,8 @@ function Subscription() {
             You're on Premium — {entitlements.seats} {entitlements.seats === 1 ? "seat" : "seats"}
           </h2>
           <p className="mt-1.5 text-sm text-muted-foreground">
-            {inr(premiumQuote(entitlements.seats).total)} a month including GST, billed through Razorpay.
+            {inr(premiumQuote(entitlements.seats).total)} a month including GST, billed through
+            Razorpay.
             {entitlements.current_period_end
               ? cancelScheduled
                 ? ` Ends on ${formatDate(entitlements.current_period_end)}, after which your chamber moves to the Free plan.`
@@ -268,12 +283,14 @@ function Subscription() {
           </p>
           {pastDue ? (
             <p className="mt-3 rounded border border-warning/40 bg-warning/10 px-3 py-2 text-sm">
-              The last renewal payment didn't go through. Razorpay will retry it automatically — check
-              the card or UPI mandate you paid with.
+              The last renewal payment didn't go through. Razorpay will retry it automatically —
+              check the card or UPI mandate you paid with.
             </p>
           ) : null}
 
-          {canManage && !cancelScheduled && entitlements.razorpay_subscription_status === "active" ? (
+          {canManage &&
+          !cancelScheduled &&
+          entitlements.razorpay_subscription_status === "active" ? (
             <div className="mt-5 grid gap-6 border-t border-border pt-5 sm:grid-cols-2">
               <div>
                 <p className="text-eyebrow">Change seats</p>
@@ -296,7 +313,8 @@ function Subscription() {
                   className="mt-3 flex items-center gap-2 rounded bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-ink disabled:opacity-60"
                 >
                   {busy ? <Loader2 className="size-4 animate-spin" /> : null}
-                  Update to {seats} {seats === 1 ? "seat" : "seats"} — {inr(premiumQuote(seats).total)}/month
+                  Update to {seats} {seats === 1 ? "seat" : "seats"} —{" "}
+                  {inr(premiumQuote(seats).total)}/month
                 </button>
               </div>
               <div>
@@ -331,8 +349,8 @@ function Subscription() {
             <div className="surface-panel mb-6 rounded border-l-4 border-warning p-5">
               <h2 className="font-display text-base font-bold">
                 Renewal due — {entitlements.subscription_grace_days_left} day
-                {entitlements.subscription_grace_days_left === 1 ? "" : "s"} left before your chamber
-                goes read-only
+                {entitlements.subscription_grace_days_left === 1 ? "" : "s"} left before your
+                chamber goes read-only
               </h2>
             </div>
           ) : (
@@ -348,9 +366,9 @@ function Subscription() {
                 </p>
               ) : entitlements.plan === "trial" ? (
                 <p className="mt-1.5 text-sm text-muted-foreground">
-                  {entitlements.trial_days_left ?? 0} day{entitlements.trial_days_left === 1 ? "" : "s"}{" "}
-                  left on your trial. Everything is unlocked until then; afterwards you move to the Free
-                  plan automatically.
+                  {entitlements.trial_days_left ?? 0} day
+                  {entitlements.trial_days_left === 1 ? "" : "s"} left on your trial. Everything is
+                  unlocked until then; afterwards you move to the Free plan automatically.
                 </p>
               ) : null}
             </div>
@@ -371,8 +389,8 @@ function Subscription() {
                 ))}
               </ul>
               <p className="mt-4 text-xs text-muted-foreground">
-                Documents & OCR, time tracking & billing, AI drafting, WhatsApp reminders and e-Courts
-                lookups are add-ons — write to {BILLING_EMAIL} to add them.
+                Documents & OCR, time tracking & billing, AI drafting, WhatsApp reminders and
+                e-Courts lookups are add-ons — write to {BILLING_EMAIL} to add them.
               </p>
             </div>
 

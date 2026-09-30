@@ -332,8 +332,8 @@ function Team() {
               <h3 className="font-display text-sm font-bold">Add a teammate</h3>
               <p className="mt-2 text-sm text-muted-foreground">
                 Your {planLabel[ent?.plan ?? "free"] ?? ent?.plan} plan covers a single advocate.
-                Premium is {rupees(PREMIUM_SEAT_PRICE_INR)} per user per month plus GST — add as many
-                colleagues as you need.
+                Premium is {rupees(PREMIUM_SEAT_PRICE_INR)} per user per month plus GST — add as
+                many colleagues as you need.
               </p>
               <Link
                 to="/app/subscription"

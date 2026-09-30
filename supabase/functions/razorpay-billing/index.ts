@@ -63,9 +63,13 @@ Deno.serve(async (req) => {
     return errorResponse(req, "Invalid JSON body");
   }
 
-  const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
-    auth: { persistSession: false },
-  });
+  const admin = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    {
+      auth: { persistSession: false },
+    },
+  );
 
   const { data: license } = await admin
     .from("licenses")
@@ -87,7 +91,9 @@ Deno.serve(async (req) => {
   };
 
   const parseSeats = (value: unknown): number | null =>
-    typeof value === "number" && Number.isInteger(value) && value >= 1 && value <= MAX_SEATS ? value : null;
+    typeof value === "number" && Number.isInteger(value) && value >= 1 && value <= MAX_SEATS
+      ? value
+      : null;
 
   const hasLiveSubscription =
     !!license.razorpay_subscription_id &&
@@ -100,11 +106,17 @@ Deno.serve(async (req) => {
         const seats = parseSeats(body.seats);
         if (!seats) return errorResponse(req, `Choose between 1 and ${MAX_SEATS} seats.`);
         if (license.plan === "premium" && hasLiveSubscription) {
-          return errorResponse(req, "This chamber is already on Premium. Change the number of seats instead.");
+          return errorResponse(
+            req,
+            "This chamber is already on Premium. Change the number of seats instead.",
+          );
         }
         const inUse = await seatsInUse();
         if (seats < inUse) {
-          return errorResponse(req, `Your chamber already uses ${inUse} seats, so choose at least ${inUse}.`);
+          return errorResponse(
+            req,
+            `Your chamber already uses ${inUse} seats, so choose at least ${inUse}.`,
+          );
         }
 
         const planId = await assertPlanPrice();
@@ -125,25 +137,41 @@ Deno.serve(async (req) => {
 
       case "verify": {
         const { paymentId, subscriptionId, signature } = body;
-        if (typeof paymentId !== "string" || typeof subscriptionId !== "string" || typeof signature !== "string") {
+        if (
+          typeof paymentId !== "string" ||
+          typeof subscriptionId !== "string" ||
+          typeof signature !== "string"
+        ) {
           return errorResponse(req, "Missing payment details.");
         }
         if (subscriptionId !== license.razorpay_subscription_id) {
-          return errorResponse(req, "That payment is not for this chamber's current checkout.", 409);
+          return errorResponse(
+            req,
+            "That payment is not for this chamber's current checkout.",
+            409,
+          );
         }
         if (!(await checkoutSignatureValid(paymentId, subscriptionId, signature))) {
           return errorResponse(req, "The payment could not be verified.", 400);
         }
         // The signature proves checkout succeeded; the licence is still set
         // from Razorpay's own record, the same way the webhook does it.
-        const result = await applySubscription(admin, tenantId, await fetchSubscription(subscriptionId));
+        const result = await applySubscription(
+          admin,
+          tenantId,
+          await fetchSubscription(subscriptionId),
+        );
         return jsonResponse(req, { result });
       }
 
       case "seats": {
         const seats = parseSeats(body.seats);
         if (!seats) return errorResponse(req, `Choose between 1 and ${MAX_SEATS} seats.`);
-        if (license.plan !== "premium" || !license.razorpay_subscription_id || license.razorpay_subscription_status !== "active") {
+        if (
+          license.plan !== "premium" ||
+          !license.razorpay_subscription_id ||
+          license.razorpay_subscription_status !== "active"
+        ) {
           return errorResponse(req, "Seats can only be changed on an active Premium subscription.");
         }
         if (seats === license.seats) return jsonResponse(req, { result: "unchanged" });
@@ -165,7 +193,11 @@ Deno.serve(async (req) => {
       }
 
       case "cancel": {
-        if (license.plan !== "premium" || !license.razorpay_subscription_id || license.razorpay_subscription_status !== "active") {
+        if (
+          license.plan !== "premium" ||
+          !license.razorpay_subscription_id ||
+          license.razorpay_subscription_status !== "active"
+        ) {
           return errorResponse(req, "There is no active Premium subscription to cancel.");
         }
         await cancelSubscriptionAtPeriodEnd(license.razorpay_subscription_id);
