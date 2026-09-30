@@ -3,7 +3,14 @@ import { useEffect, useState } from "react";
 import { Scale, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { logAuthEvent } from "@/lib/edge-functions";
-import { FieldError, invalidClass, MobileInput, Req } from "@/components/app/form-fields";
+import {
+  FieldError,
+  FieldHint,
+  FormErrorSummary,
+  invalidClass,
+  MobileInput,
+  Req,
+} from "@/components/app/form-fields";
 import { passwordLengthError, MIN_PASSWORD_LENGTH } from "@/lib/password-policy";
 import { cn } from "@/lib/utils";
 import {
@@ -156,6 +163,7 @@ function InvitePage() {
               </p>
 
               <form onSubmit={handleSubmit} noValidate className="mt-5 space-y-4">
+                <FormErrorSummary show={Object.keys(fieldErrors).length > 0} />
                 <div className="grid gap-4 sm:grid-cols-2">
                   <label className="block text-sm">
                     <span className="text-eyebrow">
@@ -170,7 +178,7 @@ function InvitePage() {
                       autoComplete="given-name"
                       aria-invalid={fieldErrors.firstName ? true : undefined}
                       className={cn(
-                        "mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm",
+                        "mt-1.5 h-10 w-full rounded border border-input bg-background px-3 text-sm",
                         invalidClass(fieldErrors.firstName),
                       )}
                       placeholder="Priya"
@@ -190,7 +198,7 @@ function InvitePage() {
                       autoComplete="family-name"
                       aria-invalid={fieldErrors.lastName ? true : undefined}
                       className={cn(
-                        "mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm",
+                        "mt-1.5 h-10 w-full rounded border border-input bg-background px-3 text-sm",
                         invalidClass(fieldErrors.lastName),
                       )}
                       placeholder="Nair"
@@ -226,14 +234,14 @@ function InvitePage() {
                     autoComplete="new-password"
                     aria-invalid={fieldErrors.password ? true : undefined}
                     className={cn(
-                      "mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm",
+                      "mt-1.5 h-10 w-full rounded border border-input bg-background px-3 text-sm",
                       invalidClass(fieldErrors.password),
                     )}
                   />
-                  <FieldError message={fieldErrors.password} />
-                  <span className="mt-1 block text-xs text-muted-foreground">
-                    At least {MIN_PASSWORD_LENGTH} characters.
-                  </span>
+                  <FieldHint
+                    hint={`At least ${MIN_PASSWORD_LENGTH} characters.`}
+                    error={fieldErrors.password}
+                  />
                 </label>
                 <label className="flex items-start gap-2.5 text-xs text-muted-foreground">
                   <input

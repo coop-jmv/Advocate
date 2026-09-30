@@ -8,7 +8,7 @@ import { DataTable, Tag, type Tone } from "@/components/app/primitives";
 import { createMatter, listMatters } from "@/lib/matters-service";
 import { friendlyErrorMessage } from "@/lib/friendly-error";
 import { lookupEcourtsCase } from "@/lib/edge-functions";
-import { FieldError, invalidClass, Req } from "@/components/app/form-fields";
+import { FieldError, FormErrorSummary, invalidClass, Req } from "@/components/app/form-fields";
 import { cn } from "@/lib/utils";
 import {
   cnrError,
@@ -24,7 +24,7 @@ import {
 type MatterField =
   "title" | "clientName" | "cnr" | "caseNumber" | "court" | "opposingParty" | "filedDate";
 
-const INPUT = "mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm";
+const INPUT = "mt-1.5 h-10 w-full rounded border border-input bg-background px-3 text-sm";
 
 export const Route = createFileRoute("/_authenticated/app/cases/")({
   head: () => ({
@@ -202,9 +202,15 @@ function Cases() {
       <form
         onSubmit={handleCreate}
         noValidate
-        className="surface-panel mb-6 grid gap-3 rounded p-4 sm:grid-cols-2 lg:grid-cols-3"
+        className="surface-panel mb-6 grid max-w-3xl gap-4 rounded p-5 sm:grid-cols-2"
       >
-        <label className="text-sm sm:col-span-2 lg:col-span-1">
+        <h2 className="font-display text-lg font-bold sm:col-span-2">New matter</h2>
+        <FormErrorSummary
+          show={Object.keys(formErrors).length > 0}
+          message="The matter could not be saved. Review the highlighted details."
+          className="sm:col-span-2"
+        />
+        <label className="text-sm sm:col-span-2">
           <span className="text-eyebrow">
             Matter title
             <Req />
@@ -232,7 +238,7 @@ function Cases() {
         </label>
         <label className="text-sm">
           <span className="text-eyebrow">CNR (optional)</span>
-          <div className="mt-1.5 flex gap-1.5">
+          <div className="mt-1.5 flex h-10">
             <input
               value={form.cnr}
               onChange={(event) =>
@@ -242,7 +248,7 @@ function Cases() {
               maxLength={16}
               aria-invalid={formErrors.cnr ? true : undefined}
               className={cn(
-                "w-full rounded border border-input bg-background px-3 py-2 text-sm uppercase",
+                "w-full min-w-0 rounded-l border border-input bg-background px-3 font-mono text-sm uppercase",
                 invalidClass(formErrors.cnr),
               )}
             />
@@ -251,7 +257,7 @@ function Cases() {
               onClick={() => void handleVerifyCnr()}
               disabled={verifying}
               title="Verify & auto-fill from e-Courts"
-              className="flex shrink-0 items-center gap-1.5 rounded border border-input px-3 py-2 text-xs font-semibold transition-colors hover:bg-secondary disabled:opacity-60"
+              className="flex shrink-0 items-center gap-1.5 rounded-r border border-l-0 border-primary bg-primary px-3 text-xs font-semibold text-primary-foreground transition-colors hover:bg-ink disabled:opacity-60"
             >
               {verifying ? (
                 <Loader2 className="size-3.5 animate-spin" />
@@ -263,7 +269,12 @@ function Cases() {
           </div>
           <FieldError message={formErrors.cnr} />
           {verifyNotice ? (
-            <span className="mt-1 block text-xs text-muted-foreground">{verifyNotice}</span>
+            <span
+              role="status"
+              className="mt-1.5 block rounded border border-docket-sapphire/40 bg-docket-sapphire/10 px-2.5 py-1.5 text-xs"
+            >
+              {verifyNotice}
+            </span>
           ) : null}
         </label>
         <label className="text-sm">
@@ -307,7 +318,7 @@ function Cases() {
           />
           <FieldError message={formErrors.filedDate} />
         </label>
-        <div className="flex items-end gap-3 sm:col-span-2 lg:col-span-3">
+        <div className="flex items-end gap-3 sm:col-span-2">
           <button
             type="submit"
             disabled={creating}

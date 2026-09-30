@@ -9,7 +9,7 @@ import { StatCard, Tag, type Tone } from "@/components/app/primitives";
 // useServerFn wrapping.
 import { listMatters } from "@/lib/matters-service";
 import { todayIsoIST } from "@/lib/date-ist";
-import { FieldError, invalidClass, Req } from "@/components/app/form-fields";
+import { FieldError, FormErrorSummary, invalidClass, Req } from "@/components/app/form-fields";
 import { cn } from "@/lib/utils";
 import {
   collectErrors,
@@ -369,7 +369,7 @@ function CauseListIntelligence() {
                     maxLength={120}
                     aria-invalid={sourceErrors.court ? true : undefined}
                     className={cn(
-                      "mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm",
+                      "mt-1.5 h-10 w-full rounded border border-input bg-background px-3 text-sm",
                       invalidClass(sourceErrors.court),
                     )}
                   />
@@ -382,7 +382,7 @@ function CauseListIntelligence() {
                     onChange={(e) => setNewSource((s) => ({ ...s, bench: e.target.value }))}
                     placeholder="Court 4, Justice Sharma"
                     maxLength={120}
-                    className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
+                    className="mt-1.5 h-10 w-full rounded border border-input bg-background px-3 text-sm"
                   />
                   <FieldError message={sourceErrors.bench} />
                 </label>
@@ -453,6 +453,7 @@ function CauseListIntelligence() {
               case number, CNR, petitioner, respondent, advocates, stage, court hall. Trailing
               columns are optional.
             </p>
+            <FormErrorSummary show={Object.keys(importErrors).length > 0} className="mt-3" />
             <div className="mt-3 grid gap-3 sm:grid-cols-3">
               <label className="text-sm">
                 <span className="text-eyebrow">
@@ -464,7 +465,7 @@ function CauseListIntelligence() {
                   onChange={(e) => setImportSourceId(e.target.value)}
                   aria-invalid={importErrors.source ? true : undefined}
                   className={cn(
-                    "mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm",
+                    "mt-1.5 h-10 w-full rounded border border-input bg-background px-3 text-sm",
                     invalidClass(importErrors.source),
                   )}
                 >
@@ -489,7 +490,7 @@ function CauseListIntelligence() {
                   onChange={(e) => setListDate(e.target.value)}
                   aria-invalid={importErrors.listDate ? true : undefined}
                   className={cn(
-                    "mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm",
+                    "mt-1.5 h-10 w-full rounded border border-input bg-background px-3 text-sm",
                     invalidClass(importErrors.listDate),
                   )}
                 />

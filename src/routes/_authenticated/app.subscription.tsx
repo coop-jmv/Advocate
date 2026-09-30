@@ -1,12 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Check, Loader2, Minus, Plus } from "lucide-react";
+import { Check, CreditCard, Loader2 } from "lucide-react";
 import { AppShell } from "@/components/app/AppShell";
 import { SettingsTabs } from "@/components/app/SettingsTabs";
 import { supabase } from "@/integrations/supabase/client";
 import { getEntitlements, getMyMembership } from "@/lib/team.functions";
-import { confirmDestructive } from "@/lib/confirm";
+import { DocketStripe, PriceBreakdown, SeatStepper } from "@/components/app/premium-ui";
 import {
   PREMIUM_MAX_SEATS,
   PREMIUM_SEAT_PRICE_INR,
@@ -67,69 +67,6 @@ function formatDate(iso: string): string {
   });
 }
 
-function SeatStepper({
-  seats,
-  min,
-  onChange,
-  disabled,
-}: {
-  seats: number;
-  min: number;
-  onChange: (seats: number) => void;
-  disabled: boolean;
-}) {
-  return (
-    <div className="flex items-center gap-2">
-      <button
-        type="button"
-        disabled={disabled || seats <= min}
-        onClick={() => onChange(seats - 1)}
-        className="flex size-8 items-center justify-center rounded border border-input hover:bg-secondary disabled:opacity-40"
-        aria-label="One seat fewer"
-      >
-        <Minus className="size-4" />
-      </button>
-      <span className="min-w-10 text-center font-display text-lg font-bold tabular-nums">
-        {seats}
-      </span>
-      <button
-        type="button"
-        disabled={disabled || seats >= PREMIUM_MAX_SEATS}
-        onClick={() => onChange(seats + 1)}
-        className="flex size-8 items-center justify-center rounded border border-input hover:bg-secondary disabled:opacity-40"
-        aria-label="One seat more"
-      >
-        <Plus className="size-4" />
-      </button>
-      <span className="text-sm text-muted-foreground">
-        {seats === 1 ? "seat (just you)" : "seats"}
-      </span>
-    </div>
-  );
-}
-
-function PriceBreakdown({ seats }: { seats: number }) {
-  const quote = premiumQuote(seats);
-  return (
-    <dl className="space-y-1.5 text-sm">
-      <div className="flex justify-between">
-        <dt className="text-muted-foreground">
-          {seats} × {inr(PREMIUM_SEAT_PRICE_INR)}
-        </dt>
-        <dd>{inr(quote.subtotal)}</dd>
-      </div>
-      <div className="flex justify-between">
-        <dt className="text-muted-foreground">GST (18%)</dt>
-        <dd>{inr(quote.gst)}</dd>
-      </div>
-      <div className="flex justify-between border-t border-border pt-1.5">
-        <dt className="font-medium">Total per month</dt>
-        <dd className="font-display font-bold">{inr(quote.total)}</dd>
-      </div>
-    </dl>
-  );
-}
-
 function Subscription() {
   const { seats: requestedSeats } = Route.useSearch();
   const loadEntitlements = useServerFn(getEntitlements);
@@ -145,6 +82,7 @@ function Subscription() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [confirmingCancel, setConfirmingCancel] = useState(false);
 
   async function reload() {
     const [ent, me] = await Promise.all([loadEntitlements(), loadMe()]);
@@ -231,22 +169,12 @@ function Subscription() {
         : `Your chamber goes down to ${seats} seats at the next renewal.`;
     });
 
-  const handleCancel = () => {
-    if (
-      !confirmDestructive(
-        `Cancel Premium? It stays active until ${
-          entitlements?.current_period_end
-            ? formatDate(entitlements.current_period_end)
-            : "the end of this period"
-        }, then your chamber moves to the Free plan. Nothing is deleted.`,
-      )
-    )
-      return;
-    void run(async () => {
+  const handleCancel = () =>
+    run(async () => {
       await cancelPremium();
+      setConfirmingCancel(false);
       return "Premium will end at the close of this billing period.";
     });
-  };
 
   return (
     <AppShell title="Subscription" subtitle="Your plan and billing">
@@ -268,73 +196,128 @@ function Subscription() {
           <Loader2 className="size-4 animate-spin" /> Loading your plan…
         </p>
       ) : !entitlements ? null : isPremium ? (
-        <div className="surface-panel rounded border-l-4 border-primary p-6">
-          <h2 className="font-display text-lg font-bold">
-            You're on Premium — {entitlements.seats} {entitlements.seats === 1 ? "seat" : "seats"}
-          </h2>
-          <p className="mt-1.5 text-sm text-muted-foreground">
-            {inr(premiumQuote(entitlements.seats).total)} a month including GST, billed through
-            Razorpay.
-            {entitlements.current_period_end
-              ? cancelScheduled
-                ? ` Ends on ${formatDate(entitlements.current_period_end)}, after which your chamber moves to the Free plan.`
-                : ` Renews on ${formatDate(entitlements.current_period_end)}.`
-              : ""}
-          </p>
-          {pastDue ? (
-            <p className="mt-3 rounded border border-warning/40 bg-warning/10 px-3 py-2 text-sm">
-              The last renewal payment didn't go through. Razorpay will retry it automatically —
-              check the card or UPI mandate you paid with.
-            </p>
-          ) : null}
-
-          {canManage &&
-          !cancelScheduled &&
-          entitlements.razorpay_subscription_status === "active" ? (
-            <div className="mt-5 grid gap-6 border-t border-border pt-5 sm:grid-cols-2">
-              <div>
-                <p className="text-eyebrow">Change seats</p>
-                <div className="mt-2">
-                  <SeatStepper
-                    seats={seats}
-                    min={Math.max(entitlements.seats_used, 1)}
-                    onChange={setSeats}
-                    disabled={busy}
-                  />
-                </div>
-                <p className="mt-2 text-xs text-muted-foreground">
-                  New seats are added straight away. Fewer seats take effect at the next renewal.
-                  Seats in use can't be removed — remove a member or revoke an invite first.
-                </p>
-                <button
-                  type="button"
-                  disabled={busy || seats === entitlements.seats}
-                  onClick={() => void handleSeatChange()}
-                  className="mt-3 flex items-center gap-2 rounded bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-ink disabled:opacity-60"
-                >
-                  {busy ? <Loader2 className="size-4 animate-spin" /> : null}
-                  Update to {seats} {seats === 1 ? "seat" : "seats"} —{" "}
-                  {inr(premiumQuote(seats).total)}/month
-                </button>
-              </div>
-              <div>
-                <p className="text-eyebrow">Cancel</p>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  Premium stays on until the end of the period you've paid for. After that your
-                  chamber moves to the Free plan — nothing is deleted.
-                </p>
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={handleCancel}
-                  className="mt-3 text-sm font-semibold text-destructive underline-offset-4 hover:underline disabled:opacity-60"
-                >
-                  Cancel Premium
-                </button>
-              </div>
+        <section className="surface-panel max-w-2xl overflow-hidden rounded">
+          <DocketStripe />
+          <div className="p-5 sm:p-6">
+            <div className="flex items-center justify-between gap-3">
+              <span className="rounded-full bg-docket-emerald/15 px-3 py-1 text-xs font-semibold">
+                {cancelScheduled ? "PREMIUM — ENDING" : "PREMIUM ACTIVE"}
+              </span>
+              <Check aria-hidden="true" className="size-5 text-docket-emerald" />
             </div>
-          ) : null}
-        </div>
+            <h2 className="mt-4 font-display text-2xl font-bold">
+              You're on Premium — {entitlements.seats} {entitlements.seats === 1 ? "seat" : "seats"}
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              {inr(premiumQuote(entitlements.seats).total)} a month including GST, billed through
+              Razorpay.
+              {entitlements.current_period_end
+                ? cancelScheduled
+                  ? ` Ends on ${formatDate(entitlements.current_period_end)}, after which your chamber moves to the Free plan.`
+                  : ` Renews on ${formatDate(entitlements.current_period_end)}.`
+                : ""}
+            </p>
+            {pastDue ? (
+              <p className="mt-3 rounded border border-warning/40 bg-warning/10 px-3 py-2 text-sm">
+                The last renewal payment didn't go through. Razorpay will retry it automatically —
+                check the card or UPI mandate you paid with.
+              </p>
+            ) : null}
+
+            {canManage &&
+            !cancelScheduled &&
+            entitlements.razorpay_subscription_status === "active" ? (
+              <>
+                <div className="mt-6 rounded border border-border bg-background p-4">
+                  <div className="flex flex-wrap items-end justify-between gap-3">
+                    <div>
+                      <span className="text-eyebrow block">Change seats</span>
+                      <div className="mt-1.5">
+                        <SeatStepper
+                          value={seats}
+                          onChange={setSeats}
+                          min={Math.max(entitlements.seats_used, 1)}
+                          disabled={busy}
+                          label="seats"
+                        />
+                      </div>
+                    </div>
+                    <span className="text-right text-xs text-muted-foreground">
+                      {seats > entitlements.seats
+                        ? "Added straight away"
+                        : seats < entitlements.seats
+                          ? "From your next renewal"
+                          : `${entitlements.seats_used} of ${entitlements.seats} in use`}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={busy || seats === entitlements.seats}
+                    onClick={() => void handleSeatChange()}
+                    className="mt-4 flex h-10 w-full items-center justify-center gap-2 rounded bg-primary px-4 text-sm font-semibold text-primary-foreground hover:bg-ink disabled:opacity-60"
+                  >
+                    {busy ? <Loader2 className="size-4 animate-spin" /> : null}
+                    {seats === entitlements.seats
+                      ? "Choose a different number of seats"
+                      : `Update to ${seats} ${seats === 1 ? "seat" : "seats"} — ${inr(premiumQuote(seats).total)}/month`}
+                  </button>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Seats in use can't be removed — remove a member or revoke an invite first.
+                  </p>
+                </div>
+
+                <div className="mt-6 border-t border-border pt-5">
+                  {!confirmingCancel ? (
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => setConfirmingCancel(true)}
+                      className="text-sm text-muted-foreground underline underline-offset-4 hover:text-destructive disabled:opacity-60"
+                    >
+                      Cancel Premium
+                    </button>
+                  ) : (
+                    <div
+                      role="alertdialog"
+                      aria-labelledby="cancel-premium-title"
+                      className="rounded border border-destructive/40 bg-destructive/5 p-4"
+                    >
+                      <p id="cancel-premium-title" className="text-sm font-semibold">
+                        Cancel at the end of this billing period?
+                      </p>
+                      <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                        Premium stays on until{" "}
+                        {entitlements.current_period_end
+                          ? formatDate(entitlements.current_period_end)
+                          : "the end of this period"}
+                        . After that your chamber moves to the Free plan — nothing is deleted.
+                      </p>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={() => void handleCancel()}
+                          className="flex items-center gap-2 rounded bg-destructive px-3 py-1.5 text-sm font-semibold text-white hover:bg-destructive/90 disabled:opacity-60"
+                        >
+                          {busy ? <Loader2 className="size-4 animate-spin" /> : null}
+                          Confirm cancellation
+                        </button>
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={() => setConfirmingCancel(false)}
+                          className="rounded border border-input px-3 py-1.5 text-sm font-medium hover:bg-secondary"
+                        >
+                          Keep Premium
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </>
+            ) : null}
+          </div>
+        </section>
       ) : (
         <>
           {entitlements.subscription_expired ? (
@@ -374,61 +357,75 @@ function Subscription() {
             </div>
           )}
 
-          <div className="surface-panel grid gap-8 rounded p-6 lg:grid-cols-[1fr_320px]">
-            <div>
-              <h3 className="font-display text-lg font-bold">Upgrade to Premium</h3>
-              <p className="mt-1 text-sm text-muted-foreground">
+          <section className="surface-panel max-w-2xl overflow-hidden rounded">
+            <DocketStripe />
+            <div className="p-5 sm:p-6">
+              <span className="rounded-full bg-secondary px-3 py-1 text-xs font-semibold">
+                {(planLabel[entitlements.plan] ?? entitlements.plan).toUpperCase()} CHAMBER
+              </span>
+              <h3 className="mt-4 font-display text-2xl font-bold">Upgrade to Premium</h3>
+              <p className="mt-2 text-sm text-muted-foreground">
                 {inr(PREMIUM_SEAT_PRICE_INR)} per user per month, plus GST. Cancel any time.
               </p>
               <ul className="mt-4 space-y-2 text-sm">
                 {PREMIUM_INCLUDES.map((line) => (
                   <li key={line} className="flex gap-2">
-                    <Check className="mt-0.5 size-4 shrink-0 text-accent" />
+                    <Check className="mt-0.5 size-4 shrink-0 text-docket-emerald" />
                     <span>{line}</span>
                   </li>
                 ))}
               </ul>
-              <p className="mt-4 text-xs text-muted-foreground">
-                Documents & OCR, time tracking & billing, AI drafting, WhatsApp reminders and
-                e-Courts lookups are add-ons — write to {BILLING_EMAIL} to add them.
-              </p>
-            </div>
 
-            <div className="space-y-4">
               {canManage ? (
                 <>
-                  <div>
-                    <p className="text-eyebrow">How many users?</p>
-                    <div className="mt-2">
-                      <SeatStepper
-                        seats={seats}
-                        min={Math.max(entitlements.seats_used, 1)}
-                        onChange={setSeats}
-                        disabled={busy}
-                      />
+                  <div className="mt-6 flex flex-wrap items-end justify-between gap-3">
+                    <div>
+                      <span className="text-eyebrow block">Users</span>
+                      <div className="mt-1.5">
+                        <SeatStepper
+                          value={seats}
+                          onChange={setSeats}
+                          min={Math.max(entitlements.seats_used, 1)}
+                          disabled={busy}
+                        />
+                      </div>
                     </div>
+                    <span className="text-sm font-semibold">
+                      {inr(PREMIUM_SEAT_PRICE_INR)} / user / month
+                    </span>
                   </div>
-                  <PriceBreakdown seats={seats} />
+                  <div className="mt-4">
+                    <PriceBreakdown seats={seats} />
+                  </div>
                   <button
                     type="button"
                     disabled={busy}
                     onClick={() => void handleUpgrade()}
-                    className="flex w-full items-center justify-center gap-2 rounded bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-ink disabled:opacity-60"
+                    className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded bg-primary px-4 text-sm font-semibold text-primary-foreground hover:bg-ink disabled:opacity-60"
                   >
-                    {busy ? <Loader2 className="size-4 animate-spin" /> : null}
+                    {busy ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <CreditCard className="size-4" />
+                    )}
                     Pay {inr(premiumQuote(seats).total)} with Razorpay
                   </button>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="mt-2.5 text-center text-xs text-muted-foreground">
                     Renews monthly. Pay by card or UPI; Razorpay emails your invoice.
                   </p>
                 </>
               ) : (
-                <p className="text-sm text-muted-foreground">
+                <p className="mt-6 text-sm text-muted-foreground">
                   Ask your chamber owner or an admin to upgrade the chamber to Premium.
                 </p>
               )}
+
+              <p className="mt-5 border-t border-border pt-4 text-xs text-muted-foreground">
+                Documents & OCR, time tracking & billing, AI drafting, WhatsApp reminders and
+                e-Courts lookups are add-ons — write to {BILLING_EMAIL} to add them.
+              </p>
             </div>
-          </div>
+          </section>
         </>
       )}
 

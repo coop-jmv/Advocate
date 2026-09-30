@@ -8,7 +8,7 @@ import { Tag, type Tone } from "@/components/app/primitives";
 import { createHearing, listHearings, updateHearingStatus } from "@/lib/diary-service";
 import { findClashKeys, isClashing } from "@/lib/hearing-conflicts";
 import { todayIsoIST } from "@/lib/date-ist";
-import { FieldError, invalidClass, Req } from "@/components/app/form-fields";
+import { FieldError, FormErrorSummary, invalidClass, Req } from "@/components/app/form-fields";
 import { cn } from "@/lib/utils";
 import {
   collectErrors,
@@ -21,7 +21,7 @@ import {
 
 type HearingField = "matterTitle" | "court" | "hearingDate" | "purpose";
 
-const INPUT = "mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm";
+const INPUT = "mt-1.5 h-10 w-full rounded border border-input bg-background px-3 text-sm";
 
 export const Route = createFileRoute("/_authenticated/app/diary")({
   head: () => ({
@@ -175,8 +175,12 @@ function Diary() {
       <form
         onSubmit={handleCreate}
         noValidate
-        className="surface-panel mb-6 grid gap-3 rounded p-4 sm:grid-cols-2 lg:grid-cols-5"
+        className="surface-panel mb-6 grid gap-4 rounded p-5 sm:grid-cols-2 lg:grid-cols-5"
       >
+        <FormErrorSummary
+          show={Object.keys(formErrors).length > 0}
+          className="sm:col-span-2 lg:col-span-5"
+        />
         <label className="text-sm sm:col-span-2 lg:col-span-1">
           <span className="text-eyebrow">
             Matter
@@ -224,7 +228,7 @@ function Diary() {
             type="time"
             value={form.hearingTime}
             onChange={(event) => setForm((f) => ({ ...f, hearingTime: event.target.value }))}
-            className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
+            className="mt-1.5 h-10 w-full rounded border border-input bg-background px-3 text-sm"
           />
         </label>
         <label className="text-sm">

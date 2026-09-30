@@ -6,7 +6,14 @@ import { AppShell } from "@/components/app/AppShell";
 import { SettingsTabs } from "@/components/app/SettingsTabs";
 import { TwoFactorSettings } from "@/components/app/TwoFactorSettings";
 import { Tag, type Tone } from "@/components/app/primitives";
-import { FieldError, invalidClass, MobileInput, Req } from "@/components/app/form-fields";
+import {
+  FieldError,
+  FieldHint,
+  FormErrorSummary,
+  invalidClass,
+  MobileInput,
+  Req,
+} from "@/components/app/form-fields";
 import { cn } from "@/lib/utils";
 import {
   collectErrors,
@@ -276,6 +283,7 @@ function Profile() {
             <section className="surface-panel rounded p-5">
               <h2 className="font-display text-lg font-bold">Your details</h2>
               <form onSubmit={handleSave} noValidate className="mt-4 space-y-4">
+                <FormErrorSummary show={Object.keys(fieldErrors).length > 0} />
                 <div className="grid gap-4 sm:grid-cols-2">
                   <label className="block text-sm">
                     <span className="text-eyebrow">
@@ -290,7 +298,7 @@ function Profile() {
                       autoComplete="given-name"
                       aria-invalid={fieldErrors.firstName ? true : undefined}
                       className={cn(
-                        "mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm",
+                        "mt-1.5 h-10 w-full rounded border border-input bg-background px-3 text-sm",
                         invalidClass(fieldErrors.firstName),
                       )}
                     />
@@ -309,7 +317,7 @@ function Profile() {
                       autoComplete="family-name"
                       aria-invalid={fieldErrors.lastName ? true : undefined}
                       className={cn(
-                        "mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm",
+                        "mt-1.5 h-10 w-full rounded border border-input bg-background px-3 text-sm",
                         invalidClass(fieldErrors.lastName),
                       )}
                     />
@@ -322,7 +330,7 @@ function Profile() {
                     value={firmName}
                     onChange={(event) => setFirmName(event.target.value)}
                     maxLength={LIMITS.shortText}
-                    className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
+                    className="mt-1.5 h-10 w-full rounded border border-input bg-background px-3 text-sm"
                   />
                   <FieldError message={fieldErrors.firmName} />
                 </label>
@@ -333,7 +341,7 @@ function Profile() {
                     onChange={(event) => setEnrolmentNo(event.target.value)}
                     maxLength={60}
                     placeholder="MH/1234/2015"
-                    className="mt-1.5 w-full rounded border border-input bg-background px-3 py-2 text-sm"
+                    className="mt-1.5 h-10 w-full rounded border border-input bg-background px-3 text-sm"
                   />
                   <FieldError message={fieldErrors.enrolmentNo} />
                 </label>
@@ -348,10 +356,10 @@ function Profile() {
                     error={fieldErrors.phone}
                     className="mt-1.5"
                   />
-                  <FieldError message={fieldErrors.phone} />
-                  <span className="mt-1 block text-xs text-muted-foreground">
-                    10-digit Indian mobile, used for hearing reminders.
-                  </span>
+                  <FieldHint
+                    hint="10-digit Indian mobile, used for hearing reminders."
+                    error={fieldErrors.phone}
+                  />
                 </label>
                 <label className="block text-sm">
                   <span className="text-eyebrow">Email</span>

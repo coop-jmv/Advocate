@@ -1,12 +1,12 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Check, Scale, Loader2, Minus, Plus } from "lucide-react";
+import { Check, Scale, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { logAuthEvent } from "@/lib/edge-functions";
 import { MIN_PASSWORD_LENGTH, passwordLengthError } from "@/lib/password-policy";
 import { cn } from "@/lib/utils";
 import { needsMfaChallenge, verifiedTotpFactor } from "@/lib/mfa";
-import { PREMIUM_MAX_SEATS, PREMIUM_SEAT_PRICE_INR, inr, premiumQuote } from "@/lib/premium";
+import { PREMIUM_MAX_SEATS, PREMIUM_SEAT_PRICE_INR, inr } from "@/lib/premium";
 import {
   collectErrors,
   emailError,
@@ -19,7 +19,15 @@ import {
   toE164Mobile,
   type FieldErrors,
 } from "@/lib/validation";
-import { FieldError, invalidClass, MobileInput, Req } from "@/components/app/form-fields";
+import {
+  FieldError,
+  FieldHint,
+  FormErrorSummary,
+  invalidClass,
+  MobileInput,
+  Req,
+} from "@/components/app/form-fields";
+import { PriceBreakdown, SeatStepper } from "@/components/app/premium-ui";
 import { MfaChallengeScreen } from "@/components/app/MfaChallengeScreen";
 import heroSignIn from "@/assets/hero-signin-courthouse.jpg";
 import heroSignUp from "@/assets/hero-signup-signing.jpg";
@@ -344,102 +352,95 @@ function AuthPage() {
             </p>
 
             {mode === "signup" ? (
-              <fieldset className="mt-2 grid gap-2 sm:grid-cols-2">
+              <fieldset className="mt-3">
                 <legend className="sr-only">Plan</legend>
-                {(
-                  [
-                    {
-                      value: "free",
-                      title: "Free",
-                      price: "₹0, forever",
-                      lines: [
-                        "One advocate login",
-                        "Up to 25 matters and clients",
-                        "AI case analysis — 5 a day",
-                      ],
-                    },
-                    {
-                      value: "premium",
-                      title: "Premium",
-                      price: `${inr(PREMIUM_SEAT_PRICE_INR)}/user/month + GST`,
-                      lines: [
-                        "Just you, or your whole team",
-                        "Unlimited matters and clients",
-                        "AI case analysis — 100 a day",
-                      ],
-                    },
-                  ] as const
-                ).map((option) => (
-                  <label
-                    key={option.value}
-                    className={cn(
-                      "cursor-pointer rounded border p-2 text-sm transition-colors",
-                      plan === option.value
-                        ? "border-primary bg-primary/5 ring-1 ring-primary"
-                        : "border-input hover:bg-secondary/60",
-                    )}
-                  >
-                    <span className="flex items-center gap-2">
-                      <input
-                        type="radio"
-                        name="plan"
-                        value={option.value}
-                        checked={plan === option.value}
-                        onChange={() => setPlan(option.value)}
-                        className="size-3.5"
-                      />
-                      <span className="font-semibold">{option.title}</span>
-                    </span>
-                    <span className="mt-0.5 block text-xs font-medium">{option.price}</span>
-                    <ul className="mt-1 space-y-0.5 text-xs text-muted-foreground">
-                      {option.lines.map((line) => (
-                        <li key={line} className="flex gap-1.5">
-                          <Check className="mt-0.5 size-3 shrink-0 text-accent" />
-                          <span>{line}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </label>
-                ))}
+                <div className="grid gap-2.5 sm:grid-cols-2">
+                  {(
+                    [
+                      {
+                        value: "free",
+                        title: "Free",
+                        price: "₹0, forever",
+                        lines: [
+                          "One advocate login",
+                          "Up to 25 matters and clients",
+                          "AI case analysis — 5 a day",
+                        ],
+                      },
+                      {
+                        value: "premium",
+                        title: "Premium",
+                        price: `${inr(PREMIUM_SEAT_PRICE_INR)}/user/month + GST`,
+                        lines: [
+                          "Just you, or your whole team",
+                          "Unlimited matters and clients",
+                          "AI case analysis — 100 a day",
+                        ],
+                      },
+                    ] as const
+                  ).map((option) => {
+                    const selected = plan === option.value;
+                    return (
+                      <label
+                        key={option.value}
+                        className={cn(
+                          "relative cursor-pointer rounded border p-3 text-sm transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring",
+                          selected
+                            ? "border-primary bg-secondary ring-1 ring-primary"
+                            : "border-input bg-background hover:border-accent",
+                        )}
+                      >
+                        <input
+                          type="radio"
+                          name="plan"
+                          value={option.value}
+                          checked={selected}
+                          onChange={() => setPlan(option.value)}
+                          className="sr-only"
+                        />
+                        <span className="flex items-start justify-between gap-2">
+                          <span className="font-display text-base font-bold">{option.title}</span>
+                          <span
+                            aria-hidden="true"
+                            className={cn(
+                              "mt-0.5 size-4 shrink-0 rounded-full border",
+                              selected ? "border-4 border-primary bg-background" : "border-input",
+                            )}
+                          />
+                        </span>
+                        <span className="mt-0.5 block text-xs font-semibold">{option.price}</span>
+                        <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
+                          {option.lines.map((line) => (
+                            <li key={line} className="flex gap-1.5">
+                              <Check className="mt-0.5 size-3 shrink-0 text-docket-emerald" />
+                              <span>{line}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </label>
+                    );
+                  })}
+                </div>
                 {plan === "premium" ? (
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded border border-border bg-secondary/40 px-2 py-1.5 text-sm sm:col-span-2">
-                    <span className="text-eyebrow">Users</span>
-                    <span className="flex items-center gap-1.5">
-                      <button
-                        type="button"
-                        disabled={premiumSeats <= 1}
-                        onClick={() => setPremiumSeats(premiumSeats - 1)}
-                        className="flex size-6 items-center justify-center rounded border border-input bg-background disabled:opacity-40"
-                        aria-label="One user fewer"
-                      >
-                        <Minus className="size-3" />
-                      </button>
-                      <span className="min-w-6 text-center font-semibold tabular-nums">
-                        {premiumSeats}
+                  <div className="mt-2.5 space-y-2.5 rounded border border-border bg-background p-3">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                      <span className="text-eyebrow w-full">Users</span>
+                      <SeatStepper value={premiumSeats} onChange={setPremiumSeats} />
+                      <span className="text-xs text-muted-foreground">
+                        Choose 1–{PREMIUM_MAX_SEATS}. You can change this later.
                       </span>
-                      <button
-                        type="button"
-                        disabled={premiumSeats >= PREMIUM_MAX_SEATS}
-                        onClick={() => setPremiumSeats(premiumSeats + 1)}
-                        className="flex size-6 items-center justify-center rounded border border-input bg-background disabled:opacity-40"
-                        aria-label="One user more"
-                      >
-                        <Plus className="size-3" />
-                      </button>
-                    </span>
-                    <span className="ml-auto text-xs text-muted-foreground">
-                      {inr(premiumQuote(premiumSeats).subtotal)} +{" "}
-                      {inr(premiumQuote(premiumSeats).gst)} GST ={" "}
-                      <span className="font-semibold text-foreground">
-                        {inr(premiumQuote(premiumSeats).total)}/month
-                      </span>
-                    </span>
+                    </div>
+                    <PriceBreakdown seats={premiumSeats} compact />
                   </div>
                 ) : null}
               </fieldset>
             ) : null}
 
-            <form onSubmit={handleSubmit} noValidate className="mt-3 space-y-2.5">
+            <form onSubmit={handleSubmit} noValidate className="mt-4 space-y-3">
+              <FormErrorSummary
+                show={mode === "signup" && hasErrors(fieldErrors)}
+                message="We couldn't create your account. Review the highlighted details."
+              />
               {mode === "signup" ? (
                 <>
                   <div className="grid gap-2.5 sm:grid-cols-2">
@@ -456,7 +457,7 @@ function AuthPage() {
                         autoComplete="given-name"
                         aria-invalid={fieldErrors.firstName ? true : undefined}
                         className={cn(
-                          "mt-1 w-full rounded border border-input bg-background px-3 py-1.5 text-sm",
+                          "mt-1 h-10 w-full rounded border border-input bg-background px-3 text-sm",
                           invalidClass(fieldErrors.firstName),
                         )}
                         placeholder="Priya"
@@ -476,7 +477,7 @@ function AuthPage() {
                         autoComplete="family-name"
                         aria-invalid={fieldErrors.lastName ? true : undefined}
                         className={cn(
-                          "mt-1 w-full rounded border border-input bg-background px-3 py-1.5 text-sm",
+                          "mt-1 h-10 w-full rounded border border-input bg-background px-3 text-sm",
                           invalidClass(fieldErrors.lastName),
                         )}
                         placeholder="Sharma"
@@ -490,7 +491,7 @@ function AuthPage() {
                       value={firmName}
                       onChange={(event) => setFirmName(event.target.value)}
                       maxLength={LIMITS.shortText}
-                      className="mt-1 w-full rounded border border-input bg-background px-3 py-1.5 text-sm"
+                      className="mt-1 h-10 w-full rounded border border-input bg-background px-3 text-sm"
                       placeholder="Your chamber or firm name (optional)"
                     />
                     <FieldError message={fieldErrors.firmName} />
@@ -506,10 +507,10 @@ function AuthPage() {
                       error={fieldErrors.phone}
                       className="mt-1"
                     />
-                    <FieldError message={fieldErrors.phone} />
-                    <span className="mt-0.5 block text-xs text-muted-foreground">
-                      10-digit Indian mobile, used for hearing reminders.
-                    </span>
+                    <FieldHint
+                      hint="10-digit Indian mobile, used for hearing reminders."
+                      error={fieldErrors.phone}
+                    />
                   </label>
                 </>
               ) : null}
@@ -527,7 +528,7 @@ function AuthPage() {
                   autoComplete="email"
                   aria-invalid={fieldErrors.email ? true : undefined}
                   className={cn(
-                    "mt-1 w-full rounded border border-input bg-background px-3 py-1.5 text-sm",
+                    "mt-1 h-10 w-full rounded border border-input bg-background px-3 text-sm",
                     invalidClass(fieldErrors.email),
                   )}
                 />
@@ -549,16 +550,18 @@ function AuthPage() {
                     autoComplete={mode === "signup" ? "new-password" : "current-password"}
                     aria-invalid={fieldErrors.password ? true : undefined}
                     className={cn(
-                      "mt-1 w-full rounded border border-input bg-background px-3 py-1.5 text-sm",
+                      "mt-1 h-10 w-full rounded border border-input bg-background px-3 text-sm",
                       invalidClass(fieldErrors.password),
                     )}
                   />
-                  <FieldError message={fieldErrors.password} />
                   {mode === "signup" ? (
-                    <span className="mt-1 block text-xs text-muted-foreground">
-                      At least {MIN_PASSWORD_LENGTH} characters.
-                    </span>
-                  ) : null}
+                    <FieldHint
+                      hint={`At least ${MIN_PASSWORD_LENGTH} characters.`}
+                      error={fieldErrors.password}
+                    />
+                  ) : (
+                    <FieldError message={fieldErrors.password} />
+                  )}
                 </label>
               ) : null}
 
@@ -614,7 +617,10 @@ function AuthPage() {
                 </p>
               ) : null}
               {mode === "signup" && existingAccount ? (
-                <div className="rounded border border-border bg-secondary px-3 py-2 text-sm">
+                <div
+                  role="status"
+                  className="rounded border border-docket-amber/50 bg-docket-amber/10 px-3 py-2.5 text-sm"
+                >
                   <p>
                     <span className="font-semibold">{email}</span> already has a LexDiary account.
                   </p>
@@ -646,7 +652,7 @@ function AuthPage() {
               <button
                 type="submit"
                 disabled={busy}
-                className="flex w-full items-center justify-center gap-2 rounded bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-ink disabled:opacity-60"
+                className="flex h-10 w-full items-center justify-center gap-2 rounded bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-ink disabled:opacity-60"
               >
                 {busy ? <Loader2 className="size-4 animate-spin" /> : null}
                 {mode === "signin"
