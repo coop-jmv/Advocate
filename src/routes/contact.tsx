@@ -9,6 +9,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { submitContactRequest } from "@/lib/contact.functions";
+import { FieldError } from "@/components/app/form-fields";
+import {
+  collectErrors,
+  emailError,
+  hasErrors,
+  mobileDigits,
+  mobileError,
+  requiredText,
+  toE164Mobile,
+  type FieldErrors,
+} from "@/lib/validation";
 
 export const Route = createFileRoute("/contact")({
   head: () => ({
@@ -46,18 +57,26 @@ function Contact() {
   });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors<"fullName" | "email" | "phone">>({});
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
+    const errors = collectErrors({
+      fullName: requiredText(form.fullName, "Full name", { min: 2 }),
+      email: emailError(form.email),
+      phone: mobileError(mobileDigits(form.phone)),
+    });
+    setFieldErrors(errors);
+    if (hasErrors(errors)) return;
     setBusy(true);
     setError(null);
     try {
       await submit({
         data: {
-          fullName: form.fullName,
+          fullName: form.fullName.trim(),
           enrolmentNo: form.enrolmentNo || undefined,
-          email: form.email,
-          phone: form.phone,
+          email: form.email.trim(),
+          phone: toE164Mobile(mobileDigits(form.phone)),
           court: form.court || undefined,
           note: form.note || undefined,
         },
@@ -103,6 +122,7 @@ function Contact() {
 
           <form
             onSubmit={(event) => void handleSubmit(event)}
+            noValidate
             className="surface-panel space-y-5 rounded p-8"
           >
             <div className="grid gap-5 sm:grid-cols-2">
@@ -114,7 +134,9 @@ function Contact() {
                   placeholder="Your full name"
                   value={form.fullName}
                   onChange={(event) => setForm((f) => ({ ...f, fullName: event.target.value }))}
+                  aria-invalid={fieldErrors.fullName ? true : undefined}
                 />
+                <FieldError message={fieldErrors.fullName} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="enrolment">Bar Council enrolment no.</Label>
@@ -134,17 +156,23 @@ function Contact() {
                   placeholder="Your email address"
                   value={form.email}
                   onChange={(event) => setForm((f) => ({ ...f, email: event.target.value }))}
+                  aria-invalid={fieldErrors.email ? true : undefined}
                 />
+                <FieldError message={fieldErrors.email} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="phone">Mobile</Label>
                 <Input
                   id="phone"
                   required
+                  type="tel"
+                  inputMode="numeric"
                   placeholder="10-digit mobile number"
                   value={form.phone}
                   onChange={(event) => setForm((f) => ({ ...f, phone: event.target.value }))}
+                  aria-invalid={fieldErrors.phone ? true : undefined}
                 />
+                <FieldError message={fieldErrors.phone} />
               </div>
             </div>
             <div className="space-y-2">

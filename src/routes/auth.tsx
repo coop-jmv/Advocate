@@ -174,13 +174,15 @@ function AuthPage() {
       setError(null);
       return;
     }
+    // A pasted address often carries a trailing space; send the clean one.
+    const cleanEmail = email.trim();
     setBusy(true);
     setError(null);
     setNotice(null);
     setExistingAccount(false);
     try {
       if (mode === "forgot") {
-        const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+        const { error: resetError } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
           redirectTo: `${window.location.origin}/reset-password`,
         });
         if (resetError) throw resetError;
@@ -189,7 +191,7 @@ function AuthPage() {
       }
       if (mode === "signup") {
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-          email,
+          email: cleanEmail,
           password,
           options: {
             emailRedirectTo: `${window.location.origin}/app`,
@@ -213,7 +215,7 @@ function AuthPage() {
           setExistingAccount(true);
           return;
         }
-        void logAuthEvent({ event: "signup", email, userId: signUpData.user?.id });
+        void logAuthEvent({ event: "signup", email: cleanEmail, userId: signUpData.user?.id });
         const { data } = await supabase.auth.getSession();
         if (data.session) {
           void navigate({ to: "/app" });
@@ -226,7 +228,10 @@ function AuthPage() {
         );
         return;
       }
-      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: cleanEmail,
+        password,
+      });
       if (signInError) throw signInError;
       await continueSignedIn();
     } catch (cause) {
@@ -239,7 +244,7 @@ function AuthPage() {
         setExistingAccount(true);
         return;
       }
-      if (mode === "signin") void logAuthEvent({ event: "login_failed", email });
+      if (mode === "signin") void logAuthEvent({ event: "login_failed", email: cleanEmail });
       // A network-level failure — sign-in service unreachable, DNS not resolving,
       // device offline — arrives as AuthRetryableFetchError carrying the browser's
       // own text ("Failed to fetch" in Chromium, "Load failed" in Safari), which
