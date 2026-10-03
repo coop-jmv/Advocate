@@ -201,6 +201,16 @@ function Contact() {
               </p>
             ) : null}
 
+            <p className="text-xs text-muted-foreground">
+              We use these details only to respond to your request and arrange onboarding, and
+              delete them after 12 months. To have them erased sooner, write to
+              grievance@lexdiary.online. See the{" "}
+              <a href="/privacy" className="underline">
+                privacy notice
+              </a>
+              .
+            </p>
+
             <button
               type="submit"
               disabled={busy}
